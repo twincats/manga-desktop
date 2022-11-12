@@ -8,6 +8,7 @@ import (
 	FileReader is struct for accessing file data related
 */
 type FileReader struct {
+	MangaPath string
 }
 
 /*
