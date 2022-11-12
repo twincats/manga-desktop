@@ -1,4 +1,4 @@
-module changeme
+module mangav4
 
 go 1.18
 
