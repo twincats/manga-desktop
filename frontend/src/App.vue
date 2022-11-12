@@ -1,8 +1,24 @@
 <template>
   <div id="main">
+    {{ response }}
     <router-view></router-view>
   </div>
 </template>
+
+<script lang="ts" setup>
+import { EventsOnce, EventsEmit } from '@wails/runtime/runtime'
+
+const router = useRouter()
+const response = ref()
+EventsEmit('args')
+EventsOnce('args', (res: string[]) => {
+  response.value = res
+  console.log(res)
+  if (res.includes('-convert')) {
+    router.push('/test')
+  }
+})
+</script>
 
 <style>
 #logo {

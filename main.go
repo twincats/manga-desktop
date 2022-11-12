@@ -4,6 +4,7 @@ import (
 	"embed"
 
 	"mangav4/system"
+	"mangav4/system/file"
 	"mangav4/system/manga"
 
 	"github.com/wailsapp/wails/v2"
@@ -17,13 +18,14 @@ var assets embed.FS
 
 func main() {
 	// Create an instance of the app structure
-	app := system.NewApp()
+	app := NewApp()
 
 	// Connect to database
-	app.ConnectDatabasePostgres("mangav3")
+	db := system.ConnectDatabasePostgres("mangav3")
 
 	// Class bind instance
-	manga := manga.NewManga(app.DB)
+	manga := manga.NewManga(db)
+	reader := file.NewFileReader()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -31,17 +33,19 @@ func main() {
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{
-			Assets: assets,
+			Assets:  assets,
+			Handler: file.NewFileLoader(),
 		},
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.Startup,
+		OnStartup:        app.startup,
 		Bind: []interface{}{
 			app,
 			manga,
+			reader,
 		},
 	})
 
