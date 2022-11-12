@@ -16,4 +16,8 @@
   background-size: 100% 100%;
   background-origin: content-box;
 }
+#main {
+  background-color: var(--color-bg-1);
+  height: 100vh;
+}
 </style>

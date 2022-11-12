@@ -4,6 +4,7 @@ import (
 	"embed"
 
 	"mangav4/system"
+	"mangav4/system/manga"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -17,6 +18,12 @@ var assets embed.FS
 func main() {
 	// Create an instance of the app structure
 	app := system.NewApp()
+
+	// Connect to database
+	app.ConnectDatabasePostgres("mangav3")
+
+	// Class bind instance
+	manga := manga.NewManga(app.DB)
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -34,6 +41,7 @@ func main() {
 		OnStartup:        app.Startup,
 		Bind: []interface{}{
 			app,
+			manga,
 		},
 	})
 
