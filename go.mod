@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/SamuelTissot/sqltime v0.1.0
-	github.com/climech/naturalsort v0.1.0
 	github.com/wailsapp/wails/v2 v2.2.0
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/driver/sqlite v1.4.3

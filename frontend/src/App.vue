@@ -14,7 +14,7 @@ EventsEmit('args')
 EventsOnce('args', (res: string[]) => {
   response.value = res
   console.log(res)
-  if (res.includes('-convert')) {
+  if (res.includes('convert')) {
     router.push('/test')
   }
 })

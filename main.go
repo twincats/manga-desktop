@@ -25,7 +25,7 @@ func main() {
 
 	// Class bind instance
 	manga := manga.NewManga(db)
-	reader := file.NewFilesDataReader()
+	// reader := file.NewFilesDataReader()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -45,11 +45,11 @@ func main() {
 		Bind: []interface{}{
 			app,
 			manga,
-			reader,
+			// reader,
 		},
 	})
 
 	if err != nil {
-		println("Error:123", err.Error())
+		println("Error:", err.Error())
 	}
 }
