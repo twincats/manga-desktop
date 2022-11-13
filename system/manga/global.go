@@ -1,8 +1,17 @@
 package manga
 
-import "gorm.io/gorm"
+import (
+	"os"
+	"regexp"
 
-var DB *gorm.DB
+	"github.com/climech/naturalsort"
+	"gorm.io/gorm"
+)
+
+var (
+	DB        *gorm.DB
+	MangaPath string = `D:\DATA\Manga`
+)
 
 // Pagination struct for pagination need set Total
 type Pagination struct {
@@ -44,4 +53,36 @@ func (p *Pagination) Paginate() {
 	//setting Offset for DB Query
 	p.Offset = (p.CurrentPage - 1) * p.PerPage
 
+}
+
+//GetFiles fetch all files within directory
+func GetFiles(path string) ([]string, error) {
+	var files []string
+	list, err := os.ReadDir(path)
+	if err != nil {
+		return files, err
+	}
+
+	for _, file := range list {
+		if !file.IsDir() {
+			files = append(files, file.Name())
+		}
+	}
+
+	// sorting files as natural
+	naturalsort.Sort(files)
+
+	return files, nil
+}
+
+// StringReplace Regex string replace
+func StringReplace(regexString string, match string, replaceString string) string {
+	reg := regexp.MustCompile(regexString)
+	return reg.ReplaceAllString(match, replaceString)
+}
+
+func fixMangaTitle(title string) string {
+	mTitle := StringReplace(`(?m)[^\w\-[\]()' ~.,!@&]|\.+$`, title, "")
+	mTitle = StringReplace("(?m) $|^ ", mTitle, "")
+	return mTitle
 }

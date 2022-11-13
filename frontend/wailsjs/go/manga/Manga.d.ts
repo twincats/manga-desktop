@@ -8,4 +8,4 @@ export function GetMangaHome(arg1:number,arg2:number):Promise<manga.MangaHome>;
 
 export function GetMangas():Promise<Array<manga.Manga>>;
 
-export function GetPage(arg1:number):Promise<string>;
+export function GetPage(arg1:number):Promise<manga.Page>;

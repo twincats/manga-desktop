@@ -7,18 +7,19 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-var wailsContext *context.Context
-
-var arguments []string
+var (
+	WailsContext *context.Context
+	arguments    []string
+)
 
 func Startup(ctx *context.Context) {
-	wailsContext = ctx
+	WailsContext = ctx
 
 	args := os.Args
 	arguments = args
 
-	runtime.EventsOnce(*wailsContext, "args", func(optionalData ...interface{}) {
-		runtime.EventsEmit(*wailsContext, "args", arguments[1:])
+	runtime.EventsOnce(*WailsContext, "args", func(optionalData ...interface{}) {
+		runtime.EventsEmit(*WailsContext, "args", arguments[1:])
 	})
 
 }

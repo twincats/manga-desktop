@@ -2,13 +2,12 @@
   <div class="p-3">
     <div class="grid grid-cols-5 lg:grid-cols-10">
       <div v-for="(manga, i) in mangaHome?.manga" :key="i" class="mb-3">
-        <a-card
-          hoverable
-          :style="{ height: '100%' }"
-          @click="$router.push(`chapter/${manga.id}`)"
-        >
+        <a-card hoverable :style="{ height: '100%' }">
           <template #cover>
-            <div class="h-210px overflow-hidden hover:cursor-pointer">
+            <div
+              class="h-210px overflow-hidden hover:cursor-pointer"
+              @click="$router.push(`chapter/${manga.id}`)"
+            >
               <img
                 :style="{ width: '100%', transform: 'translateY(-20px)' }"
                 alt="dessert"
@@ -18,7 +17,7 @@
           </template>
           <a-card-meta :title="manga.title">
             <template #description>
-              <a-link @click="$router.push(`/page/${manga.chapter_id}`)"
+              <a-link @click.stop="$router.push(`/page/${manga.chapter_id}`)"
                 >Chapter {{ manga.chapter }}</a-link
               >
             </template>

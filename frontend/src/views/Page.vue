@@ -2,21 +2,26 @@
   <div>
     Page Vue
     <div>{{ cid }}</div>
-    <div>
-      {{ page }}
+    <div v-if="page">
+      <img
+        v-for="(p, i) in page.pages"
+        :key="i"
+        :src="`file/${page.path}/${p}`"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { GetPage } from '@wails/go/manga/Manga'
+import type { manga } from '@wails/go/models'
 
 // const Route = useRoute()
 const props = defineProps<{
   cid: string
 }>()
 
-const page = ref()
+const page = ref<manga.Page>()
 GetPage(Number(props.cid)).then(res => {
   page.value = res
 })

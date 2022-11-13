@@ -2,14 +2,18 @@ package manga
 
 import (
 	"encoding/json"
+	"path/filepath"
+
+	"mangav4/system"
 
 	"github.com/SamuelTissot/sqltime"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
 )
 
 // NewManga create new instance of Manga
-func NewManga(d *gorm.DB) *Manga {
-	DB = d
+func NewManga(db *gorm.DB) *Manga {
+	DB = db
 	return &Manga{}
 }
 
@@ -35,7 +39,7 @@ func (m *Manga) GetMangaHome(page int, limit int) MangaHome {
 }
 
 /* GetPage for Fetching list of images chapter */
-func (m *Manga) GetPage(id int) string {
+func (m *Manga) GetPage(id int) Page {
 	var p PageApi
 	DB.Table("chapters").
 		Select("chapters.id", "chapter", "mangas.title").
@@ -43,7 +47,18 @@ func (m *Manga) GetPage(id int) string {
 		Where("chapters.id = ?", id).
 		Take(&p)
 
-	return "Title : " + p.Title
+	urlPath := filepath.Join(fixMangaTitle(p.Title), p.Chapter)
+	path := filepath.Join(MangaPath, urlPath)
+	files, err := GetFiles(path)
+	if err != nil {
+		runtime.LogError(*system.WailsContext, err.Error())
+	}
+
+	var page Page
+	page.Pages = files
+	page.Path = urlPath
+
+	return page
 }
 
 // PageApi for Fetching chapter and Manga title
@@ -114,8 +129,10 @@ type MangaHome struct {
 type Page struct {
 	Pages []string `json:"pages"`
 	Path  string   `json:"path"`
-	Nav   struct {
-		Next string `json:"next"`
-		Prev string `json:"prev"`
-	} `json:"nav"`
+	Nav   Nav      `json:"nav"`
+}
+
+type Nav struct {
+	Next string `json:"next"`
+	Prev string `json:"prev"`
 }
