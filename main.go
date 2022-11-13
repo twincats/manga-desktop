@@ -17,6 +17,10 @@ import (
 var assets embed.FS
 
 func main() {
+	// Single instance check
+	if _, err := system.CreateMutexW(system.ProcCreateMutexW, "mangav4.application"); err != nil {
+		return
+	}
 	// Create an instance of the app structure
 	app := NewApp()
 
