@@ -1,7 +1,14 @@
 <template>
   <div>
     <div>TESTING PAGE</div>
-    <div><a-button @click="showManga" type="primary">Fetch</a-button></div>
+    <div>
+      <a-space>
+        <a-button @click="showManga" type="primary">Fetch</a-button>
+        <a-button @click="$router.push('/')" type="secondary" status="warning"
+          >Home</a-button
+        >
+      </a-space>
+    </div>
     <div>
       {{ manga }}
     </div>

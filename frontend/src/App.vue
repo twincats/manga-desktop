@@ -1,39 +1,35 @@
 <template>
-  <div id="main">
-    {{ response }}
-    <router-view></router-view>
+  <div>
+    <menu-bar
+      @clickMenu="collapse = !collapse"
+      @clickToggleTheme="toggleTheme()"
+    />
+    <side-bar :collapse="collapse" />
+    <div id="main">
+      <router-view></router-view>
+    </div>
+    <footer-bar />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { EventsOnce, EventsEmit } from '@wails/runtime/runtime'
+import { EmitListenOnce, useTheme } from '@/composable/helper'
 
 const router = useRouter()
-const response = ref()
-EventsEmit('args')
-EventsOnce('args', (res: string[]) => {
-  response.value = res
-  console.log(res)
+const collapse = ref(true)
+const { theme, toggleTheme } = useTheme()
+EmitListenOnce('args', (res: string[]) => {
   if (res.includes('convert')) {
-    router.push('/test')
+    router.push('/convert')
   }
 })
 </script>
 
 <style>
-#logo {
-  display: block;
-  width: 50%;
-  height: 50%;
-  margin: auto;
-  padding: 10% 0 0;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  background-origin: content-box;
-}
 #main {
-  background-color: var(--color-bg-1);
-  height: 100vh;
+  height: calc(100vh - 56px);
+  overflow: auto;
+  background-color: rgb(v-bind('theme.bg'));
+  color-scheme: v-bind('theme.scheme');
 }
 </style>
