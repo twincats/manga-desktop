@@ -1,10 +1,97 @@
 export namespace manga {
 	
+	export class Alter {
+	    id: number;
+	    title: string;
+	    manga_id: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Alter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.title = source["title"];
+	        this.manga_id = source["manga_id"];
+	    }
+	}
+	export class Language {
+	    id: number;
+	    lang: string;
+	    lang_code: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Language(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.lang = source["lang"];
+	        this.lang_code = source["lang_code"];
+	    }
+	}
+	export class Chapter {
+	    id: number;
+	    chapter: string;
+	    title: string;
+	    volume: string;
+	    group: string;
+	    timestamp_release: number;
+	    status_read: boolean;
+	    language_id: number;
+	    language: Language;
+	    // Go type: sqltime.Time
+	    created_at: any;
+	    // Go type: sqltime.Time
+	    updated_at: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new Chapter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.chapter = source["chapter"];
+	        this.title = source["title"];
+	        this.volume = source["volume"];
+	        this.group = source["group"];
+	        this.timestamp_release = source["timestamp_release"];
+	        this.status_read = source["status_read"];
+	        this.language_id = source["language_id"];
+	        this.language = this.convertValues(source["language"], Language);
+	        this.created_at = this.convertValues(source["created_at"], null);
+	        this.updated_at = this.convertValues(source["updated_at"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class Manga {
 	    id: number;
 	    title: string;
 	    status_end: boolean;
 	    mdex?: number;
+	    chapter: Chapter[];
+	    alter: Alter[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Manga(source);
@@ -16,7 +103,27 @@ export namespace manga {
 	        this.title = source["title"];
 	        this.status_end = source["status_end"];
 	        this.mdex = source["mdex"];
+	        this.chapter = this.convertValues(source["chapter"], Chapter);
+	        this.alter = this.convertValues(source["alter"], Alter);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class Pagination {
 	    current_page: number;

@@ -4,8 +4,8 @@ import (
 	"embed"
 
 	"mangav4/system"
+	"mangav4/system/app"
 	"mangav4/system/file"
-	"mangav4/system/manga"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -21,15 +21,16 @@ func main() {
 	if _, err := system.CreateMutexW(system.ProcCreateMutexW, "mangav4.application"); err != nil {
 		return
 	}
+
 	// Create an instance of the app structure
-	app := NewApp()
+	mangaApp := NewApp()
 
 	// Connect to database
-	db := system.ConnectDatabasePostgres("mangav3")
+	app.ConnectDatabasePostgres("mangav3")
 
 	// Class bind instance
-	manga := manga.NewManga(db)
-	// reader := file.NewFilesDataReader()
+	binding := system.InitializeBinding()
+	binding = append(binding, mangaApp)
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -45,12 +46,8 @@ func main() {
 			WindowIsTranslucent:  false,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
-		Bind: []interface{}{
-			app,
-			manga,
-			// reader,
-		},
+		OnStartup:        mangaApp.startup,
+		Bind:             binding,
 	})
 
 	if err != nil {

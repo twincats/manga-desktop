@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"mangav4/system"
+	"mangav4/system/app"
 
 	"github.com/SamuelTissot/sqltime"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -12,22 +12,28 @@ import (
 )
 
 // NewManga create new instance of Manga
-func NewManga(db *gorm.DB) *Manga {
-	DB = db
+func NewManga() *Manga {
 	return &Manga{}
 }
 
 // GetManga get single manga by ID
-func (m *Manga) GetManga(id int) Manga {
+func (m *Manga) GetManga(id uint) Manga {
 	var manga Manga
-	DB.Order("title").First(&manga, id)
+	app.DB.Order("title").First(&manga, id)
+	return manga
+}
+
+// GetMangaWithChapter get single manga with all chapter
+func (m *Manga) GetMangaWithChapter(id uint) Manga {
+	var manga Manga
+	app.DB.Preload("Chapter.Language").Preload("Alter").Order("title").First(&manga, id)
 	return manga
 }
 
 // GetMangas get list of manga []manga
 func (m *Manga) GetMangas() []Manga {
 	var manga []Manga
-	DB.Order("title").Find(&manga)
+	app.DB.Order("title").Find(&manga)
 	return manga
 }
 
@@ -41,7 +47,7 @@ func (m *Manga) GetMangaHome(page int, limit int) MangaHome {
 /* GetPage for Fetching list of images chapter */
 func (m *Manga) GetPage(id int) Page {
 	var p PageApi
-	DB.Table("chapters").
+	app.DB.Table("chapters").
 		Select("chapters.id", "chapter", "mangas.title").
 		Joins("inner join mangas on chapters.manga_id = mangas.id").
 		Where("chapters.id = ?", id).
@@ -51,7 +57,7 @@ func (m *Manga) GetPage(id int) Page {
 	path := filepath.Join(MangaPath, urlPath)
 	files, err := GetFiles(path)
 	if err != nil {
-		runtime.LogError(*system.WailsContext, err.Error())
+		runtime.LogError(*app.WailsContext, err.Error())
 	}
 
 	var page Page
@@ -70,12 +76,14 @@ type PageApi struct {
 
 // Manga Struct for model manga
 type Manga struct {
-	ID           int          `json:"id"`
+	ID           uint         `json:"id"`
 	Title        string       `json:"title"`
 	StatusEnding bool         `json:"status_end"`
 	Mdex         *int         `orm:"null" json:"mdex"`
 	CreatedAt    sqltime.Time `orm:"auto_now_add;type(datetime)" json:"-"`
 	UpdatedAt    sqltime.Time `orm:"auto_now;type(datetime)" json:"-"`
+	Chapter      []Chapter    `json:"chapter"`
+	Alter        []Alter      `json:"alter"`
 }
 
 type MangaHomeApi struct {
@@ -111,8 +119,8 @@ func (m *MangaHomeApi) Paginate(page int, limit int) MangaHome {
 }
 
 func (f MangaHomeApi) FetchQuery() *gorm.DB {
-	latestSubQuery := DB.Table("chapters").Select("manga_id", "MAX(CAST(chapter AS decimal)) AS chapter").Group("manga_id").Order("manga_id")
-	homeApiQuery := DB.Table("mangas").
+	latestSubQuery := app.DB.Table("chapters").Select("manga_id", "MAX(CAST(chapter AS decimal)) AS chapter").Group("manga_id").Order("manga_id")
+	homeApiQuery := app.DB.Table("mangas").
 		Select("mangas.id", "mangas.title", "mdex", "status_ending", "chapters.id as chapter_id", "latest.chapter", "TO_DATE(cast(chapters.created_at as TEXT) ,'YYYY-MM-DD') as download_time").
 		Joins("inner join chapters on mangas.id = chapters.manga_id").
 		Joins("inner join (?) latest on mangas.id = latest.manga_id", latestSubQuery).

@@ -5,11 +5,9 @@ import (
 	"regexp"
 
 	"github.com/climech/naturalsort"
-	"gorm.io/gorm"
 )
 
 var (
-	DB        *gorm.DB
 	MangaPath string = `D:\DATA\Manga`
 )
 

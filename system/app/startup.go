@@ -1,14 +1,16 @@
-package system
+package app
 
 import (
 	"context"
 	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"gorm.io/gorm"
 )
 
 var (
 	WailsContext *context.Context
+	DB           *gorm.DB
 	arguments    []string
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"mangav4/system"
+	"mangav4/system/app"
 )
 
 // App struct
@@ -21,7 +21,7 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	go system.Startup(&ctx)
+	go app.Startup(&ctx)
 }
 
 // Greet returns a greeting for the given name
