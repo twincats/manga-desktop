@@ -1,9 +1,8 @@
 <template>
   <div>
-    Page Vue
-    <div>{{ cid }}</div>
     <div v-if="page">
       <img
+        class="w-full lg:w-auto"
         v-for="(p, i) in page.pages"
         :key="i"
         :src="`file/${page.path}/${p}`"

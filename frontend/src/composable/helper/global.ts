@@ -33,3 +33,46 @@ export const SEQUENCE3 = (n: number): number => {
   }
   return NaN
 }
+
+export class DateApp {
+  date: Date
+  locale: string
+  constructor(s: string | null = null) {
+    const parse = s ? Date.parse(s) : Date.now()
+    console.log(s)
+    this.date = new Date(parse)
+    this.locale = 'id-ID'
+  }
+  static NewDate(s: string | null = null) {
+    return new DateApp(s)
+  }
+  Format(f: string): string {
+    const format = {
+      D: this.date.toLocaleString(this.locale, { day: 'numeric' }),
+      DD: this.date.toLocaleString(this.locale, { day: '2-digit' }),
+      MM: this.date.toLocaleString(this.locale, { month: '2-digit' }),
+      MMM: this.date.toLocaleString(this.locale, { month: 'short' }),
+      MMMM: this.date.toLocaleString(this.locale, { month: 'long' }),
+      YY: this.date.toLocaleString(this.locale, { year: '2-digit' }),
+      YYYY: this.date.toLocaleString(this.locale, { year: 'numeric' }),
+      HH: this.date.toLocaleString(this.locale, { hour: '2-digit' }),
+      mm: this.date.toLocaleString(this.locale, { minute: '2-digit' }),
+      ss: (
+        '0' + this.date.toLocaleString(this.locale, { second: '2-digit' })
+      ).slice(-2),
+      ddd: this.date.toLocaleString(this.locale, { weekday: 'short' }),
+      dddd: this.date.toLocaleString(this.locale, { weekday: 'long' }),
+    }
+    console.log(
+      (
+        '0' + this.date.toLocaleString(this.locale, { second: '2-digit' })
+      ).slice(-2)
+    )
+    for (const [key, value] of Object.entries(format)) {
+      if (f.split(/\W/).includes(key)) {
+        f = f.replace(key, value.toString())
+      }
+    }
+    return f
+  }
+}

@@ -33,6 +33,8 @@ declare module '@vue/runtime-core' {
     BreadNav: typeof import('./src/components/app/BreadNav.vue')['default']
     FooterBar: typeof import('./src/components/app/FooterBar.vue')['default']
     IMdiEmoticonSadOutline: typeof import('~icons/mdi/emoticon-sad-outline')['default']
+    ITwemojiFlagForFlagIndonesia: typeof import('~icons/twemoji/flag-for-flag-indonesia')['default']
+    ITwemojiFlagForFlagUnitedKingdom: typeof import('~icons/twemoji/flag-for-flag-united-kingdom')['default']
     MenuBar: typeof import('./src/components/app/MenuBar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
