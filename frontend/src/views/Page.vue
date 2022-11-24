@@ -1,12 +1,7 @@
 <template>
   <div>
-    <div v-if="page">
-      <img
-        class="w-full lg:w-auto"
-        v-for="(p, i) in page.pages"
-        :key="i"
-        :src="`file/${page.path}/${p}`"
-      />
+    <div v-if="page" v-for="(p, i) in page.pages" class="flex justify-center">
+      <img class="" :key="i" :src="`file/${page.path}/${p}`" />
     </div>
   </div>
 </template>

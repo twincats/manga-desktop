@@ -1,32 +1,38 @@
 <template>
-  <div class="p-3">
-    <div class="grid grid-cols-5 lg:grid-cols-10">
-      <div v-for="(manga, i) in mangaHome?.manga" :key="i" class="mb-3">
-        <a-card hoverable :style="{ height: '100%' }">
-          <template #cover>
-            <div
-              class="h-210px overflow-hidden hover:cursor-pointer"
-              @click="$router.push(`chapter/${manga.id}`)"
-            >
-              <img
-                :style="{ width: '100%', transform: 'translateY(-20px)' }"
-                alt="dessert"
-                :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
-              />
-            </div>
-          </template>
-          <a-card-meta :title="manga.title">
-            <template #description>
-              <a-link @click.stop="$router.push(`/page/${manga.chapter_id}`)"
-                >Chapter {{ manga.chapter }}</a-link
-              >
-            </template>
-          </a-card-meta>
-        </a-card>
+  <div id="homeid" class="px-3 pt-3">
+    <a-input-search
+      style="--primary-6: 255, 117, 24"
+      class="w-full mb-2"
+      placeholder="Search Manga"
+      :input-attrs="{ class: 'text-center' }"
+      search-button
+    />
+    <div class="grid grid-cols-5 gap-2 lg:grid-cols-10 h-572px lg:h-856px">
+      <div v-for="(manga, i) in mangaHome?.manga" :key="i" class="box">
+        <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
+          <div class="h-203px">
+            <img
+              :alt="manga.title"
+              :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+            />
+          </div>
+        </div>
+        <div class="title select-none">
+          <span>{{ manga.title }}</span>
+        </div>
+        <div class="chapter">
+          <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
+            Chapter {{ manga.chapter }}
+          </button>
+        </div>
       </div>
     </div>
-    <div class="mt-3">
+    <div class="mt-2">
       <a-pagination
+        style="
+          --primary-6: 255, 117, 24;
+          --color-primary-light-1: rgba(255, 117, 24, 0.2);
+        "
         class="justify-center"
         v-model:current="nav.page"
         v-model:page-size="nav.limit"
@@ -90,4 +96,65 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
 })
 </script>
 
-<style scoped></style>
+<style lang="less" scoped>
+// #homeid {
+//   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+// }
+
+@mainColor: --color-bg-3;
+
+.box {
+  text-align: center;
+  border: solid 2px var(@mainColor);
+  border-radius: 0.5rem;
+  margin-bottom: 0.25rem;
+  .cover {
+    padding: 0.25rem;
+    div {
+      overflow: hidden;
+      position: relative;
+      border-radius: 0.3rem 0.3rem 0 0;
+      img {
+        height: 120%;
+        position: absolute;
+        margin: auto;
+        left: -999px;
+        right: -999px;
+      }
+    }
+    &:hover {
+      cursor: pointer;
+    }
+  }
+  .title {
+    padding: 0.5rem 0;
+
+    span {
+      line-height: 1.5;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+    }
+  }
+  .chapter {
+    padding: 0.25rem 0;
+    border-radius: 0 0 0.35rem 0.35rem;
+    background-color: var(@mainColor);
+
+    button {
+      background-color: unset;
+      border: unset;
+      &:hover {
+        color: var(--app-main);
+        background-color: var(--app-main-fade);
+        border-radius: 0.25rem;
+        cursor: pointer;
+      }
+    }
+  }
+  &:hover {
+    background-color: var(--color-fill-4);
+  }
+}
+</style>

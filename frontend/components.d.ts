@@ -7,14 +7,13 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    ABackTop: typeof import('@arco-design/web-vue')['BackTop']
     AButton: typeof import('@arco-design/web-vue')['Button']
     AButtonGroup: typeof import('@arco-design/web-vue')['ButtonGroup']
-    ACard: typeof import('@arco-design/web-vue')['Card']
-    ACardMeta: typeof import('@arco-design/web-vue')['CardMeta']
     ACheckbox: typeof import('@arco-design/web-vue')['Checkbox']
     ACheckboxGroup: typeof import('@arco-design/web-vue')['CheckboxGroup']
     AInput: typeof import('@arco-design/web-vue')['Input']
-    ALink: typeof import('@arco-design/web-vue')['Link']
+    AInputSearch: typeof import('@arco-design/web-vue')['InputSearch']
     AMenu: typeof import('@arco-design/web-vue')['Menu']
     AMenuItem: typeof import('@arco-design/web-vue')['MenuItem']
     APagination: typeof import('@arco-design/web-vue')['Pagination']
