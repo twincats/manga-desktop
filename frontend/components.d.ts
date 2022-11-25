@@ -7,7 +7,6 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
-    ABackTop: typeof import('@arco-design/web-vue')['BackTop']
     AButton: typeof import('@arco-design/web-vue')['Button']
     AButtonGroup: typeof import('@arco-design/web-vue')['ButtonGroup']
     ACheckbox: typeof import('@arco-design/web-vue')['Checkbox']
@@ -31,10 +30,13 @@ declare module '@vue/runtime-core' {
     ATypographyTitle: typeof import('@arco-design/web-vue')['TypographyTitle']
     BreadNav: typeof import('./src/components/app/BreadNav.vue')['default']
     FooterBar: typeof import('./src/components/app/FooterBar.vue')['default']
+    'IMdi:formatVerticalAlignBottom': typeof import('~icons/mdi/format-vertical-align-bottom')['default']
+    'IMdi:formatVerticalAlignTop': typeof import('~icons/mdi/format-vertical-align-top')['default']
     IMdiEmoticonSadOutline: typeof import('~icons/mdi/emoticon-sad-outline')['default']
     ITwemojiFlagForFlagIndonesia: typeof import('~icons/twemoji/flag-for-flag-indonesia')['default']
     ITwemojiFlagForFlagUnitedKingdom: typeof import('~icons/twemoji/flag-for-flag-united-kingdom')['default']
     MenuBar: typeof import('./src/components/app/MenuBar.vue')['default']
+    PageNav: typeof import('./src/components/manga/PageNav.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SideBar: typeof import('./src/components/app/SideBar.vue')['default']

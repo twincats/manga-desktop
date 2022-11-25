@@ -39,7 +39,7 @@ export class DateApp {
   locale: string
   constructor(s: string | null = null) {
     const parse = s ? Date.parse(s) : Date.now()
-    console.log(s)
+    // console.log(s)
     this.date = new Date(parse)
     this.locale = 'id-ID'
   }
@@ -63,11 +63,11 @@ export class DateApp {
       ddd: this.date.toLocaleString(this.locale, { weekday: 'short' }),
       dddd: this.date.toLocaleString(this.locale, { weekday: 'long' }),
     }
-    console.log(
-      (
-        '0' + this.date.toLocaleString(this.locale, { second: '2-digit' })
-      ).slice(-2)
-    )
+    // console.log(
+    //   (
+    //     '0' + this.date.toLocaleString(this.locale, { second: '2-digit' })
+    //   ).slice(-2)
+    // )
     for (const [key, value] of Object.entries(format)) {
       if (f.split(/\W/).includes(key)) {
         f = f.replace(key, value.toString())

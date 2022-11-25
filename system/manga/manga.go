@@ -48,7 +48,7 @@ func (m *Manga) GetMangaHome(page int, limit int) MangaHome {
 func (m *Manga) GetPage(id int) Page {
 	var p PageApi
 	app.DB.Table("chapters").
-		Select("chapters.id", "chapter", "mangas.title").
+		Select("chapters.id", "chapter", "mangas.title", "manga_id").
 		Joins("inner join mangas on chapters.manga_id = mangas.id").
 		Where("chapters.id = ?", id).
 		Take(&p)
@@ -64,14 +64,29 @@ func (m *Manga) GetPage(id int) Page {
 	page.Pages = files
 	page.Path = urlPath
 
+	// fetch all chapter
+	var pnav []PageApiNav
+	app.DB.Table("chapters").Select("id").
+		Where("manga_id = ?", p.MangaId).
+		Order("CAST(chapter as DECIMAL)").Find(&pnav)
+
+	for _, n := range pnav {
+		page.Chaps = append(page.Chaps, n.ID)
+	}
+
 	return page
 }
 
 // PageApi for Fetching chapter and Manga title
 type PageApi struct {
-	ID      int
+	ID      uint
 	Chapter string
 	Title   string
+	MangaId uint
+}
+
+type PageApiNav struct {
+	ID uint
 }
 
 // Manga Struct for model manga
@@ -137,10 +152,10 @@ type MangaHome struct {
 type Page struct {
 	Pages []string `json:"pages"`
 	Path  string   `json:"path"`
-	Nav   Nav      `json:"nav"`
+	Chaps []uint   `json:"chaps"`
 }
 
-type Nav struct {
-	Next string `json:"next"`
-	Prev string `json:"prev"`
-}
+// type Nav struct {
+// 	Next string `json:"next"`
+// 	Prev string `json:"prev"`
+// }
