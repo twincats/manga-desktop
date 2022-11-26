@@ -8,24 +8,38 @@
       search-button
     />
     <div class="grid grid-cols-5 gap-2 lg:grid-cols-10 h-572px lg:h-856px">
-      <div v-for="(manga, i) in mangaHome?.manga" :key="i" class="box">
-        <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
-          <div class="h-203px">
-            <img
-              :alt="manga.title"
-              :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
-            />
+      <a-dropdown
+        trigger="contextMenu"
+        alignPoint
+        :style="{ display: 'block' }"
+      >
+        <div v-for="(manga, i) in mangaHome?.manga" :key="i" class="box">
+          <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
+            <div class="h-203px">
+              <img
+                :alt="manga.title"
+                :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+              />
+            </div>
+          </div>
+          <div
+            class="title select-none"
+            @click="$router.push(`chapter/${manga.id}`)"
+          >
+            <span>{{ manga.title }}</span>
+          </div>
+          <div class="chapter">
+            <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
+              Chapter {{ manga.chapter }}
+            </button>
           </div>
         </div>
-        <div class="title select-none">
-          <span>{{ manga.title }}</span>
-        </div>
-        <div class="chapter">
-          <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
-            Chapter {{ manga.chapter }}
-          </button>
-        </div>
-      </div>
+        <template #content>
+          <a-doption>Option 1</a-doption>
+          <a-doption>Option 2</a-doption>
+          <a-doption>Option 3</a-doption>
+        </template>
+      </a-dropdown>
     </div>
     <div class="mt-2">
       <a-pagination
@@ -122,9 +136,6 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
         right: -999px;
       }
     }
-    &:hover {
-      cursor: pointer;
-    }
   }
   .title {
     padding: 0.5rem 0;
@@ -155,6 +166,10 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
   }
   &:hover {
     background-color: var(--color-fill-4);
+    .cover,
+    .title {
+      cursor: pointer;
+    }
   }
 }
 </style>

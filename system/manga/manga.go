@@ -63,6 +63,7 @@ func (m *Manga) GetPage(id int) Page {
 	var page Page
 	page.Pages = files
 	page.Path = urlPath
+	page.MangaId = p.MangaId
 
 	// fetch all chapter
 	var pnav []PageApiNav
@@ -150,9 +151,10 @@ type MangaHome struct {
 }
 
 type Page struct {
-	Pages []string `json:"pages"`
-	Path  string   `json:"path"`
-	Chaps []uint   `json:"chaps"`
+	Pages   []string `json:"pages"`
+	Path    string   `json:"path"`
+	Chaps   []uint   `json:"chaps"`
+	MangaId uint     `json:"manga_id"`
 }
 
 // type Nav struct {

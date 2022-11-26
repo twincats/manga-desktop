@@ -9,10 +9,9 @@
       <a-sub-menu key="0">
         <template #icon><icon-apps></icon-apps></template>
         <template #title>Navigation 1</template>
-        <a-menu-item key="0_0">Menu 1</a-menu-item>
-        <a-menu-item key="0_1">Menu 2</a-menu-item>
-        <a-menu-item key="0_2">Menu 3</a-menu-item>
-        <a-menu-item key="0_3">Menu 4</a-menu-item>
+        <a-menu-item key="0_0">Home</a-menu-item>
+        <a-menu-item key="0_1">Chapter</a-menu-item>
+        <a-menu-item key="0_2">Download</a-menu-item>
       </a-sub-menu>
       <a-sub-menu key="1">
         <template #icon><icon-bug></icon-bug></template>
@@ -31,12 +30,21 @@
           <a-menu-item key="2_2_1">Menu 2</a-menu-item>
         </a-sub-menu>
       </a-sub-menu>
+      <a-menu-item key="3">
+        <template #icon><icon-settings /></template>
+        Menu 1</a-menu-item
+      >
     </a-menu>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { IconApps, IconBug, IconBulb } from '@arco-design/web-vue/es/icon'
+import {
+  IconApps,
+  IconBug,
+  IconBulb,
+  IconSettings,
+} from '@arco-design/web-vue/es/icon'
 
 interface Props {
   collapse?: boolean

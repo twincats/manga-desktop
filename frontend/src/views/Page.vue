@@ -10,24 +10,37 @@
         :key="i"
         draggable="false"
         :src="`file/${page.path}/${p}`"
+        @contextmenu.prevent="openContextMenu"
       />
     </div>
 
     <div v-if="page">
       <page-nav @change="updatePageChange" :chaps="page.chaps"></page-nav>
     </div>
+    <teleport to="#main">
+      <context-menu ref="refMenu" :width="200">
+        <li>Image URL</li>
+        <li @click="$router.push('/chapter/' + page?.manga_id)">
+          Home Chapter
+        </li>
+        <div class="divider"></div>
+        <li>Delete Image</li>
+      </context-menu>
+    </teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { GetPage } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
+import { UseContextMenu } from '@/composable/helper'
 
 // const Route = useRoute()
 const props = defineProps<{
   cid: string
 }>()
-const { x, y } = useWindowScroll()
+
+const { refMenu, openContextMenu } = UseContextMenu()
 const router = useRouter()
 const updatePageChange = (chapId: number) => {
   console.log('event change :', chapId)
@@ -47,8 +60,8 @@ fetchData(props.cid)
 //watch page params
 watch(
   () => props.cid,
-  async newcid => {
-    await fetchData(newcid)
+  newcid => {
+    fetchData(newcid)
   }
 )
 

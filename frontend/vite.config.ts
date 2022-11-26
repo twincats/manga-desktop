@@ -19,7 +19,9 @@ export default defineConfig({
     },
   },
   plugins: [
-    vue(),
+    vue({
+      reactivityTransform: true,
+    }),
     Unocss(),
     AutoImport({
       imports: ['vue', 'vue-router', '@vueuse/core'],

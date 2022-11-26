@@ -227,6 +227,7 @@ export namespace manga {
 	    pages: string[];
 	    path: string;
 	    chaps: number[];
+	    manga_id: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Page(source);
@@ -237,6 +238,7 @@ export namespace manga {
 	        this.pages = source["pages"];
 	        this.path = source["path"];
 	        this.chaps = source["chaps"];
+	        this.manga_id = source["manga_id"];
 	    }
 	}
 

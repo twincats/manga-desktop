@@ -1,6 +1,7 @@
 
 //setting global LESS Variable
 @app-main:rgb(255, 117, 24);
+@app-context:rgb(44,44,44);
 body{
     color: var(--color-text-1);
 
@@ -8,15 +9,27 @@ body{
     --app-main:@app-main;
     --app-main-fade:fade(@app-main,20%);
     --app-main-tint:tint(@app-main,20%);
-    // &[arco-theme='dark']{
-    //     --app-main-1:darken(@app-main-1,20%);
-    // }
-}
 
-#app {
+    // dark variable
+    &[arco-theme='dark']{
+      
+      --app-context:@app-context;
+      --app-context-light:lighten(@app-context,5%);
+    }
+    // light variable
+      --app-context:lighten(@app-context,55%);
+      --app-context-light:lighten(@app-context,60%);
+
+
+    //normal style
     font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
       'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
       sans-serif;
-    
 }
+
+
+svg {
+    vertical-align: sub;
+    display: inline-block;
+  }
 

@@ -10,7 +10,7 @@
     </div>
     <div class="w-full flex justify-end">
       <a-button-group size="mini">
-        <a-button @click="$router.push('/home')"> H </a-button>
+        <a-button @click="$router.push('/test')"> H </a-button>
         <a-button @click="emit('clickToggleTheme')">
           <icon-moon-fill v-if="mode == 'dark'" />
           <icon-sun v-else />
