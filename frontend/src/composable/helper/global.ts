@@ -57,18 +57,16 @@ export class DateApp {
       YY: this.date.toLocaleString(this.locale, { year: '2-digit' }),
       YYYY: this.date.toLocaleString(this.locale, { year: 'numeric' }),
       HH: this.date.toLocaleString(this.locale, { hour: '2-digit' }),
-      mm: this.date.toLocaleString(this.locale, { minute: '2-digit' }),
+      mm: (
+        '0' + this.date.toLocaleString(this.locale, { minute: '2-digit' })
+      ).slice(-2),
       ss: (
         '0' + this.date.toLocaleString(this.locale, { second: '2-digit' })
       ).slice(-2),
       ddd: this.date.toLocaleString(this.locale, { weekday: 'short' }),
       dddd: this.date.toLocaleString(this.locale, { weekday: 'long' }),
     }
-    // console.log(
-    //   (
-    //     '0' + this.date.toLocaleString(this.locale, { second: '2-digit' })
-    //   ).slice(-2)
-    // )
+    //loop trough format string
     for (const [key, value] of Object.entries(format)) {
       if (f.split(/\W/).includes(key)) {
         f = f.replace(key, value.toString())

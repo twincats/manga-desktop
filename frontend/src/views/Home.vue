@@ -11,45 +11,35 @@
       search-button
     />
     <div class="grid grid-cols-5 gap-2 lg:grid-cols-10">
-      <a-dropdown
-        trigger="contextMenu"
-        alignPoint
-        :style="{ display: 'block' }"
+      <div
+        v-for="(manga, i) in mangaHome?.manga"
+        :key="i"
+        class="box"
+        @contextmenu.prevent="openContextMenu($event, manga)"
       >
-        <div v-for="(manga, i) in mangaHome?.manga" :key="i" class="box">
-          <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
-            <div class="h-203px lg:h-200px">
-              <img
-                :alt="manga.title"
-                :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
-              />
-            </div>
-          </div>
-          <div
-            class="title select-none"
-            @click="$router.push(`chapter/${manga.id}`)"
-          >
-            <span>{{ manga.title }}</span>
-          </div>
-          <div class="chapter">
-            <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
-              Chapter {{ manga.chapter }}
-            </button>
+        <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
+          <div class="h-203px lg:h-200px">
+            <img
+              :alt="manga.title"
+              :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+            />
           </div>
         </div>
-        <template #content>
-          <a-doption>Option 1</a-doption>
-          <a-doption>Option 2</a-doption>
-          <a-doption>Option 3</a-doption>
-        </template>
-      </a-dropdown>
+        <div
+          class="title select-none"
+          @click="$router.push(`chapter/${manga.id}`)"
+        >
+          <span>{{ manga.title }}</span>
+        </div>
+        <div class="chapter">
+          <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
+            Chapter {{ manga.chapter }}
+          </button>
+        </div>
+      </div>
     </div>
     <div class="mt-2">
       <a-pagination
-        style="
-          --primary-6: 255, 117, 24;
-          --color-primary-light-1: rgba(255, 117, 24, 0.2);
-        "
         class="justify-center"
         v-model:current="nav.page"
         v-model:page-size="nav.limit"
@@ -58,11 +48,24 @@
         :total="mangaHome?.pagination?.total ? mangaHome?.pagination?.total : 0"
       />
     </div>
+    <teleport to="#main">
+      <context-menu ref="refMenu" v-slot="{ item }: { item: manga.Manga }">
+        <li>Add Alternatif</li>
+        <li @click="$router.push('/convert/' + item.id)">Convert Manga</li>
+        <div class="divider"></div>
+        <li class="text-red-500 font-serif font-bold">DELETE</li>
+      </context-menu>
+    </teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { MangaTitleURL, GetBreakPoints, SEQUENCE3 } from '@/composable/helper'
+import {
+  MangaTitleURL,
+  GetBreakPoints,
+  SEQUENCE3,
+  UseContextMenu,
+} from '@/composable/helper'
 import { GetMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 
@@ -73,6 +76,7 @@ interface Nav {
 }
 
 /* INITIAL REACTIVE VARIABLE */
+const { refMenu, openContextMenu } = UseContextMenu()
 const mangaHome = ref<manga.MangaHome | null>(null)
 const nav = reactive<Nav>({ page: 1, limit: 10 })
 const { breakpoints } = GetBreakPoints()
@@ -116,10 +120,6 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
 </script>
 
 <style lang="less" scoped>
-// #homeid {
-//   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-// }
-
 @mainColor: --color-bg-3;
 
 .box {

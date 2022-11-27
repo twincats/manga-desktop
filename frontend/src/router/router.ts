@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { typedProps } from './param'
 
 export default createRouter({
   history: createWebHashHistory(),
@@ -9,8 +10,9 @@ export default createRouter({
       component: () => import('../views/Home.vue'),
     },
     {
-      path: '/convert',
+      path: '/convert/:mid?',
       name: 'convert',
+      props: typedProps({ mid: Number }),
       component: () => import('../views/Convert.vue'),
     },
     {

@@ -1,5 +1,11 @@
 <template>
-  <div>
+  <div
+    style="
+      --primary-6: 255, 117, 24;
+      --color-primary-light-1: rgba(255, 117, 24, 0.2);
+      --primary-5: 204, 92, 18;
+    "
+  >
     <menu-bar
       @clickMenu="collapse = !collapse"
       @clickToggleTheme="toggleTheme()"

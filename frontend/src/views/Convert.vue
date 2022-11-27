@@ -5,7 +5,7 @@
         <div class="w-150">
           <div>
             Quality: &nbsp;&nbsp;
-            <strong style="color: rgb(var(--arcoblue-6))">{{
+            <strong style="color: rgb(var(--primary-6))">{{
               data.quality
             }}</strong>
           </div>
@@ -24,7 +24,7 @@
             Resize : &nbsp;&nbsp;
             <strong
               v-if="data.resizeStatus"
-              style="color: rgb(var(--arcoblue-6))"
+              style="color: rgb(var(--primary-6))"
               >{{ data.resize }}</strong
             >
           </div>
@@ -192,8 +192,14 @@
 import { GetMangas } from '@wails/go/manga/Manga'
 import { MangaTitleURL } from '@/composable/helper'
 
+/// COMPONENT INTERFACE
 interface TableManga {
+  id: number
   title: string
+}
+
+interface ConvertProps {
+  mid?: number | null
 }
 
 ///INITIAL VARIABLE
@@ -201,9 +207,9 @@ const initialData = {
   title: '',
   quality: 60,
   resize: 1000,
-  resizeStatus: false,
+  resizeStatus: true,
   delete: true,
-  covert: 2,
+  covert: 1,
   format: [1],
 }
 
@@ -215,6 +221,7 @@ const initialOutput = {
   hiddenSearch: '',
 }
 
+const { mid = null } = defineProps<ConvertProps>()
 const data = reactive({ ...initialData })
 const output = reactive({ ...initialOutput })
 const statusConvert = ref('')
@@ -244,8 +251,16 @@ GetMangas().then(resp => {
 
   //fill table
   manga.forEach(item => {
-    tableManga.push({ title: item.title })
+    tableManga.push({ title: item.title, id: item.id })
   })
+
+  // auto select manga from params
+  if (mid) {
+    const sel = manga.find(item => item.id == mid)
+    if (sel) {
+      data.title = sel.title
+    }
+  }
 })
 
 onStartTyping(() => {
