@@ -1,13 +1,16 @@
 <template>
   <div id="homeid" class="px-3 pt-3">
     <a-input-search
+      v-model="searchManga"
       style="--primary-6: 255, 117, 24"
+      @change="loadManga(searchManga)"
+      allow-clear
       class="w-full mb-2"
       placeholder="Search Manga"
       :input-attrs="{ class: 'text-center' }"
       search-button
     />
-    <div class="grid grid-cols-5 gap-2 lg:grid-cols-10 h-572px lg:h-856px">
+    <div class="grid grid-cols-5 gap-2 lg:grid-cols-10">
       <a-dropdown
         trigger="contextMenu"
         alignPoint
@@ -15,7 +18,7 @@
       >
         <div v-for="(manga, i) in mangaHome?.manga" :key="i" class="box">
           <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
-            <div class="h-203px">
+            <div class="h-203px lg:h-200px">
               <img
                 :alt="manga.title"
                 :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
@@ -50,6 +53,7 @@
         class="justify-center"
         v-model:current="nav.page"
         v-model:page-size="nav.limit"
+        :hide-on-single-page="true"
         :auto-adjust="false"
         :total="mangaHome?.pagination?.total ? mangaHome?.pagination?.total : 0"
       />
@@ -73,12 +77,13 @@ const mangaHome = ref<manga.MangaHome | null>(null)
 const nav = reactive<Nav>({ page: 1, limit: 10 })
 const { breakpoints } = GetBreakPoints()
 const lg = breakpoints.greater('lg')
+const searchManga = ref('')
 
 /* INITIAL PRELOAD FUNCTION */
 //load manga
-const loadManga = (n: Nav) => {
+const loadManga = (sarch: string | null = null) => {
   // console.log(nav, 'berore fetching')
-  GetMangaHome(n.page, n.limit).then(res => {
+  GetMangaHome(sarch, nav.page, nav.limit).then(res => {
     mangaHome.value = res
   })
 }
@@ -90,7 +95,7 @@ if (lg.value) {
 } else {
   nav.limit = 10
 }
-loadManga(nav)
+loadManga()
 
 // Watching View and Pagination page change
 watch([lg, () => nav.page], ([l, p], [_, op]) => {
@@ -99,13 +104,13 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
     if (op == p) {
       nav.page = SEQUENCE3(p)
     }
-    loadManga(nav)
+    loadManga(searchManga.value)
   } else {
     nav.limit = 10
     if (op == p) {
       nav.page = (p - 1) * 3 + 1
     }
-    loadManga(nav)
+    loadManga(searchManga.value)
   }
 })
 </script>

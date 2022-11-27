@@ -33,7 +33,7 @@ import { UseContextMenu } from '@/composable/helper'
 
 const manga = ref<manga.MangaHome>()
 const showManga = () => {
-  GetMangaHome(1, 5).then(res => {
+  GetMangaHome(null, 1, 5).then(res => {
     manga.value = res
   })
 }

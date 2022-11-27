@@ -4,7 +4,7 @@ import {manga} from '../models';
 
 export function GetManga(arg1:number):Promise<manga.Manga>;
 
-export function GetMangaHome(arg1:number,arg2:number):Promise<manga.MangaHome>;
+export function GetMangaHome(arg1:any,arg2:number,arg3:number):Promise<manga.MangaHome>;
 
 export function GetMangaWithChapter(arg1:number):Promise<manga.Manga>;
 

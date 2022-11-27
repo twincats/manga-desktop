@@ -5,7 +5,9 @@
         <a-button @click="emit('clickMenu')"> <icon-list /> </a-button>
         <a-button @click="$router.push('/')"> M </a-button>
         <a-button @click="$router.push('/convert')"> CV </a-button>
-        <a-button> <icon-download /> </a-button>
+        <a-button @click="$router.push('/download')">
+          <icon-download />
+        </a-button>
       </a-button-group>
     </div>
     <div class="w-full flex justify-end">

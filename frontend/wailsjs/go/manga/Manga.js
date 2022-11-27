@@ -6,8 +6,8 @@ export function GetManga(arg1) {
   return window['go']['manga']['Manga']['GetManga'](arg1);
 }
 
-export function GetMangaHome(arg1, arg2) {
-  return window['go']['manga']['Manga']['GetMangaHome'](arg1, arg2);
+export function GetMangaHome(arg1, arg2, arg3) {
+  return window['go']['manga']['Manga']['GetMangaHome'](arg1, arg2, arg3);
 }
 
 export function GetMangaWithChapter(arg1) {

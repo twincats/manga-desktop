@@ -2,14 +2,12 @@
   <div class="text-left px-2">
     <div class="flex">
       <a-typography class="w-full">
-        <a-typography-title :heading="5"
-          >Chapter Manga <br /><small>
-            {{ result?.title }}
-          </small></a-typography-title
-        >
+        <a-typography-title :heading="5" style="margin-top: 0.25rem"
+          >{{ result?.title }}
+        </a-typography-title>
         <a-typography-paragraph>
           Status Complete : {{ result?.status_end }} <br />
-          <div v-if="false">
+          <div v-if="result">
             Manga Alternative Title :
             <span v-if="result?.alter.length == 0">NO</span> <br />
             <ul v-if="result?.alter">
@@ -20,16 +18,16 @@
           </div>
         </a-typography-paragraph>
       </a-typography>
-      <div v-if="result" class="w-27">
+      <div v-if="result" class="w-45">
         <img
-          class="w-full"
+          class="w-full mt-1"
           :src="`/file/${MangaTitleURL(result.title)}/cover.webp`"
           alt=""
         />
       </div>
     </div>
     <div>
-      <a-table :data="result?.chapter" :pagination="pprop">
+      <a-table :data="result?.chapter" :pagination="pprop" size="small">
         <template #columns>
           <a-table-column
             :width="110"
@@ -124,13 +122,15 @@ GetMangaWithChapter(Number(props.mid)).then(res => {
   })
 })
 
-const pprop = reactive<PaginationProps>({})
+const pprop = reactive<PaginationProps>({
+  hideOnSinglePage: true,
+})
 
 const setAutopaginationSize = () => {
   if (bp.lg.value) {
     pprop.pageSize = 10
   } else {
-    pprop.pageSize = 16
+    pprop.pageSize = 18
   }
 }
 setAutopaginationSize()

@@ -2,6 +2,7 @@ package manga
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 
 	"mangav4/system/app"
@@ -38,10 +39,10 @@ func (m *Manga) GetMangas() []Manga {
 }
 
 // GetMangaHome get list of mangaHome with paginate []manga
-func (m *Manga) GetMangaHome(page int, limit int) MangaHome {
+func (m *Manga) GetMangaHome(title *string, page int, limit int) MangaHome {
 	mangaHomeApi := MangaHomeApi{}
 
-	return mangaHomeApi.Paginate(page, limit)
+	return mangaHomeApi.Paginate(title, page, limit)
 }
 
 /* GetPage for Fetching list of images chapter */
@@ -112,13 +113,31 @@ type MangaHomeApi struct {
 	DownloadTime sqltime.Time `json:"download_time"`
 }
 
-func (m *MangaHomeApi) Paginate(page int, limit int) MangaHome {
+func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
+	// declaration for total data is fetched
+	var totalManga int64
+
 	// getQuery
 	query := m.FetchQuery()
 
-	// get totalManga
-	var totalManga int64
-	query.Count(&totalManga)
+	// if only
+	if title != nil && *title != "" {
+		ilike := fmt.Sprintf("%%%s%%", *title)
+		query = app.DB.Table("(?) as mh", query).
+			Select("mh.id", "mh.title", "mdex", "status_ending", "chapter_id", "chapter", "download_time").
+			Joins("left join manga_alternatives on manga_alternatives.manga_id = mh.id").
+			Where("mh.title ILIKE ?", ilike).
+			Or("manga_alternatives.title ILIKE ?", ilike).
+			Group("mh.id, mh.title,mdex,status_ending,chapter_id,chapter,download_time").
+			Order("mh.title")
+
+		// get totalManga with searhing manga title
+		app.DB.Table("(?) as mhome", query).Count(&totalManga)
+
+	} else {
+		// get totalManga without searhing manga title
+		query.Count(&totalManga)
+	}
 
 	// set pagination
 	pagination := &Pagination{CurrentPage: page, Total: int(totalManga), PerPage: limit}

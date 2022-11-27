@@ -1,6 +1,8 @@
 package system
 
-import "mangav4/system/manga"
+import (
+	"mangav4/system/manga"
+)
 
 // initialize bind instance
 func InitializeBinding() []interface{} {

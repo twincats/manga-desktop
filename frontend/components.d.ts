@@ -27,6 +27,8 @@ declare module '@vue/runtime-core' {
     ASubMenu: typeof import('@arco-design/web-vue')['SubMenu']
     ATable: typeof import('@arco-design/web-vue')['Table']
     ATableColumn: typeof import('@arco-design/web-vue')['TableColumn']
+    ATabPane: typeof import('@arco-design/web-vue')['TabPane']
+    ATabs: typeof import('@arco-design/web-vue')['Tabs']
     ATypography: typeof import('@arco-design/web-vue')['Typography']
     ATypographyParagraph: typeof import('@arco-design/web-vue')['TypographyParagraph']
     ATypographyTitle: typeof import('@arco-design/web-vue')['TypographyTitle']

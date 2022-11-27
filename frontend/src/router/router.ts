@@ -26,6 +26,11 @@ export default createRouter({
       component: () => import('../views/Page.vue'),
     },
     {
+      path: '/download',
+      name: 'download',
+      component: () => import('../views/Download.vue'),
+    },
+    {
       path: '/test',
       name: 'test',
       component: () => import('../views/Test.vue'),
