@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"mangav4/system/app"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -22,6 +24,22 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	go app.Startup(&ctx)
+}
+
+func (b *App) beforeClose(ctx context.Context) (prevent bool) {
+	if app.BlockClose {
+		dialog, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+			Type:    runtime.QuestionDialog,
+			Title:   "Quit?",
+			Message: "Are you sure you want to quit?",
+		})
+
+		if err != nil {
+			return false
+		}
+		return dialog != "Yes"
+	}
+	return false
 }
 
 // Greet returns a greeting for the given name

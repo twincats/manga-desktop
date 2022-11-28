@@ -143,7 +143,7 @@
       </div>
     </div>
     <div>
-      <div id="status_convert" v-html="statusConvert"></div>
+      <div id="status_convert" v-html="output.statusConvert"></div>
       <div id="mprogress" class="mt-1">
         <a-progress
           status="success"
@@ -180,8 +180,13 @@
         <a-space>
           <a-button @click="reset">Reset</a-button>
           <a-button>Cover Fix</a-button>
-          <a-button>Save Log</a-button>
-          <a-button type="primary" @click="clickTest">Convert</a-button>
+          <a-button @click="showMessage">Save Log</a-button>
+          <a-button
+            :disabled="data.title == ''"
+            type="primary"
+            @click="clickTest"
+            >Convert</a-button
+          >
         </a-space>
       </div>
     </div>
@@ -190,7 +195,9 @@
 
 <script setup lang="ts">
 import { GetMangas } from '@wails/go/manga/Manga'
-import { MangaTitleURL } from '@/composable/helper'
+import { SaveDialog } from '@wails/go/tool/Dialog'
+
+import { MangaTitleURL, DateApp } from '@/composable/helper'
 
 /// COMPONENT INTERFACE
 interface TableManga {
@@ -219,12 +226,12 @@ const initialOutput = {
   percent: 0,
   progress: 0,
   hiddenSearch: '',
+  statusConvert: '',
 }
 
 const { mid = null } = defineProps<ConvertProps>()
 const data = reactive({ ...initialData })
 const output = reactive({ ...initialOutput })
-const statusConvert = ref('')
 const hiddenSearch = ref<HTMLInputElement | null>(null)
 
 const tableManga = reactive<TableManga[]>([])
@@ -291,15 +298,26 @@ const tableMangaFilter = computed(() => {
   })
 })
 
+const showMessage = async () => {
+  const filePath = await SaveDialog('Save Dialog', 'log_convert.log', 'D:/', [
+    { name: 'Log File', pattern: '*.log' },
+  ])
+  console.log(filePath)
+}
+
 //// CODE BELOW IS TESTING CODE
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 const clickTest = async () => {
+  output.sizeBefore = 1500
   for (let i = 1; i <= 10; i++) {
-    statusConvert.value += '<span>Hello world</span><br/>'
+    output.progress = (i * 10) / 100
+    output.statusConvert += '<span>Hello world</span><br/>'
     await sleep(1000)
   }
+  output.sizeAfter = 950
+  output.percent = (1500 - 950) / 100
 }
 </script>
 

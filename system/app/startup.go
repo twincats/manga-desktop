@@ -12,6 +12,7 @@ var (
 	WailsContext *context.Context
 	DB           *gorm.DB
 	arguments    []string
+	BlockClose   = false
 )
 
 func Startup(ctx *context.Context) {
