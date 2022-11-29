@@ -33,6 +33,8 @@ declare module '@vue/runtime-core' {
     BreadNav: typeof import('./src/components/app/BreadNav.vue')['default']
     ContextMenu: typeof import('./src/components/app/ContextMenu.vue')['default']
     FooterBar: typeof import('./src/components/app/FooterBar.vue')['default']
+    'IMdi:cloudSearchOutline': typeof import('~icons/mdi/cloud-search-outline')['default']
+    'IMdi:eraser': typeof import('~icons/mdi/eraser')['default']
     'IMdi:formatVerticalAlignBottom': typeof import('~icons/mdi/format-vertical-align-bottom')['default']
     'IMdi:formatVerticalAlignTop': typeof import('~icons/mdi/format-vertical-align-top')['default']
     IMdiEmoticonSadOutline: typeof import('~icons/mdi/emoticon-sad-outline')['default']
