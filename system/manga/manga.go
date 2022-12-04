@@ -79,6 +79,13 @@ func (m *Manga) GetPage(id int) Page {
 	return page
 }
 
+// GetServer fetch all server data
+func (f *Manga) GetServer() []Server {
+	var servers []Server
+	app.DB.Find(&servers)
+	return servers
+}
+
 // PageApi for Fetching chapter and Manga title
 type PageApi struct {
 	ID      uint

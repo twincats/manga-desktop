@@ -8,6 +8,7 @@
       <a-tab-pane key="1" title="Download">
         <div class="px-2 my-2">
           <a-input
+            v-model="urldata"
             :style="{ width: '100%' }"
             :input-attrs="{ class: 'text-center' }"
             placeholder="URL"
@@ -15,26 +16,45 @@
           >
             <template #append>
               <a-space size="mini">
-                <a-button type="secondary" class="px-2">
-                  <span style="font-size: 1rem; line-height: 1rem">
+                <a-button type="secondary" class="px-2" @click="urldata = ''">
+                  <span class="icons">
                     <i-mdi:eraser />
                   </span>
                 </a-button>
-                <a-button type="secondary" class="px-2">
-                  <span
-                    style="
-                      color: rgb(255, 117, 24);
-                      font-size: 1rem;
-                      line-height: 1rem;
-                    "
+                <a-button
+                  @click="goGetchDownload"
+                  type="secondary"
+                  class="px-2"
+                >
+                  <span class="icons" style="color: rgb(255, 117, 24)"
                     ><i-mdi:cloud-search-outline
                   /></span>
                 </a-button>
               </a-space>
             </template>
           </a-input>
+          <div class="mb-2 p-2" style="background-color: var(--color-bg-2)">
+            <div id="servers" v-if="servers">
+              <a-radio-group
+                v-model="selectedServer"
+                size="mini"
+                class=""
+                type="button"
+              >
+                <div class="grid grid-cols-8 w-full">
+                  <a-radio
+                    v-for="(item, i) in servers"
+                    :key="i"
+                    :value="item.id"
+                  >
+                    {{ item.name }}</a-radio
+                  >
+                </div>
+              </a-radio-group>
+            </div>
+          </div>
         </div>
-        <div class="h-[calc(100vh-11rem)] px-2 overflow-auto">
+        <div class="h-[calc(100vh-15rem)] px-2 overflow-auto">
           <div
             class="min-h-240px mb-2"
             style="background-color: var(--color-bg-2)"
@@ -111,6 +131,10 @@
 
 <script setup lang="ts">
 import { IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
+import { useClipboardData } from '@/composable/helper'
+import { GetServer } from '@wails/go/manga/Manga'
+import type { manga } from '@wails/go/models'
+
 interface TableDownload {
   chapter: number
   vol: number
@@ -135,7 +159,7 @@ function makeid(length: number) {
 const cover = ref('/file/Bar Flowers/cover.webp')
 const tableDownload = reactive<TableDownload[]>([])
 
-for (let i = 1; i <= 10; i++) {
+for (let i = 1; i <= 4; i++) {
   tableDownload.push({
     chapter: i,
     bahasa: 'English',
@@ -146,6 +170,27 @@ for (let i = 1; i <= 10; i++) {
     title: makeid(15),
   })
 }
+
+//get server
+const servers = ref<manga.Server[] | null>(null)
+GetServer().then(res => {
+  servers.value = res.filter(item => item.status_active == true)
+})
+
+const urldata = ref('')
+const selectedServer = ref(1)
+const { GetPasteData } = useClipboardData()
+const goGetchDownload = () => {
+  // auto fetch paste URL(only)
+  GetPasteData().then(res => {
+    try {
+      const PasteURL = new URL(res)
+      urldata.value = PasteURL.href
+    } catch (e) {
+      console.log(e)
+    }
+  }) //
+}
 </script>
 
 <style lang="less">
@@ -153,5 +198,20 @@ for (let i = 1; i <= 10; i++) {
   .arco-input-append {
     padding: 0 0 0 0.25rem;
   }
+}
+
+#servers {
+  .arco-radio-group-button {
+    display: flex;
+  }
+
+  .arco-radio-button:nth-of-type(8n + 1)::before {
+    content: none;
+  }
+}
+
+.icons {
+  font-size: 1rem;
+  line-height: 1rem;
 }
 </style>

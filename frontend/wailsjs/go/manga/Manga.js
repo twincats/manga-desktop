@@ -21,3 +21,7 @@ export function GetMangas() {
 export function GetPage(arg1) {
   return window['go']['manga']['Manga']['GetPage'](arg1);
 }
+
+export function GetServer() {
+  return window['go']['manga']['Manga']['GetServer']();
+}

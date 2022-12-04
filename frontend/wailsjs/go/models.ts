@@ -241,6 +241,27 @@ export namespace manga {
 	        this.manga_id = source["manga_id"];
 	    }
 	}
+	
+	export class Server {
+	    id: number;
+	    name: string;
+	    url: string;
+	    search: boolean;
+	    status_active: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Server(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.url = source["url"];
+	        this.search = source["search"];
+	        this.status_active = source["status_active"];
+	    }
+	}
 
 }
 

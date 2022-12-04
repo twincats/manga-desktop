@@ -91,3 +91,15 @@ export const UseContextMenu = () => {
     closeContextMenu,
   }
 }
+
+export const useClipboardData = () => {
+  const pasteData = ref('')
+  const GetPasteData = async () => {
+    pasteData.value = await navigator.clipboard.readText()
+    return pasteData.value
+  }
+  return {
+    pasteData,
+    GetPasteData,
+  }
+}

@@ -11,3 +11,5 @@ export function GetMangaWithChapter(arg1:number):Promise<manga.Manga>;
 export function GetMangas():Promise<Array<manga.Manga>>;
 
 export function GetPage(arg1:number):Promise<manga.Page>;
+
+export function GetServer():Promise<Array<manga.Server>>;
