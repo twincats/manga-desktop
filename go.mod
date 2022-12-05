@@ -1,6 +1,6 @@
 module mangav4
 
-go 1.18
+go 1.19
 
 require (
 	github.com/SamuelTissot/sqltime v0.1.0

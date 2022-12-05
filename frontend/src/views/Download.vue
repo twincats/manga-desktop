@@ -16,7 +16,7 @@
           >
             <template #append>
               <a-space size="mini">
-                <a-button type="secondary" class="px-2" @click="urldata = ''">
+                <a-button type="secondary" class="px-2" @click="clearDownload">
                   <span class="icons">
                     <i-mdi:eraser />
                   </span>
@@ -131,7 +131,7 @@
 
 <script setup lang="ts">
 import { IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
-import { useClipboardData } from '@/composable/helper'
+import { useClipboardData, IsURL } from '@/composable/helper'
 import { GetServer } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 
@@ -183,14 +183,33 @@ const { GetPasteData } = useClipboardData()
 const goGetchDownload = () => {
   // auto fetch paste URL(only)
   GetPasteData().then(res => {
-    try {
-      const PasteURL = new URL(res)
-      urldata.value = PasteURL.href
-    } catch (e) {
-      console.log(e)
+    const pasteURL = IsURL(res)
+    if (pasteURL) {
+      urldata.value = pasteURL.href
     }
   }) //
 }
+
+//clearDownload
+const clearDownload = () => {
+  urldata.value = ''
+  selectedServer.value = 1
+}
+
+//watch URL => auto select servers
+watchDebounced(
+  [urldata, selectedServer],
+  ([newURL]) => {
+    const isURL = IsURL(newURL)
+    if (isURL) {
+      const res = servers.value?.find(item => item.url == isURL.host)
+      if (res?.id) {
+        selectedServer.value = res.id
+      }
+    }
+  },
+  { debounce: 50 }
+)
 </script>
 
 <style lang="less">

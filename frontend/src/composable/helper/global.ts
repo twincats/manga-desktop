@@ -98,8 +98,24 @@ export const useClipboardData = () => {
     pasteData.value = await navigator.clipboard.readText()
     return pasteData.value
   }
+  const SetPasteData = async (v: string) => {
+    await navigator.clipboard.writeText(v)
+  }
   return {
     pasteData,
     GetPasteData,
+    SetPasteData,
   }
+}
+
+//check if string us URL
+export const IsURL = (text: string) => {
+  var URLObject: URL | null = null
+  try {
+    const PasteURL = new URL(text)
+    URLObject = PasteURL
+  } catch (e) {
+    URLObject = null
+  }
+  return URLObject
 }
