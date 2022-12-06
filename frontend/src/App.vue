@@ -27,8 +27,10 @@ const router = useRouter()
 const collapse = ref(true)
 const { theme, toggleTheme } = useTheme()
 EmitListenOnce('args', (res: string[]) => {
-  if (res.includes('convert')) {
-    router.push('/convert')
+  if (res.length) {
+    if (res.includes('convert')) {
+      router.push('/convert')
+    }
   }
 })
 </script>

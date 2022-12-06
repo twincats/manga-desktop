@@ -38,11 +38,25 @@ export const SEQUENCE3 = (n: number): number => {
 export class DateApp {
   date: Date
   locale: string
+  formatter: Intl.RelativeTimeFormat
+  #DIVISIONS = [
+    { amount: 60, name: 'seconds' },
+    { amount: 60, name: 'minutes' },
+    { amount: 24, name: 'hours' },
+    { amount: 7, name: 'days' },
+    { amount: 4.34524, name: 'weeks' },
+    { amount: 12, name: 'months' },
+    { amount: Number.POSITIVE_INFINITY, name: 'years' },
+  ]
   constructor(s: string | null = null) {
     const parse = s ? Date.parse(s) : Date.now()
     // console.log(s)
     this.date = new Date(parse)
     this.locale = 'id-ID'
+    this.formatter = new Intl.RelativeTimeFormat(this.locale, {
+      localeMatcher: 'best fit',
+      numeric: 'always',
+    })
   }
   static NewDate(s: string | null = null) {
     return new DateApp(s)
@@ -73,6 +87,19 @@ export class DateApp {
       }
     }
     return f
+  }
+  formatTimeAgo() {
+    let duration = (this.date.valueOf() - new Date().valueOf()) / 1000
+    for (let i = 0; i <= this.#DIVISIONS.length; i++) {
+      const division = this.#DIVISIONS[i]
+      if (Math.abs(duration) < division.amount) {
+        return this.formatter.format(
+          Math.round(duration),
+          <Intl.RelativeTimeFormatUnit>division.name
+        )
+      }
+      duration /= division.amount
+    }
   }
 }
 

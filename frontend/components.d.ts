@@ -32,6 +32,7 @@ declare module '@vue/runtime-core' {
     ATypographyTitle: typeof import('@arco-design/web-vue')['TypographyTitle']
     BreadNav: typeof import('./src/components/app/BreadNav.vue')['default']
     ContextMenu: typeof import('./src/components/app/ContextMenu.vue')['default']
+    CustomDownloadTh: typeof import('./src/components/manga/CustomDownloadTh.vue')['default']
     FooterBar: typeof import('./src/components/app/FooterBar.vue')['default']
     'IMdi:cloudSearchOutline': typeof import('~icons/mdi/cloud-search-outline')['default']
     'IMdi:eraser': typeof import('~icons/mdi/eraser')['default']

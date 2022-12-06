@@ -73,7 +73,7 @@
                 Selected : <br />
               </div>
               <div class="p-2 self-end">
-                <a-button>Read</a-button>
+                <a-button status="warning">Read</a-button>
               </div>
             </div>
           </div>
@@ -82,6 +82,7 @@
               :data="tableDownload"
               :pagination="{ pageSize: 6 }"
               size="small"
+              @row-click="(c)=>clickRowTable(<TableDownload>c)"
             >
               <template #columns>
                 <a-table-column title="chapter" data-index="chapter" />
@@ -101,9 +102,20 @@
                 </a-table-column>
                 <a-table-column :width="100" title="Download" align="center">
                   <template #cell="{ record }: { record: TableDownload }">
-                    <a-button size="mini">Download</a-button>
+                    <a-button
+                      size="mini"
+                      @click="testDownload"
+                      :disabled="activateMultiDownload"
+                      >Download</a-button
+                    >
                   </template>
                 </a-table-column>
+              </template>
+              <template #th="{ column }">
+                <custom-download-th
+                  :active="activateMultiDownload"
+                  :column="column"
+                />
               </template>
             </a-table>
           </div>
@@ -131,7 +143,7 @@
 
 <script setup lang="ts">
 import { IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
-import { useClipboardData, IsURL } from '@/composable/helper'
+import { useClipboardData, IsURL, DateApp } from '@/composable/helper'
 import { GetServer } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 
@@ -159,17 +171,36 @@ function makeid(length: number) {
 const cover = ref('/file/Bar Flowers/cover.webp')
 const tableDownload = reactive<TableDownload[]>([])
 
+///TESTING FOR TEMPORARY FILL DATA DOWNLOAD
+function randomDate(start: Date, end: Date) {
+  return new Date(
+    start.getTime() + Math.random() * (end.getTime() - start.getTime())
+  )
+}
+
 for (let i = 1; i <= 4; i++) {
+  const mdate = DateApp.NewDate(
+    randomDate(new Date(2020, 0, 1), new Date()).toString()
+  ).formatTimeAgo()
   tableDownload.push({
     chapter: i,
     bahasa: 'English',
     vol: i + 1,
     group: 'Achul',
-    release: '2 Hari yang lalu',
+    release: mdate ? mdate : '',
     status: false,
     title: makeid(15),
   })
 }
+
+const activateMultiDownload = ref(false)
+const testDownload = () => {
+  activateMultiDownload.value = !activateMultiDownload.value
+}
+const clickRowTable = (c: TableDownload) => {
+  activateMultiDownload.value = !activateMultiDownload.value
+}
+///TESTING
 
 //get server
 const servers = ref<manga.Server[] | null>(null)
