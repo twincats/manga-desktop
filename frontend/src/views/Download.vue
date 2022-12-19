@@ -199,7 +199,10 @@ import {
 } from '@/composable/helper'
 import { GetServer } from '@wails/go/manga/Manga'
 import { WebBrowser } from '@wails/go/tool/Web'
-import type { manga, tool } from '@wails/go/models'
+import { DownloadChapter } from '@wails/go/download/Download'
+import { Message } from '@arco-design/web-vue'
+import '@arco-design/web-vue/es/message/style/index'
+import type { manga, tool, download, types } from '@wails/go/models'
 
 interface TableDownload {
   chapter: number
@@ -241,6 +244,11 @@ watch(lg, nlg => {
     tablePageSize.value = 15
   }
 })
+
+//INTERNAL Function
+const getSelectedServer = (id: number): manga.Server | undefined => {
+  return servers.value?.find(item => item.id == id)
+}
 
 ///TESTING FOR TEMPORARY FILL DATA DOWNLOAD
 function randomDate(start: Date, end: Date) {
@@ -295,6 +303,24 @@ const goGetchDownload = () => {
     const pasteURL = IsURL(res)
     if (pasteURL) {
       urldata.value = pasteURL.href
+      //here testing download chapter
+    }
+
+    //testing download chapter
+    const server = getSelectedServer(selectedServer.value)
+    if (server) {
+      DownloadChapter({
+        url: url.value,
+        server_name: server.name,
+      })
+        .then(res => {
+          console.log(res)
+        })
+        .catch(e => {
+          // getCurrentInstance().appContext.config.globalProperties.$message
+          console.log(e)
+          Message.error(e)
+        })
     }
   }) //
 }

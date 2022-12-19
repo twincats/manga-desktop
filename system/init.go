@@ -1,6 +1,7 @@
 package system
 
 import (
+	"mangav4/system/download"
 	"mangav4/system/manga"
 	"mangav4/system/tool"
 )
@@ -13,6 +14,7 @@ func InitializeBinding() []interface{} {
 		manga.NewChapter(),
 		tool.NewDialog(),
 		tool.NewWeb(),
+		download.NewDownload(),
 	}
 
 	return binding

@@ -1,3 +1,26 @@
+export namespace download {
+	
+	export class Option {
+	    url: string;
+	    server_name: string;
+	    page?: number;
+	    limit?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Option(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.server_name = source["server_name"];
+	        this.page = source["page"];
+	        this.limit = source["limit"];
+	    }
+	}
+
+}
+
 export namespace manga {
 	
 	export class Alter {
@@ -281,6 +304,104 @@ export namespace tool {
 	        this.url = source["url"];
 	        this.body = source["body"];
 	        this.error = source["error"];
+	    }
+	}
+
+}
+
+export namespace types {
+	
+	export class ChapterList {
+	    id: string;
+	    chapter: string;
+	    title: string;
+	    volume: string;
+	    timestamp: number;
+	    language: string;
+	    group_name: string;
+	    status: boolean;
+	    check: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChapterList(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.chapter = source["chapter"];
+	        this.title = source["title"];
+	        this.volume = source["volume"];
+	        this.timestamp = source["timestamp"];
+	        this.language = source["language"];
+	        this.group_name = source["group_name"];
+	        this.status = source["status"];
+	        this.check = source["check"];
+	    }
+	}
+	export class Chapter {
+	    manga: string;
+	    cover_url: string;
+	    mdex: string;
+	    manga_id: number;
+	    server_id: number;
+	    chapter: ChapterList[];
+	    limit: number;
+	    total: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Chapter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manga = source["manga"];
+	        this.cover_url = source["cover_url"];
+	        this.mdex = source["mdex"];
+	        this.manga_id = source["manga_id"];
+	        this.server_id = source["server_id"];
+	        this.chapter = this.convertValues(source["chapter"], ChapterList);
+	        this.limit = source["limit"];
+	        this.total = source["total"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class Page {
+	    id_chap: number;
+	    title: string;
+	    pages: string[];
+	    pagesSaver?: string[];
+	    status: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Page(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id_chap = source["id_chap"];
+	        this.title = source["title"];
+	        this.pages = source["pages"];
+	        this.pagesSaver = source["pagesSaver"];
+	        this.status = source["status"];
 	    }
 	}
 
