@@ -3,15 +3,14 @@
     <div
       class="flex justify-center flex-wrap flex-row-reverse lg:overflow-hidden"
     >
-      <img
-        class="max-w-full lg:ml-1 mb-1 select-none"
-        v-if="page"
-        v-for="(p, i) in page.pages"
-        :key="i"
-        draggable="false"
-        :src="`file/${page.path}/${p}`"
-        @contextmenu.prevent="openContextMenu"
-      />
+      <div v-if="page" v-for="(p, i) in page.pages" :key="i">
+        <img
+          class="max-w-full lg:ml-1 mb-1 select-none"
+          draggable="false"
+          :src="`file/${page.path}/${p}`"
+          @contextmenu.prevent="openContextMenu"
+        />
+      </div>
     </div>
 
     <div v-if="page">
@@ -51,17 +50,25 @@ const updatePageChange = (chapId: number) => {
 const page = ref<manga.Page | null>(null)
 
 //fetching function
-const fetchData = async (cid: string) => {
-  page.value = await GetPage(Number(cid))
+const fetchData = async (cid: number) => {
+  page.value = await GetPage(cid)
 }
 //initial fetch Data
-fetchData(props.cid)
+fetchData(Number(props.cid))
 
+const el = document.getElementById('main')
+const scroll = useScroll(el, { behavior: 'smooth' })
 //watch page params
 watch(
-  () => props.cid,
-  newcid => {
-    fetchData(newcid)
+  () => Number(props.cid),
+  async (newcid, _) => {
+    await fetchData(newcid)
+    scroll.y.value = 0
+    // if (newcid > oldcid) {
+    // scroll.y.value = 0
+    // } else {
+    //   scroll.y.value = 1000 * 1000
+    // }
   }
 )
 

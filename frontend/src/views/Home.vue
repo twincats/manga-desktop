@@ -14,7 +14,7 @@
       <div
         v-for="(manga, i) in mangaHome?.manga"
         :key="i"
-        class="box"
+        class="box relative"
         @contextmenu.prevent="openContextMenu($event, manga)"
       >
         <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
@@ -35,6 +35,15 @@
           <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
             Chapter {{ manga.chapter }}
           </button>
+        </div>
+        <div
+          v-if="
+            DateApp.NewDate().Format('DD-MM-YYYY') ==
+            DateApp.NewDate(manga.download_time).Format('DD-MM-YYYY')
+          "
+          class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-orange-500"
+        >
+          New
         </div>
       </div>
     </div>
@@ -65,6 +74,7 @@ import {
   GetBreakPoints,
   SEQUENCE3,
   UseContextMenu,
+  DateApp,
 } from '@/composable/helper'
 import { GetMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'

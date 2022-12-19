@@ -1,6 +1,6 @@
 <template>
-  <th>
-    <div v-if="column.title == 'Download'" class="text-center">
+  <th class="h-8">
+    <div v-if="column.title == 'Download'" class="text-center px-1">
       <a-button
         @click="emit('clickDownload')"
         type="primary"
