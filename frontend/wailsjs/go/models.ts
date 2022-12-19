@@ -265,3 +265,24 @@ export namespace manga {
 
 }
 
+export namespace tool {
+	
+	export class Web {
+	    url: string;
+	    body: string;
+	    error: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new Web(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.body = source["body"];
+	        this.error = source["error"];
+	    }
+	}
+
+}
+

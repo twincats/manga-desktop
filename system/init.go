@@ -12,6 +12,7 @@ func InitializeBinding() []interface{} {
 		manga.NewManga(),
 		manga.NewChapter(),
 		tool.NewDialog(),
+		tool.NewWeb(),
 	}
 
 	return binding

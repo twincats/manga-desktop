@@ -4,8 +4,8 @@
     class="m-1"
     style="--primary-6: 255, 117, 24; --primary-5: 204, 92, 18"
   >
-    <a-tabs default-active-key="1">
-      <a-tab-pane key="1" title="Download">
+    <a-tabs v-model:active-key="tabsActive">
+      <a-tab-pane :key="1" title="Download">
         <div class="px-2 my-2">
           <a-input
             v-model="urldata"
@@ -46,6 +46,7 @@
                     v-for="(item, i) in servers"
                     :key="i"
                     :value="item.id"
+                    @dblclick="openBrowser(item.url)"
                   >
                     {{ item.name }}</a-radio
                   >
@@ -166,20 +167,22 @@
           </div>
         </div>
       </a-tab-pane>
-      <a-tab-pane key="2" title="Web">
+      <a-tab-pane :key="2" title="Web">
         <div class="h-[calc(100vh-7.5rem)] px-2">
           <a-input-search
             allow-clear
             class="w-full mb-2"
             placeholder="URL"
+            v-model="url"
             search-button
+            @search="fetchBrowserData"
           />
           <div
+            ref="web"
             class="h-[calc(100vh-11.2rem)] overflow-auto p-2"
             style="background-color: var(--color-bg-2)"
-          >
-            <div id="webID"></div>
-          </div>
+            v-html="browserData?.body"
+          ></div>
         </div>
       </a-tab-pane>
     </a-tabs>
@@ -195,7 +198,8 @@ import {
   GetBreakPoints,
 } from '@/composable/helper'
 import { GetServer } from '@wails/go/manga/Manga'
-import type { manga } from '@wails/go/models'
+import { WebBrowser } from '@wails/go/tool/Web'
+import type { manga, tool } from '@wails/go/models'
 
 interface TableDownload {
   chapter: number
@@ -222,6 +226,7 @@ const cover = ref('/file/Bar Flowers/cover.webp')
 const tableDownload = reactive<TableDownload[]>([])
 const tablePageSize = ref(5)
 const { lg } = GetBreakPoints()
+const tabsActive = ref(1)
 
 if (lg.value) {
   tablePageSize.value = 5
@@ -266,6 +271,13 @@ const testDownload = () => {
 const clickRowTable = (c: TableDownload) => {
   activateMultiDownload.value = !activateMultiDownload.value
 }
+
+const openBrowser = (uri: string) => {
+  console.log(url)
+  tabsActive.value = 2
+  url.value = 'https://' + uri
+  fetchBrowserData()
+}
 ///TESTING
 
 //get server
@@ -307,6 +319,27 @@ watchDebounced(
   },
   { debounce: 50 }
 )
+
+//TAB 2
+const web = ref<HTMLElement | null>(null)
+const url = ref('')
+const browserData = ref<tool.Web | null>(null)
+const fetchBrowserData = () => {
+  if (url.value) {
+    WebBrowser(url.value).then(res => (browserData.value = res))
+  }
+}
+useEventListener(web, 'click', e => {
+  e.preventDefault()
+  if (e.target instanceof HTMLAnchorElement) {
+    console.log(e.target.href)
+  } else {
+    const path1 = e.composedPath()[1]
+    if (path1 instanceof HTMLAnchorElement) {
+      console.log(path1.href)
+    }
+  }
+})
 </script>
 
 <style lang="less">
