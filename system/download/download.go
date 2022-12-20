@@ -3,18 +3,11 @@ package download
 import (
 	"errors"
 	"mangav4/system/download/types"
+	"reflect"
 )
 
 type Download struct {
-	Dl types.Downloads `json:"downloads"`
-}
-
-// option for download params
-type Option struct {
-	URL        string `json:"url"`
-	ServerName string `json:"server_name"`
-	Page       *int   `json:"page"`
-	Limit      *int   `json:"limit"`
+	types.Downloads
 }
 
 // Get new Download instance
@@ -22,26 +15,27 @@ func NewDownload() *Download {
 	return new(Download)
 }
 
-func (f *Download) DownloadChapter(o Option) (*types.Chapter, error) {
-	class := *types.NewDownload(o.ServerName)
-	if class == nil {
-		return nil, errors.New("error: Server Name " + o.ServerName + " Not Found")
+func (f *Download) getDownloads(className string) types.Downloads {
+	var d types.Downloads
+	for c := range types.CLASS {
+		if className == c {
+			ref := reflect.ValueOf(types.CLASS[c])
+			d = ref.Interface().(types.Downloads)
+		}
 	}
-	opt := types.OptionDownload{
-		Id: o.URL,
-	}
-
-	return class.GetChapter(opt)
+	return d
 }
 
-func (f *Download) DownloadPage(o Option) (*types.Page, error) {
-	class := *types.NewDownload(o.ServerName)
-	if class == nil {
-		return nil, errors.New("error: Server Name " + o.ServerName + " Not Found")
+func (f *Download) GetChapter(o types.Option) (*types.Chapter, error) {
+	if d := f.getDownloads(o.ServerName); d != nil {
+		return d.GetChapter(o)
 	}
-	opt := types.OptionDownload{
-		Id: o.URL,
-	}
+	return nil, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
+}
 
-	return class.GetPage(opt)
+func (f *Download) GetPage(o types.Option) (*types.Page, error) {
+	if d := f.getDownloads(o.ServerName); d != nil {
+		return d.GetPage(o)
+	}
+	return nil, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }

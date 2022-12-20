@@ -196,13 +196,14 @@ import {
   IsURL,
   DateApp,
   GetBreakPoints,
+  UseParseDom,
 } from '@/composable/helper'
 import { GetServer } from '@wails/go/manga/Manga'
 import { WebBrowser } from '@wails/go/tool/Web'
-import { DownloadChapter } from '@wails/go/download/Download'
+import { GetChapter } from '@wails/go/download/Download'
 import { Message } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
-import type { manga, tool, download, types } from '@wails/go/models'
+import type { manga, tool } from '@wails/go/models'
 
 interface TableDownload {
   chapter: number
@@ -309,7 +310,7 @@ const goGetchDownload = () => {
     //testing download chapter
     const server = getSelectedServer(selectedServer.value)
     if (server) {
-      DownloadChapter({
+      GetChapter({
         url: url.value,
         server_name: server.name,
       })
@@ -352,7 +353,11 @@ const url = ref('')
 const browserData = ref<tool.Web | null>(null)
 const fetchBrowserData = () => {
   if (url.value) {
-    WebBrowser(url.value).then(res => (browserData.value = res))
+    WebBrowser(url.value).then(res => {
+      const htmlDoc = UseParseDom(res.body)
+      const v = htmlDoc.getElementsByTagName('h1')
+      console.log(v.item(0)?.innerText)
+    })
   }
 }
 useEventListener(web, 'click', e => {

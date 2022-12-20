@@ -146,3 +146,9 @@ export const IsURL = (text: string) => {
   }
   return URLObject
 }
+
+export const UseParseDom = (data: string): Document => {
+  const parser = new DOMParser()
+  const val = parser.parseFromString(data, 'text/html')
+  return val
+}

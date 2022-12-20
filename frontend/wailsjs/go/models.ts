@@ -1,26 +1,3 @@
-export namespace download {
-	
-	export class Option {
-	    url: string;
-	    server_name: string;
-	    page?: number;
-	    limit?: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new Option(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.server_name = source["server_name"];
-	        this.page = source["page"];
-	        this.limit = source["limit"];
-	    }
-	}
-
-}
-
 export namespace manga {
 	
 	export class Alter {
@@ -384,6 +361,24 @@ export namespace types {
 		}
 	}
 	
+	export class Option {
+	    url: string;
+	    server_name: string;
+	    page?: number;
+	    limit?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Option(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.server_name = source["server_name"];
+	        this.page = source["page"];
+	        this.limit = source["limit"];
+	    }
+	}
 	export class Page {
 	    id_chap: number;
 	    title: string;

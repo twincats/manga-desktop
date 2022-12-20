@@ -11,12 +11,15 @@ var CLASS = map[string]interface{}{
 }
 
 type Downloads interface {
-	GetChapter(o OptionDownload) (*Chapter, error)
-	GetPage(o OptionDownload) (*Page, error)
+	GetChapter(o Option) (*Chapter, error)
+	GetPage(o Option) (*Page, error)
 }
 
-type OptionDownload struct {
-	Id string
+type Option struct {
+	URL        string `json:"url"`
+	ServerName string `json:"server_name"`
+	Page       *int   `json:"page"`
+	Limit      *int   `json:"limit"`
 }
 
 func NewDownload(className string) *Downloads {
