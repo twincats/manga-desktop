@@ -320,11 +320,13 @@ export namespace types {
 	    manga: string;
 	    cover_url: string;
 	    mdex: string;
-	    manga_id: number;
-	    server_id: number;
+	    manga_id?: number;
+	    server_name: number;
 	    chapter: ChapterList[];
 	    limit: number;
 	    total: number;
+	    // Go type: MdexManga
+	    mdextest: any;
 	
 	    static createFrom(source: any = {}) {
 	        return new Chapter(source);
@@ -336,10 +338,11 @@ export namespace types {
 	        this.cover_url = source["cover_url"];
 	        this.mdex = source["mdex"];
 	        this.manga_id = source["manga_id"];
-	        this.server_id = source["server_id"];
+	        this.server_name = source["server_name"];
 	        this.chapter = this.convertValues(source["chapter"], ChapterList);
 	        this.limit = source["limit"];
 	        this.total = source["total"];
+	        this.mdextest = this.convertValues(source["mdextest"], null);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

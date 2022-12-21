@@ -64,6 +64,9 @@
               Uragirareta S Rank Boukensha no Ore wa, Aisuru Dorei no Kanojora
               to Tomoni Dorei dake no Harem Guild o Tsukuru
             </div>
+            <div class="TESTING ELEMENT text-center">
+              {{ testresultchapter }}
+            </div>
             <div class="flex">
               <div class="w-150px px-2">
                 <img class="w-full" :src="cover" alt="cover" />
@@ -203,7 +206,7 @@ import { WebBrowser } from '@wails/go/tool/Web'
 import { GetChapter } from '@wails/go/download/Download'
 import { Message } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
-import type { manga, tool } from '@wails/go/models'
+import type { manga, tool, types } from '@wails/go/models'
 
 interface TableDownload {
   chapter: number
@@ -292,44 +295,45 @@ const openBrowser = (uri: string) => {
 //get server
 const servers = ref<manga.Server[] | null>(null)
 GetServer().then(res => {
-  servers.value = res.filter(item => item.status_active == true)
+  servers.value = res.filter(item => item.status_active === true)
 })
-
+const testresultchapter = ref<types.Chapter | null>(null)
 const urldata = ref('')
 const selectedServer = ref(1)
 const { GetPasteData } = useClipboardData()
-const goGetchDownload = () => {
+const goGetchDownload = async () => {
   // auto fetch paste URL(only)
-  GetPasteData().then(res => {
-    const pasteURL = IsURL(res)
-    if (pasteURL) {
-      urldata.value = pasteURL.href
-      //here testing download chapter
-    }
+  const paste = await GetPasteData()
+  const pasteURL = IsURL(paste)
+  if (pasteURL) {
+    urldata.value = pasteURL.href
+    //here testing download chapter
+  }
 
-    //testing download chapter
-    const server = getSelectedServer(selectedServer.value)
-    if (server) {
-      GetChapter({
-        url: url.value,
-        server_name: server.name,
+  //testing download chapter
+  const server = getSelectedServer(selectedServer.value)
+  if (server) {
+    GetChapter({
+      url: urldata.value,
+      server_name: server.name,
+    })
+      .then(res => {
+        testresultchapter.value = res
+        console.log(res)
       })
-        .then(res => {
-          console.log(res)
-        })
-        .catch(e => {
-          // getCurrentInstance().appContext.config.globalProperties.$message
-          console.log(e)
-          Message.error(e)
-        })
-    }
-  }) //
+      .catch(e => {
+        // getCurrentInstance().appContext.config.globalProperties.$message
+        console.log(e)
+        Message.error(e)
+      })
+  }
 }
 
 //clearDownload
 const clearDownload = () => {
   urldata.value = ''
   selectedServer.value = 1
+  testresultchapter.value = null
 }
 
 //watch URL => auto select servers
