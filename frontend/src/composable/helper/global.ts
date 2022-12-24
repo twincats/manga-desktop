@@ -48,17 +48,25 @@ export class DateApp {
     { amount: 12, name: 'months' },
     { amount: Number.POSITIVE_INFINITY, name: 'years' },
   ]
-  constructor(s: string | null = null) {
-    const parse = s ? Date.parse(s) : Date.now()
+  constructor(s: string | number | null = null) {
+    if (typeof s == 'string') {
+      const parse = s ? Date.parse(s) : Date.now()
+      this.date = new Date(parse)
+    } else if (typeof s == 'number') {
+      this.date = new Date(s)
+    } else {
+      this.date = new Date()
+    }
+
     // console.log(s)
-    this.date = new Date(parse)
+
     this.locale = 'id-ID'
     this.formatter = new Intl.RelativeTimeFormat(this.locale, {
       localeMatcher: 'best fit',
       numeric: 'always',
     })
   }
-  static NewDate(s: string | null = null) {
+  static NewDate(s: string | number | null = null) {
     return new DateApp(s)
   }
   Format(f: string): string {

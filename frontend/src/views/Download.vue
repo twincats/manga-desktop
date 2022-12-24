@@ -57,37 +57,48 @@
         </div>
         <div class="h-[calc(100vh-16rem)] px-2 overflow-auto">
           <div
-            class="min-h-240px mb-2"
+            class="min-h-220px mb-2"
             style="background-color: var(--color-bg-2)"
           >
             <div class="text-lg p-2 text-center">
-              Uragirareta S Rank Boukensha no Ore wa, Aisuru Dorei no Kanojora
-              to Tomoni Dorei dake no Harem Guild o Tsukuru
-            </div>
-            <div class="TESTING ELEMENT text-center">
-              {{ testresultchapter }}
+              <div v-if="chapterList">{{ chapterList.manga }}</div>
             </div>
             <div class="flex">
-              <div class="w-150px px-2">
-                <img class="w-full" :src="cover" alt="cover" />
+              <div class="w-150px h-full px-2">
+                <img
+                  v-if="chapterList"
+                  class="w-full"
+                  :src="cover"
+                  alt="cover"
+                />
+                <div></div>
               </div>
-              <div class="w-full flex flex-col">
-                <div class="h-full">
-                  Server : Mangadex <br />
-                  Total Chapter : 42 <br />
+              <div class="w-full flex flex-col" v-if="chapterList">
+                <div class="h-full min-h-120px">
+                  Server : {{ chapterList.server_name }} <br />
+                  Total Chapter : {{ chapterList.chapter.length }} <br />
                   Download : <br />
                   Selected : <br />
                 </div>
                 <div class="p-2 pl-0" v-if="selectedServer == 1">
-                  Mangadex Server :
-                  <a-radio-group size="small">
-                    <a-radio value="A">Original</a-radio>
-                    <a-radio value="B">Data Saver</a-radio>
-                  </a-radio-group>
+                  <a-form-item
+                    field="size"
+                    style="margin-bottom: 0"
+                    label="Mangadex Server"
+                  >
+                    <a-radio-group v-model="mdexPageServer" size="small">
+                      <a-radio :value="1">Original</a-radio>
+                      <a-radio :value="2">Data Saver</a-radio>
+                    </a-radio-group>
+                  </a-form-item>
                 </div>
               </div>
-              <div class="p-2 self-end">
-                <a-button status="warning">Read</a-button>
+              <div class="p-2 self-end" v-if="chapterList">
+                <a-button
+                  :disabled="chapterList.manga_id == null"
+                  status="warning"
+                  >Read</a-button
+                >
               </div>
             </div>
           </div>
@@ -96,8 +107,8 @@
               :data="tableDownload"
               :pagination="{ pageSize: tablePageSize, size: 'mini' }"
               size="mini"
-              :scroll="{ x: 1200 }"
-              @row-click="(c)=>clickRowTable(<TableDownload>c)"
+              :scroll="{ x: 1500 }"
+              @row-click="(c)=>clickRowTable(<types.ChapterList>c)"
             >
               <template #columns>
                 <a-table-column
@@ -107,29 +118,48 @@
                   title="Chapter"
                   data-index="chapter"
                 />
-                <a-table-column :width="50" title="Vol" data-index="vol" />
-                <a-table-column title="Judul Chapter" data-index="title" />
+                <a-table-column :width="50" title="Vol" data-index="volume" />
                 <a-table-column
+                  :width="400"
+                  title="Judul Chapter"
+                  data-index="title"
+                />
+
+                <a-table-column title="Group" data-index="group_name" />
+                <a-table-column
+                  fixed="right"
                   :width="120"
                   align="center"
                   title="Bahasa"
-                  data-index="bahasa"
+                  data-index="language"
                 />
-                <a-table-column title="Group" data-index="group" />
                 <a-table-column
                   fixed="right"
                   :width="135"
                   align="center"
                   title="Release"
-                  data-index="release"
-                />
+                >
+                  <template #cell="{ record }: { record: types.ChapterList }">
+                    {{
+                      DateApp.NewDate(record.timestamp * 1000).formatTimeAgo()
+                    }}
+                  </template>
+                </a-table-column>
                 <a-table-column
                   fixed="right"
                   :width="70"
                   align="center"
                   title="Status"
-                  data-index="status"
-                />
+                >
+                  <template #cell="{ record }: { record: types.ChapterList }">
+                    <span
+                      class="bg-green-600 px-2 rounded-lg"
+                      v-if="record.status"
+                      >OK</span
+                    >
+                    <span class="bg-red-600 px-2 rounded-lg">No</span>
+                  </template>
+                </a-table-column>
                 <a-table-column
                   :fixed="'right'"
                   :width="50"
@@ -150,7 +180,7 @@
                   title="Download"
                   align="center"
                 >
-                  <template #cell="{ record }: { record: TableDownload }">
+                  <template #cell="{ record }: { record: types.ChapterList }">
                     <a-button
                       size="mini"
                       @click="testDownload"
@@ -165,6 +195,21 @@
                   :active="activateMultiDownload"
                   :column="column"
                 />
+              </template>
+              <template #empty>
+                <div
+                  class="arco-empty flex justify-center items-center md:min-h-180px lg:min-h-450px"
+                >
+                  <div>
+                    <div class="arco-empty-image">
+                      <i-mdi-emoticon-sad-outline />
+                    </div>
+                    <div class="arco-empty-description">
+                      <div class="my-2"></div>
+                      Tidak ada data
+                    </div>
+                  </div>
+                </div>
               </template>
             </a-table>
           </div>
@@ -208,32 +253,13 @@ import { Message } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
 import type { manga, tool, types } from '@wails/go/models'
 
-interface TableDownload {
-  chapter: number
-  vol: number
-  title: string
-  bahasa: string
-  group: string
-  release: string
-  status: boolean
-}
-
-function makeid(length: number) {
-  var result = ''
-  var characters =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  var charactersLength = characters.length
-  for (var i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength))
-  }
-  return result
-}
-
 const cover = ref('/file/Bar Flowers/cover.webp')
-const tableDownload = reactive<TableDownload[]>([])
+const chapterList = ref<types.Chapter | null>(null)
+const tableDownload = reactive<types.ChapterList[]>([])
 const tablePageSize = ref(5)
 const { lg } = GetBreakPoints()
 const tabsActive = ref(1)
+const mdexPageServer = ref(1)
 
 if (lg.value) {
   tablePageSize.value = 5
@@ -255,32 +281,12 @@ const getSelectedServer = (id: number): manga.Server | undefined => {
 }
 
 ///TESTING FOR TEMPORARY FILL DATA DOWNLOAD
-function randomDate(start: Date, end: Date) {
-  return new Date(
-    start.getTime() + Math.random() * (end.getTime() - start.getTime())
-  )
-}
-
-for (let i = 1; i <= 20; i++) {
-  const mdate = DateApp.NewDate(
-    randomDate(new Date(2020, 0, 1), new Date()).toString()
-  ).formatTimeAgo()
-  tableDownload.push({
-    chapter: i,
-    bahasa: 'English',
-    vol: i + 1,
-    group: 'Achul',
-    release: mdate ? mdate : '',
-    status: false,
-    title: makeid(15),
-  })
-}
 
 const activateMultiDownload = ref(false)
 const testDownload = () => {
   activateMultiDownload.value = !activateMultiDownload.value
 }
-const clickRowTable = (c: TableDownload) => {
+const clickRowTable = (c: types.ChapterList) => {
   activateMultiDownload.value = !activateMultiDownload.value
 }
 
@@ -297,7 +303,7 @@ const servers = ref<manga.Server[] | null>(null)
 GetServer().then(res => {
   servers.value = res.filter(item => item.status_active === true)
 })
-const testresultchapter = ref<types.Chapter | null>(null)
+
 const urldata = ref('')
 const selectedServer = ref(1)
 const { GetPasteData } = useClipboardData()
@@ -305,24 +311,27 @@ const goGetchDownload = async () => {
   // auto fetch paste URL(only)
   const paste = await GetPasteData()
   const pasteURL = IsURL(paste)
-  if (pasteURL) {
+  if (pasteURL != null) {
     urldata.value = pasteURL.href
     //here testing download chapter
   }
 
   //testing download chapter
   const server = getSelectedServer(selectedServer.value)
-  if (server) {
+  if (server && urldata.value != '') {
     GetChapter({
       url: urldata.value,
       server_name: server.name,
     })
       .then(res => {
-        testresultchapter.value = res
-        console.log(res)
+        //warning torefs expect reactive
+        chapterList.value = res
+        res.chapter.forEach(item => {
+          tableDownload.push(item)
+        })
+        // console.log(res)
       })
       .catch(e => {
-        // getCurrentInstance().appContext.config.globalProperties.$message
         console.log(e)
         Message.error(e)
       })
@@ -333,7 +342,8 @@ const goGetchDownload = async () => {
 const clearDownload = () => {
   urldata.value = ''
   selectedServer.value = 1
-  testresultchapter.value = null
+  chapterList.value = null
+  tableDownload.length = 0
 }
 
 //watch URL => auto select servers

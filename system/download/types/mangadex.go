@@ -48,6 +48,9 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 
 	var c Chapter
 	c.Mdex = mdex
+	c.ServerName = o.ServerName
+	c.Limit = mdexChapter.Limit
+	c.Total = mdexChapter.Total
 	setMangadexTitle(mdexmanga, &c)
 	setMangadexCover(mdexmanga, &c)
 	setMangadexChapter(mdexChapter, &c)
