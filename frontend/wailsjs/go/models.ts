@@ -325,7 +325,6 @@ export namespace types {
 	    chapter: ChapterList[];
 	    limit: number;
 	    total: number;
-	    // Go type: MdexManga
 	    mdextest: any;
 	
 	    static createFrom(source: any = {}) {
@@ -342,7 +341,7 @@ export namespace types {
 	        this.chapter = this.convertValues(source["chapter"], ChapterList);
 	        this.limit = source["limit"];
 	        this.total = source["total"];
-	        this.mdextest = this.convertValues(source["mdextest"], null);
+	        this.mdextest = source["mdextest"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -367,7 +366,7 @@ export namespace types {
 	export class Option {
 	    url: string;
 	    server_name: string;
-	    page?: number;
+	    offset?: number;
 	    limit?: number;
 	
 	    static createFrom(source: any = {}) {
@@ -378,7 +377,7 @@ export namespace types {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
 	        this.server_name = source["server_name"];
-	        this.page = source["page"];
+	        this.offset = source["offset"];
 	        this.limit = source["limit"];
 	    }
 	}

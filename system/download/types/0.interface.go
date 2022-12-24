@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"mangav4/system/app"
 	"reflect"
 )
 
@@ -37,7 +38,7 @@ type Downloads interface {
 type Option struct {
 	URL        string `json:"url"`
 	ServerName string `json:"server_name"`
-	Page       *int   `json:"page"`
+	Offset     *int   `json:"offset"`
 	Limit      *int   `json:"limit"`
 }
 
@@ -63,7 +64,7 @@ type Chapter struct {
 	Chapter    []ChapterList `json:"chapter"`
 	Limit      int           `json:"limit"`
 	Total      int           `json:"total"`
-	MdexData   MdexManga     `json:"mdextest"`
+	MdexData   interface{}   `json:"mdextest"`
 }
 
 // ChapterList is list of chapter for main data Chapter for GetChapter mehotds
@@ -86,4 +87,38 @@ type Page struct {
 	Pages      []string  `json:"pages"`
 	PagesSaver *[]string `json:"pagesSaver"`
 	Status     bool      `json:"status"`
+}
+
+// ParallelFetchResult is output for ParallelFetch
+type ParallelFetchResult struct {
+	ID   int
+	Url  string
+	Body []byte
+	Err  error
+}
+
+func ParallelFetch(urlList []string) []ParallelFetchResult {
+	var result []ParallelFetchResult
+
+	var client = app.Client
+	var channelResult = make(chan ParallelFetchResult)
+
+	for i, s := range urlList {
+		go func(url string, i int) {
+			//time.Sleep(time.Second)
+			bodyByte, err := client.Get(url).Bytes()
+			channelResult <- ParallelFetchResult{
+				ID:   i,
+				Url:  url,
+				Body: bodyByte,
+				Err:  err,
+			}
+		}(s, i)
+	}
+
+	for i := 0; i < len(urlList); i++ {
+		result = append(result, <-channelResult)
+	}
+
+	return result
 }

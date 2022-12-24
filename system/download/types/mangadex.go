@@ -3,10 +3,11 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"mangav4/system/app/internet"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/valyala/fasthttp"
 )
 
 type Mangadex struct {
@@ -15,23 +16,42 @@ type Mangadex struct {
 
 func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 	var mdex = getMangadexIdFromUrl(o.URL)
-	urlManga := fmt.Sprintf("https://api.mangadex.org/manga/%s?includes[]=cover_art", mdex)
+	limit, offset := getDefaultLimitOffset(o)
 
-	_, body, err := fasthttp.Get(nil, urlManga)
-	if err != nil {
-		return nil, err
-	}
+	urlManga := fmt.Sprintf("https://api.mangadex.org/manga/%s?includes[]=cover_art", mdex)
+	urlChapter := fmt.Sprintf("https://api.mangadex.org/manga/%s/feed?translatedLanguage[]=en&translatedLanguage[]=id&includes[]=scanlation_group&limit=%d&offset=%d&order[chapter]=desc", mdex, limit, offset)
+
+	var UrlList = []string{urlManga, urlChapter}
+	result := ParallelFetch(UrlList)
 
 	var mdexmanga MdexManga
-	err = json.Unmarshal(body, &mdexmanga)
-	if err != nil {
-		return nil, err
+	var mdexChapter MdexChapter
+
+	for _, fetchResult := range result {
+		if fetchResult.Err != nil {
+			return nil, fetchResult.Err
+		}
+
+		switch fetchResult.ID {
+		case 0:
+			err := internet.BodyParser(fetchResult.Body, &mdexmanga)
+			if err != nil {
+				return nil, err
+			}
+		case 1:
+			err := internet.BodyParser(fetchResult.Body, &mdexChapter)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	var c Chapter
-	c.Manga = "Mangadex " + mdex
-	c.MdexData = mdexmanga
 	c.Mdex = mdex
+	setMangadexTitle(mdexmanga, &c)
+	setMangadexCover(mdexmanga, &c)
+	setMangadexChapter(mdexChapter, &c)
+
 	return &c, nil
 }
 
@@ -41,6 +61,7 @@ func (d Mangadex) GetPage(o Option) (*Page, error) {
 	return &c, nil
 }
 
+// getMangadexIdFromUrl is get mdex UUID from url / string
 func getMangadexIdFromUrl(mdex string) string {
 	if _, err := uuid.Parse(mdex); err == nil {
 		return mdex
@@ -54,6 +75,103 @@ func getMangadexIdFromUrl(mdex string) string {
 	return ""
 }
 
+// getDefaultLimitOffset return (limit,offset)
+func getDefaultLimitOffset(o Option) (int, int) {
+	var limit = 30
+	var offset = 0
+
+	if o.Limit != nil {
+		limit = *o.Limit
+	}
+
+	if o.Offset != nil {
+		offset = *o.Offset
+	}
+	return limit, offset
+}
+
+// setMangadexTitle is fill up mangadex Title
+func setMangadexTitle(m MdexManga, c *Chapter) {
+	if m.Data.Attributes.Title.En != "" {
+		c.Manga = m.Data.Attributes.Title.En
+	} else if m.Data.Attributes.Title.JaRo != "" {
+		c.Manga = m.Data.Attributes.Title.JaRo
+	} else if m.Data.Attributes.Title.Ja != "" {
+		c.Manga = m.Data.Attributes.Title.Ja
+	} else {
+		c.Manga = ""
+	}
+}
+
+// setMangadexCover is fill up mangadex cover
+func setMangadexCover(m MdexManga, c *Chapter) {
+	for _, v := range m.Data.Relationships {
+		if v.Type == "cover_art" {
+			c.Cover = fmt.Sprintf("https://uploads.mangadex.org/covers/%s/%s.256.jpg", m.Data.Id, v.Attributes.FileName)
+		}
+	}
+}
+
+// setMangadexChapter is fill up mangadex chapter
+func setMangadexChapter(m MdexChapter, c *Chapter) {
+	var chapterList []ChapterList
+	for _, v := range m.Data {
+		chapterList = append(chapterList, ChapterList{
+			ID:        v.Id,
+			Chapter:   v.Attributes.Chapter,
+			Volume:    v.Attributes.Volume,
+			Title:     v.Attributes.Title,
+			Timestamp: int(v.Attributes.PublishAt.Unix()),
+			Languange: getLang(v.Attributes.TranslatedLanguage),
+			GroupName: getGroupName(v.Relationships),
+		})
+	}
+	c.Chapter = chapterList
+}
+
+// getLang  2 digit string full langauage string (English | Indonesia)
+func getLang(s string) string {
+	if s == "en" {
+		return "English"
+	} else {
+		return "Indonesia"
+	}
+}
+
+// getGroupName turn relationshio group as string
+func getGroupName(R []MdexRelationship) string {
+	var groups []string
+	for _, r := range R {
+		if r.Type == "scanlation_group" {
+			groups = append(groups, r.Attributes.Name)
+		}
+	}
+	if len(groups) > 0 {
+		return joinString(groups)
+	} else {
+		return "No Groups"
+	}
+}
+
+// JoinString join array string with &
+func joinString(ss []string) string {
+	var v string
+	if len(ss) > 1 {
+		for i, s := range ss {
+			if i+1 < len(ss) {
+				v += s + " & "
+			} else {
+				v += s
+			}
+		}
+	} else if len(ss) == 1 {
+		v = ss[0]
+	} else {
+		v = ""
+	}
+	return v
+}
+
 type MdexManga struct {
 	Data struct {
 		Id         string
@@ -62,7 +180,7 @@ type MdexManga struct {
 			AltTitles   []MdexLang
 			Description MdexLang
 		}
-		Relationships []Relationship
+		Relationships []MdexRelationship
 	}
 }
 
@@ -72,11 +190,28 @@ type MdexLang struct {
 	JaRo string `json:"ja-ro"`
 }
 
-type Relationship struct {
+type MdexRelationship struct {
 	Id         string
 	Type       string
 	Attributes struct {
 		Name     string
 		FileName string
 	}
+}
+
+type MdexChapter struct {
+	Data []struct {
+		Id         string
+		Attributes struct {
+			Chapter            json.Number
+			Volume             string
+			Title              string
+			TranslatedLanguage string
+			PublishAt          time.Time
+		}
+		Relationships []MdexRelationship
+	}
+	Limit  int
+	Offset int
+	Total  int
 }

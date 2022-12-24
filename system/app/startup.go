@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"mangav4/system/app/internet"
 	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -13,6 +14,7 @@ var (
 	DB           *gorm.DB
 	arguments    []string
 	BlockClose   = false
+	Client       = new(internet.Client)
 )
 
 func Startup(ctx *context.Context) {
