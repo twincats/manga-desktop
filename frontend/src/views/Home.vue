@@ -72,7 +72,7 @@
 import {
   MangaTitleURL,
   GetBreakPoints,
-  SEQUENCE3,
+  Sequence,
   UseContextMenu,
   DateApp,
 } from '@/composable/helper'
@@ -116,7 +116,7 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
   if (l) {
     nav.limit = 30
     if (op == p) {
-      nav.page = SEQUENCE3(p)
+      nav.page = Sequence(3, p)
     }
     loadManga(searchManga.value)
   } else {

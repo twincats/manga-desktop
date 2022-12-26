@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"mangav4/system/app"
 	"mangav4/system/app/internet"
 	"strings"
 	"time"
@@ -53,7 +54,7 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 	c.Total = mdexChapter.Total
 	setMangadexTitle(mdexmanga, &c)
 	setMangadexCover(mdexmanga, &c)
-	setMangadexChapter(mdexChapter, &c)
+	c.Chapter = setMangadexChapter(mdexChapter)
 
 	return &c, nil
 }
@@ -62,6 +63,24 @@ func (d Mangadex) GetPage(o Option) (*Page, error) {
 	var c Page
 	c.Title = "Mangadex"
 	return &c, nil
+}
+
+func (f *Mangadex) GetChapterMdexPagination(url string, limit, offset int) ([]ChapterList, error) {
+	mdex := getMangadexIdFromUrl(url)
+	urlChapter := fmt.Sprintf("https://api.mangadex.org/manga/%s/feed?translatedLanguage[]=en&translatedLanguage[]=id&includes[]=scanlation_group&limit=%d&offset=%d&order[chapter]=desc", mdex, limit, offset)
+	bodyByte, err := app.Client.Get(urlChapter).Bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	var mdexChap MdexChapter
+	err = internet.BodyParser(bodyByte, &mdexChap)
+	if err != nil {
+		return nil, err
+	}
+
+	return setMangadexChapter(mdexChap), nil
+
 }
 
 // getMangadexIdFromUrl is get mdex UUID from url / string
@@ -116,7 +135,7 @@ func setMangadexCover(m MdexManga, c *Chapter) {
 }
 
 // setMangadexChapter is fill up mangadex chapter
-func setMangadexChapter(m MdexChapter, c *Chapter) {
+func setMangadexChapter(m MdexChapter) []ChapterList {
 	var chapterList []ChapterList
 	for _, v := range m.Data {
 		chapterList = append(chapterList, ChapterList{
@@ -129,7 +148,7 @@ func setMangadexChapter(m MdexChapter, c *Chapter) {
 			GroupName: getGroupName(v.Relationships),
 		})
 	}
-	c.Chapter = chapterList
+	return chapterList
 }
 
 // getLang  2 digit string full langauage string (English | Indonesia)

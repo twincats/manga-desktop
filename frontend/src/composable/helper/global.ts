@@ -22,15 +22,14 @@ export const GetBreakPoints = () => {
   return bp
 }
 
-export const SEQUENCE3 = (n: number): number => {
-  if (n % 3 == 1) {
-    return Math.floor(n / 3) + 1
-  }
-  if (n % 3 == 2) {
-    return Math.floor((n - 1) / 3) + 1
-  }
-  if (n % 3 == 0) {
-    return Math.floor((n - 2) / 3) + 1
+// Sequence return n number to s sequence number + 1
+// example sequence 3 => 1,1,1,2,2,2,3,3,3,4 (1..10)
+export const Sequence = (s: number, n: number): number => {
+  for (let i = 0; i < s; i++) {
+    const modSec = i + 1 < s ? i + 1 : 0
+    if (n % s == modSec) {
+      return Math.floor((n - i) / s) + 1
+    }
   }
   return NaN
 }

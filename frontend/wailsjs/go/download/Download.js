@@ -6,6 +6,10 @@ export function GetChapter(arg1) {
   return window['go']['download']['Download']['GetChapter'](arg1);
 }
 
+export function GetChapterMdexPagination(arg1, arg2, arg3) {
+  return window['go']['download']['Download']['GetChapterMdexPagination'](arg1, arg2, arg3);
+}
+
 export function GetPage(arg1) {
   return window['go']['download']['Download']['GetPage'](arg1);
 }

@@ -39,3 +39,8 @@ func (f *Download) GetPage(o types.Option) (*types.Page, error) {
 	}
 	return nil, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }
+
+func (f *Download) GetChapterMdexPagination(url string, limit, offset int) ([]types.ChapterList, error) {
+	mdex := new(types.Mangadex)
+	return mdex.GetChapterMdexPagination(url, limit, offset)
+}

@@ -55,7 +55,10 @@
             </div>
           </div>
         </div>
-        <div class="h-[calc(100vh-16rem)] px-2 overflow-auto">
+        <div
+          v-if="chapterList"
+          class="h-[calc(100vh-16rem)] px-2 overflow-auto"
+        >
           <div
             class="min-h-220px mb-2"
             style="background-color: var(--color-bg-2)"
@@ -78,7 +81,7 @@
                   Server : {{ chapterList.server_name }} <br />
                   Total Chapter : {{ chapterList.chapter.length }} <br />
                   Download : <br />
-                  Selected : <br />
+                  Selected : {{ chapterList.total }} <br />
                 </div>
                 <div class="p-2 pl-0" v-if="selectedServer == 1">
                   <a-form-item
@@ -102,12 +105,20 @@
               </div>
             </div>
           </div>
-          <div>
+          <div v-if="chapterList">
             <a-table
               :data="tableDownload"
-              :pagination="{ pageSize: tablePageSize, size: 'mini' }"
+              :pagination="{
+                pageSize: tablePageSize,
+                total: chapterList.total,
+                size: 'mini',
+              }"
+              :loading="tableLoading"
+              @page-change="tablePageChange"
+              @change="(data, extra) => tableChange(<types.ChapterList[]>data, extra)"
+              class="select-none"
               size="mini"
-              :scroll="{ x: 1500 }"
+              :scroll="{ x: 1200 }"
               @row-click="(c)=>clickRowTable(<types.ChapterList>c)"
             >
               <template #columns>
@@ -119,30 +130,29 @@
                   data-index="chapter"
                 />
                 <a-table-column :width="50" title="Vol" data-index="volume" />
-                <a-table-column
-                  :width="400"
-                  title="Judul Chapter"
-                  data-index="title"
-                />
+                <a-table-column title="Judul Chapter" data-index="title" />
 
                 <a-table-column title="Group" data-index="group_name" />
-                <a-table-column
-                  fixed="right"
-                  :width="120"
-                  align="center"
-                  title="Bahasa"
-                  data-index="language"
-                />
-                <a-table-column
-                  fixed="right"
-                  :width="135"
-                  align="center"
-                  title="Release"
-                >
+
+                <a-table-column :width="135" align="center" title="Release">
                   <template #cell="{ record }: { record: types.ChapterList }">
                     {{
                       DateApp.NewDate(record.timestamp * 1000).formatTimeAgo()
                     }}
+                  </template>
+                </a-table-column>
+                <a-table-column
+                  fixed="right"
+                  :width="80"
+                  align="center"
+                  title="Bahasa"
+                  data-index="language"
+                >
+                  <template #cell="{ record }: { record: types.ChapterList }">
+                    <i-twemoji-flag-for-flag-indonesia
+                      v-if="record.language == 'Indonesia'"
+                    />
+                    <i-twemoji-flag-for-flag-united-kingdom v-else />
                   </template>
                 </a-table-column>
                 <a-table-column
@@ -198,7 +208,7 @@
               </template>
               <template #empty>
                 <div
-                  class="arco-empty flex justify-center items-center md:min-h-180px lg:min-h-450px"
+                  class="arco-empty flex justify-center items-center md:min-h-150px lg:min-h-420px"
                 >
                   <div>
                     <div class="arco-empty-image">
@@ -245,18 +255,23 @@ import {
   DateApp,
   GetBreakPoints,
   UseParseDom,
+  Sequence,
 } from '@/composable/helper'
 import { GetServer } from '@wails/go/manga/Manga'
 import { WebBrowser } from '@wails/go/tool/Web'
-import { GetChapter } from '@wails/go/download/Download'
-import { Message } from '@arco-design/web-vue'
+import {
+  GetChapter,
+  GetChapterMdexPagination,
+} from '@wails/go/download/Download'
+import { Message, TableChangeExtra } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
-import type { manga, tool, types } from '@wails/go/models'
+import { manga, tool, types } from '@wails/go/models'
 
 const cover = ref('/file/Bar Flowers/cover.webp')
 const chapterList = ref<types.Chapter | null>(null)
 const tableDownload = reactive<types.ChapterList[]>([])
 const tablePageSize = ref(5)
+const tableLoading = ref(false)
 const { lg } = GetBreakPoints()
 const tabsActive = ref(1)
 const mdexPageServer = ref(1)
@@ -297,6 +312,39 @@ const openBrowser = (uri: string) => {
   fetchBrowserData()
 }
 ///TESTING
+
+const tablePageChange = (p: number) => {
+  console.log(p)
+}
+
+const tableChange = (chap: types.ChapterList[], extra: TableChangeExtra) => {
+  //basic limit = 30 ==> Offset calculation, offset = page * limit - limit
+  const limit = 30
+  const pageSize = extra.pageSize ? extra.pageSize : limit
+  const page = extra.page ? extra.page : 1
+
+  if (chap.length == 0) {
+    tableLoading.value = true
+    const seq = limit / pageSize
+    const pSeq = Sequence(seq, page)
+    const offset = pSeq * limit - limit
+    // const startIndex = pSeq * limit
+    // console.log(pSeq, offset, startIndex)
+    GetChapterMdexPagination(urldata.value, limit, offset)
+      .then(res => {
+        console.log(res)
+        if (res) {
+          tableDownload.splice(offset, 0, ...res)
+        }
+        tableLoading.value = false
+      })
+      .catch(e => {
+        console.log(e)
+        tableLoading.value = false
+      })
+    // console.log(extra)
+  }
+}
 
 //get server
 const servers = ref<manga.Server[] | null>(null)
