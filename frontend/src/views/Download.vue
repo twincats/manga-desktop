@@ -71,7 +71,7 @@
                 <img
                   v-if="chapterList"
                   class="w-full"
-                  :src="cover"
+                  :src="chapterList.cover_url"
                   alt="cover"
                 />
                 <div></div>
@@ -176,8 +176,8 @@
                   title="Check"
                   align="center"
                 >
-                  <template #cell>
-                    <span v-if="true" class="text-green-600"
+                  <template #cell="{ record }: { record: types.ChapterList }">
+                    <span v-if="record.check" class="text-green-600"
                       ><icon-check
                     /></span>
                     <span v-else class="text-red-600"><icon-minus /></span>

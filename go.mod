@@ -7,7 +7,7 @@ require (
 	github.com/climech/naturalsort v0.1.0
 	github.com/google/uuid v1.2.0
 	github.com/valyala/fasthttp v1.43.0
-	github.com/wailsapp/wails/v2 v2.2.0
+	github.com/wailsapp/wails/v2 v2.3.1
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/driver/sqlite v1.4.3
 	gorm.io/gorm v1.24.1

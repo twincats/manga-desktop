@@ -1,5 +1,5 @@
 <template>
-  <div class="menu-demo">
+  <div class="menu-sidebar">
     <a-menu
       :style="{ width: '200px', height: '100%' }"
       :default-open-keys="['0']"
@@ -8,10 +8,12 @@
     >
       <a-sub-menu key="0">
         <template #icon><icon-apps></icon-apps></template>
-        <template #title>Navigation 1</template>
-        <a-menu-item key="0_0">Home</a-menu-item>
+        <template #title>Manga</template>
+        <a-menu-item key="0_0" @click="$router.push('/')">Home</a-menu-item>
         <a-menu-item key="0_1">Chapter</a-menu-item>
-        <a-menu-item key="0_2">Download</a-menu-item>
+        <a-menu-item key="0_2" @click="$router.push('/download')"
+          >Download</a-menu-item
+        >
       </a-sub-menu>
       <a-sub-menu key="1">
         <template #icon><icon-bug></icon-bug></template>
@@ -30,10 +32,12 @@
           <a-menu-item key="2_2_1">Menu 2</a-menu-item>
         </a-sub-menu>
       </a-sub-menu>
-      <a-menu-item key="3">
+      <a-sub-menu key="3">
         <template #icon><icon-settings /></template>
-        Menu 1</a-menu-item
-      >
+        <template #title>Setting</template>
+        <a-menu-item key="3_1">Theme</a-menu-item>
+        <a-menu-item key="3_1">Download</a-menu-item>
+      </a-sub-menu>
     </a-menu>
   </div>
 </template>
@@ -56,13 +60,22 @@ withDefaults(defineProps<Props>(), {
 })
 </script>
 
-<style scoped>
-.menu-demo {
+<style>
+.menu-sidebar {
   /* box-sizing: border-box; */
   float: left;
   height: calc(100vh - 28px);
   padding: 0;
   margin: 0;
   background-color: var(--color-neutral-2);
+}
+.arco-menu-item {
+  line-height: 30px !important;
+}
+
+.arco-trigger-menu-item {
+  height: 26px;
+  line-height: 26px;
+  font-size: 12px;
 }
 </style>
