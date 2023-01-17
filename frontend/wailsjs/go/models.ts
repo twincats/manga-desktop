@@ -368,6 +368,7 @@ export namespace types {
 	    server_name: string;
 	    offset?: number;
 	    limit?: number;
+	    datasaver?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Option(source);
@@ -379,13 +380,13 @@ export namespace types {
 	        this.server_name = source["server_name"];
 	        this.offset = source["offset"];
 	        this.limit = source["limit"];
+	        this.datasaver = source["datasaver"];
 	    }
 	}
 	export class Page {
 	    id_chap: number;
 	    title: string;
 	    pages: string[];
-	    pagesSaver?: string[];
 	    status: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -397,7 +398,6 @@ export namespace types {
 	        this.id_chap = source["id_chap"];
 	        this.title = source["title"];
 	        this.pages = source["pages"];
-	        this.pagesSaver = source["pagesSaver"];
 	        this.status = source["status"];
 	    }
 	}

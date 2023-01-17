@@ -40,6 +40,7 @@ type Option struct {
 	ServerName string `json:"server_name"`
 	Offset     *int   `json:"offset"`
 	Limit      *int   `json:"limit"`
+	DataSaver  *bool  `json:"datasaver"`
 }
 
 // NewDownload return Downloads interface from manga struct with nil as not found
@@ -82,11 +83,10 @@ type ChapterList struct {
 
 // Page is main output for GetPage methods
 type Page struct {
-	IDChap     int       `json:"id_chap"`
-	Title      string    `json:"title"`
-	Pages      []string  `json:"pages"`
-	PagesSaver *[]string `json:"pagesSaver"`
-	Status     bool      `json:"status"`
+	IDChap int      `json:"id_chap"`
+	Title  string   `json:"title"`
+	Pages  []string `json:"pages"`
+	Status bool     `json:"status"`
 }
 
 // ParallelFetchResult is output for ParallelFetch

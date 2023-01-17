@@ -2,8 +2,12 @@ package download
 
 import (
 	"errors"
+	"mangav4/system/app"
 	"mangav4/system/download/types"
 	"reflect"
+	"time"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Download struct {
@@ -35,7 +39,17 @@ func (f *Download) GetChapter(o types.Option) (*types.Chapter, error) {
 
 func (f *Download) GetPage(o types.Option) (*types.Page, error) {
 	if d := f.getDownloads(o.ServerName); d != nil {
-		return d.GetPage(o)
+		//simulation download
+		pages_data, err := d.GetPage(o)
+		if err != nil {
+			return nil, err
+		}
+		//
+		for _, p := range pages_data.Pages {
+			time.Sleep(time.Second)
+			runtime.EventsEmit(*app.WailsContext, "dlProgress", p)
+		}
+		return pages_data, err
 	}
 	return nil, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }

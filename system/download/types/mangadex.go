@@ -60,8 +60,26 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 }
 
 func (d Mangadex) GetPage(o Option) (*Page, error) {
+	mdex_page_url := fmt.Sprintf("https://api.mangadex.org/at-home/server/%s", o.URL)
+	pageByte, err := app.Client.Get(mdex_page_url).Bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	var mdex_page MdexPages
+	err = internet.BodyParser(pageByte, &mdex_page)
+	if err != nil {
+		return nil, err
+	}
+
 	var c Page
 	c.Title = "Mangadex"
+	if *o.DataSaver {
+		c.Pages = mdex_page.Chapter.DataSaver
+	} else {
+		c.Pages = mdex_page.Chapter.Data
+	}
+
 	return &c, nil
 }
 
@@ -236,4 +254,13 @@ type MdexChapter struct {
 	Limit  int
 	Offset int
 	Total  int
+}
+
+type MdexPages struct {
+	BaseUrl string
+	Chapter struct {
+		Hash      string
+		Data      []string
+		DataSaver []string
+	}
 }

@@ -81,7 +81,17 @@
                   Server : {{ chapterList.server_name }} <br />
                   Total Chapter : {{ chapterList.chapter.length }} <br />
                   Download : <br />
-                  Selected : {{ chapterList.total }} <br />
+                  Selected :
+                  <span v-if="selected_chapter_url.length > 0">Chapter </span>
+                  <span v-for="(item, i) in selected_chapter_url" :key="i">
+                    {{ item.chapter }}
+                    <i-twemoji-flag-for-flag-indonesia
+                      v-if="item.language == 'Indonesia'"
+                    />
+                    <i-twemoji-flag-for-flag-united-kingdom v-else />
+                    <span v-if="i + 1 < selected_chapter_url.length">, </span>
+                  </span>
+                  <br />
                 </div>
                 <div class="p-2 pl-0" v-if="selectedServer == 1">
                   <a-form-item
@@ -90,8 +100,8 @@
                     label="Mangadex Server"
                   >
                     <a-radio-group v-model="mdexPageServer" size="small">
-                      <a-radio :value="1">Original</a-radio>
-                      <a-radio :value="2">Data Saver</a-radio>
+                      <a-radio :value="false">Original</a-radio>
+                      <a-radio :value="true">Data Saver</a-radio>
                     </a-radio-group>
                   </a-form-item>
                 </div>
@@ -177,7 +187,9 @@
                   align="center"
                 >
                   <template #cell="{ record }: { record: types.ChapterList }">
-                    <span v-if="record.check" class="text-green-600"
+                    <span
+                      v-if="selected_chapter_url.indexOf(record) != -1"
+                      class="text-green-600"
                       ><icon-check
                     /></span>
                     <span v-else class="text-red-600"><icon-minus /></span>
@@ -193,8 +205,8 @@
                   <template #cell="{ record }: { record: types.ChapterList }">
                     <a-button
                       size="mini"
-                      @click="testDownload"
-                      :disabled="activateMultiDownload"
+                      @click.stop="testDownload(record)"
+                      :disabled="selected_chapter_url.length > 1"
                       >Download</a-button
                     >
                   </template>
@@ -202,7 +214,7 @@
               </template>
               <template #th="{ column }">
                 <custom-download-th
-                  :active="activateMultiDownload"
+                  :active="selected_chapter_url.length > 1"
                   :column="column"
                 />
               </template>
@@ -259,22 +271,26 @@ import {
 } from '@/composable/helper'
 import { GetServer } from '@wails/go/manga/Manga'
 import { WebBrowser } from '@wails/go/tool/Web'
+import { EventsOn } from '@wails/runtime/runtime'
+
 import {
   GetChapter,
   GetChapterMdexPagination,
+  GetPage,
 } from '@wails/go/download/Download'
 import { Message, TableChangeExtra } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
 import { manga, tool, types } from '@wails/go/models'
 
-const cover = ref('/file/Bar Flowers/cover.webp')
+// const cover = ref('/file/Bar Flowers/cover.webp')
 const chapterList = ref<types.Chapter | null>(null)
 const tableDownload = reactive<types.ChapterList[]>([])
 const tablePageSize = ref(5)
 const tableLoading = ref(false)
 const { lg } = GetBreakPoints()
 const tabsActive = ref(1)
-const mdexPageServer = ref(1)
+const mdexPageServer = ref(false)
+const selected_chapter_url = ref<types.ChapterList[]>([])
 
 if (lg.value) {
   tablePageSize.value = 5
@@ -296,13 +312,39 @@ const getSelectedServer = (id: number): manga.Server | undefined => {
 }
 
 ///TESTING FOR TEMPORARY FILL DATA DOWNLOAD
-
-const activateMultiDownload = ref(false)
-const testDownload = () => {
-  activateMultiDownload.value = !activateMultiDownload.value
+const testDownload = (c: types.ChapterList | null = null) => {
+  if (c == null) {
+    console.log('Download multiple')
+  } else {
+    console.log('download single')
+    const server = getSelectedServer(selectedServer.value)
+    if (server && urldata.value != '') {
+      GetPage({
+        url: c.id,
+        server_name: server.name,
+        datasaver: mdexPageServer.value,
+      })
+        .then(res => {
+          console.log(res)
+        })
+        .catch(e => {
+          console.log(e)
+        })
+      EventsOn('dlProgress', p => console.log(p))
+    }
+  }
 }
 const clickRowTable = (c: types.ChapterList) => {
-  activateMultiDownload.value = !activateMultiDownload.value
+  const i = selected_chapter_url.value.findIndex(i => i.chapter == c.chapter)
+  if (i != -1) {
+    selected_chapter_url.value.splice(i, 1)
+  } else {
+    selected_chapter_url.value.push(c)
+  }
+  selected_chapter_url.value.sort(
+    (a, b) => Number(a.chapter) - Number(b.chapter)
+  )
+  // activateMultiDownload.value = !activateMultiDownload.value
 }
 
 const openBrowser = (uri: string) => {
