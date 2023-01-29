@@ -34,9 +34,11 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "mangav4",
-		Width:  1024,
-		Height: 768,
+		Title:     "mangav4",
+		Width:     1024,
+		Height:    768,
+		MinWidth:  1024,
+		MinHeight: 768,
 		AssetServer: &assetserver.Options{
 			Assets:  assets,
 			Handler: file.NewFileLoader(),

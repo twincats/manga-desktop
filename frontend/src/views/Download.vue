@@ -46,7 +46,6 @@
                     v-for="(item, i) in servers"
                     :key="i"
                     :value="item.id"
-                    @dblclick="openBrowser(item.url)"
                   >
                     {{ item.name }}</a-radio
                   >
@@ -238,22 +237,7 @@
         </div>
       </a-tab-pane>
       <a-tab-pane :key="2" title="Web">
-        <div class="h-[calc(100vh-7.5rem)] px-2">
-          <a-input-search
-            allow-clear
-            class="w-full mb-2"
-            placeholder="URL"
-            v-model="url"
-            search-button
-            @search="fetchBrowserData"
-          />
-          <div
-            ref="web"
-            class="h-[calc(100vh-11.2rem)] overflow-auto p-2"
-            style="background-color: var(--color-bg-2)"
-            v-html="browserData?.body"
-          ></div>
-        </div>
+        <download-web />
       </a-tab-pane>
     </a-tabs>
   </div>
@@ -261,18 +245,8 @@
 
 <script setup lang="ts">
 import { IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
-import {
-  useClipboardData,
-  IsURL,
-  DateApp,
-  GetBreakPoints,
-  UseParseDom,
-  Sequence,
-} from '@/composable/helper'
-import { GetServer } from '@wails/go/manga/Manga'
-import { WebBrowser } from '@wails/go/tool/Web'
+import { useClipboardData, IsURL, DateApp, Sequence } from '@/composable/helper'
 import { EventsOn } from '@wails/runtime/runtime'
-
 import {
   GetChapter,
   GetChapterMdexPagination,
@@ -280,38 +254,55 @@ import {
 } from '@wails/go/download/Download'
 import { Message, TableChangeExtra } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
-import { manga, tool, types } from '@wails/go/models'
+import { manga, types } from '@wails/go/models'
+import { UseTable, UseServer } from '@/composable/downloads/download'
 
-// const cover = ref('/file/Bar Flowers/cover.webp')
-const chapterList = ref<types.Chapter | null>(null)
-const tableDownload = reactive<types.ChapterList[]>([])
-const tablePageSize = ref(5)
-const tableLoading = ref(false)
-const { lg } = GetBreakPoints()
+//// STARTING CODE BOOTUP ////
+const { tableDownload, tableLoading, tablePageSize } = UseTable()
+const { servers, getSelectedServer } = UseServer()
+
+// GLOBAL VALUE
 const tabsActive = ref(1)
-const mdexPageServer = ref(false)
-const selected_chapter_url = ref<types.ChapterList[]>([])
+const urldata = ref('') // url chapter modelValue
+const selectedServer = ref(1) // selectedServer modelValue
 
-if (lg.value) {
-  tablePageSize.value = 5
-} else {
-  tablePageSize.value = 15
-}
-
-watch(lg, nlg => {
-  if (nlg) {
-    tablePageSize.value = 5
-  } else {
-    tablePageSize.value = 15
+// GET CHAPTER DATA
+const { GetPasteData } = useClipboardData()
+const chapterList = ref<types.Chapter | null>(null) // result of get chapter data
+const goGetchDownload = async () => {
+  // auto fetch paste URL(only)
+  const paste = await GetPasteData()
+  const pasteURL = IsURL(paste)
+  if (pasteURL != null) {
+    urldata.value = pasteURL.href
+    //here testing download chapter
   }
-})
 
-//INTERNAL Function
-const getSelectedServer = (id: number): manga.Server | undefined => {
-  return servers.value?.find(item => item.id == id)
+  //testing download chapter
+  const server = getSelectedServer(selectedServer.value)
+  if (server && urldata.value != '') {
+    GetChapter({
+      url: urldata.value,
+      server_name: server.name,
+    })
+      .then(res => {
+        //warning torefs expect reactive
+        chapterList.value = res
+        res.chapter.forEach(item => {
+          tableDownload.push(item)
+        })
+        // console.log(res)
+      })
+      .catch(e => {
+        console.log(e)
+        Message.error(e)
+      })
+  }
 }
 
 ///TESTING FOR TEMPORARY FILL DATA DOWNLOAD
+// DOWNLOAD SINGLE OR MULTIPLE CHAPTER
+const mdexPageServer = ref(false) // modelValue mdex datasaver server
 const testDownload = (c: types.ChapterList | null = null) => {
   if (c == null) {
     console.log('Download multiple')
@@ -334,6 +325,9 @@ const testDownload = (c: types.ChapterList | null = null) => {
     }
   }
 }
+
+// SET SELECTED CHAPTER TO DOWNLOAD
+const selected_chapter_url = ref<types.ChapterList[]>([]) // data for list selected chapter to download
 const clickRowTable = (c: types.ChapterList) => {
   const i = selected_chapter_url.value.findIndex(i => i.chapter == c.chapter)
   if (i != -1) {
@@ -344,17 +338,9 @@ const clickRowTable = (c: types.ChapterList) => {
   selected_chapter_url.value.sort(
     (a, b) => Number(a.chapter) - Number(b.chapter)
   )
-  // activateMultiDownload.value = !activateMultiDownload.value
 }
 
-const openBrowser = (uri: string) => {
-  console.log(url)
-  tabsActive.value = 2
-  url.value = 'https://' + uri
-  fetchBrowserData()
-}
 ///TESTING
-
 const tablePageChange = (p: number) => {
   console.log(p)
 }
@@ -388,46 +374,6 @@ const tableChange = (chap: types.ChapterList[], extra: TableChangeExtra) => {
   }
 }
 
-//get server
-const servers = ref<manga.Server[] | null>(null)
-GetServer().then(res => {
-  servers.value = res.filter(item => item.status_active === true)
-})
-
-const urldata = ref('')
-const selectedServer = ref(1)
-const { GetPasteData } = useClipboardData()
-const goGetchDownload = async () => {
-  // auto fetch paste URL(only)
-  const paste = await GetPasteData()
-  const pasteURL = IsURL(paste)
-  if (pasteURL != null) {
-    urldata.value = pasteURL.href
-    //here testing download chapter
-  }
-
-  //testing download chapter
-  const server = getSelectedServer(selectedServer.value)
-  if (server && urldata.value != '') {
-    GetChapter({
-      url: urldata.value,
-      server_name: server.name,
-    })
-      .then(res => {
-        //warning torefs expect reactive
-        chapterList.value = res
-        res.chapter.forEach(item => {
-          tableDownload.push(item)
-        })
-        // console.log(res)
-      })
-      .catch(e => {
-        console.log(e)
-        Message.error(e)
-      })
-  }
-}
-
 //clearDownload
 const clearDownload = () => {
   urldata.value = ''
@@ -436,7 +382,7 @@ const clearDownload = () => {
   tableDownload.length = 0
 }
 
-//watch URL => auto select servers
+//watch URL DATA => auto select servers
 watchDebounced(
   [urldata, selectedServer],
   ([newURL]) => {
@@ -450,31 +396,6 @@ watchDebounced(
   },
   { debounce: 50 }
 )
-
-//TAB 2
-const web = ref<HTMLElement | null>(null)
-const url = ref('')
-const browserData = ref<tool.Web | null>(null)
-const fetchBrowserData = () => {
-  if (url.value) {
-    WebBrowser(url.value).then(res => {
-      const htmlDoc = UseParseDom(res.body)
-      const v = htmlDoc.getElementsByTagName('h1')
-      console.log(v.item(0)?.innerText)
-    })
-  }
-}
-useEventListener(web, 'click', e => {
-  e.preventDefault()
-  if (e.target instanceof HTMLAnchorElement) {
-    console.log(e.target.href)
-  } else {
-    const path1 = e.composedPath()[1]
-    if (path1 instanceof HTMLAnchorElement) {
-      console.log(path1.href)
-    }
-  }
-})
 </script>
 
 <style lang="less">
