@@ -42,9 +42,9 @@ export namespace manga {
 	    status_read: boolean;
 	    language_id: number;
 	    language: Language;
-	    // Go type: sqltime.Time
+	    // Go type: sqltime
 	    created_at: any;
-	    // Go type: sqltime.Time
+	    // Go type: sqltime
 	    updated_at: any;
 	
 	    static createFrom(source: any = {}) {
@@ -154,7 +154,7 @@ export namespace manga {
 	    mdex?: number;
 	    chapter_id: number;
 	    chapter: string;
-	    // Go type: sqltime.Time
+	    // Go type: sqltime
 	    download_time: any;
 	
 	    static createFrom(source: any = {}) {

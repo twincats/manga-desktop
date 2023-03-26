@@ -288,7 +288,7 @@ const goGetchDownload = async () => {
       .then(res => {
         //warning torefs expect reactive
         chapterList.value = res
-        res.chapter.forEach(item => {
+        res.chapter.forEach((item: types.ChapterList) => {
           tableDownload.push(item)
         })
         // console.log(res)
