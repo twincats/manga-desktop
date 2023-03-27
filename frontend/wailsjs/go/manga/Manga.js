@@ -25,3 +25,11 @@ export function GetPage(arg1) {
 export function GetServer() {
   return window['go']['manga']['Manga']['GetServer']();
 }
+
+export function InsertManga(arg1) {
+  return window['go']['manga']['Manga']['InsertManga'](arg1);
+}
+
+export function TestHomeApiQuery() {
+  return window['go']['manga']['Manga']['TestHomeApiQuery']();
+}

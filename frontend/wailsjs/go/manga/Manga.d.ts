@@ -13,3 +13,7 @@ export function GetMangas():Promise<Array<manga.Manga>>;
 export function GetPage(arg1:number):Promise<manga.Page>;
 
 export function GetServer():Promise<Array<manga.Server>>;
+
+export function InsertManga(arg1:manga.Manga):Promise<number>;
+
+export function TestHomeApiQuery():Promise<any>;

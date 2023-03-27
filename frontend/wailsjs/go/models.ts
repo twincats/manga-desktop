@@ -34,7 +34,7 @@ export namespace manga {
 	}
 	export class Chapter {
 	    id: number;
-	    chapter: string;
+	    chapter: number;
 	    title: string;
 	    volume: string;
 	    group: string;
@@ -84,12 +84,26 @@ export namespace manga {
 		    return a;
 		}
 	}
+	export class Config {
+	    id: number;
+	    manga_folder: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Config(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.manga_folder = source["manga_folder"];
+	    }
+	}
 	
 	export class Manga {
 	    id: number;
 	    title: string;
 	    status_end: boolean;
-	    mdex?: number;
+	    mdex: string;
 	    chapter: Chapter[];
 	    alter: Alter[];
 	
@@ -151,10 +165,10 @@ export namespace manga {
 	    id: number;
 	    title: string;
 	    status_end: boolean;
-	    mdex?: number;
+	    mdex: string;
 	    chapter_id: number;
-	    chapter: string;
-	    // Go type: sqltime
+	    chapter: number;
+	    // Go type: time
 	    download_time: any;
 	
 	    static createFrom(source: any = {}) {

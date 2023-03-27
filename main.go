@@ -4,7 +4,6 @@ import (
 	"embed"
 
 	"mangav4/system"
-	"mangav4/system/app"
 	"mangav4/system/file"
 
 	"github.com/wailsapp/wails/v2"
@@ -26,7 +25,7 @@ func main() {
 	mangaApp := NewApp()
 
 	// Connect to database
-	app.ConnectDatabasePostgres("mangav3")
+	system.DatabaseStartUp()
 
 	// Class bind instance
 	binding := system.InitializeBinding()

@@ -43,6 +43,7 @@ declare module '@vue/runtime-core' {
     IMdiEmoticonSadOutline: typeof import('~icons/mdi/emoticon-sad-outline')['default']
     ITwemojiFlagForFlagIndonesia: typeof import('~icons/twemoji/flag-for-flag-indonesia')['default']
     ITwemojiFlagForFlagUnitedKingdom: typeof import('~icons/twemoji/flag-for-flag-united-kingdom')['default']
+    MangaPath: typeof import('./src/components/manga/MangaPath.vue')['default']
     MenuBar: typeof import('./src/components/app/MenuBar.vue')['default']
     PageNav: typeof import('./src/components/manga/PageNav.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
