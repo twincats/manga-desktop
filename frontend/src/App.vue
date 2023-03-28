@@ -19,18 +19,13 @@
       </div>
       <footer-bar />
     </div>
-    <manga-path v-else />
+    <manga-path @update:status-config="(s:boolean)=> statusConfig = s" v-else />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { EmitListenOnce, useTheme } from '@/composable/helper'
 import { GetConfig } from '@wails/go/manga/Config'
-import { TestHomeApiQuery } from '@wails/go/manga/Manga'
-
-TestHomeApiQuery().then(res => {
-  console.log(res)
-})
 
 const statusConfig = ref(false)
 GetConfig().then(res => {

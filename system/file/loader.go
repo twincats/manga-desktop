@@ -8,22 +8,22 @@ import (
 )
 
 /*
-	FileLoader struct is custom asset handler for image manga
-	with base as "file/{manga_path}"
+FileLoader struct is custom asset handler for image manga
+with base as "file/{manga_path}"
 */
 type FileLoader struct {
 	http.Handler
 }
 
 /*
-	NewFileLoader create instance of FileLoader
+NewFileLoader create instance of FileLoader
 */
 func NewFileLoader() *FileLoader {
 	return &FileLoader{}
 }
 
 /*
-	ServeHTTP response to asset handle of manga
+ServeHTTP response to asset handle of manga
 */
 func (h *FileLoader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 

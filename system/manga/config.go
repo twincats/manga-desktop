@@ -1,6 +1,7 @@
 package manga
 
 import (
+	"fmt"
 	"mangav4/system/app"
 	"mangav4/system/file"
 	"path/filepath"
@@ -60,8 +61,10 @@ func (f *Config) AutoScanDirs() ([]string, error) {
 			chapter.LanguageId = 1
 			chapter.Group = "Unknown"
 			chapter.MangaId = mid
+			fmt.Println(chapter)
 			chapter.InsertChapter(chapter)
 		}
 	}
+	file.MANGA_PATH = cf.MangaFolder
 	return mangaList, nil
 }

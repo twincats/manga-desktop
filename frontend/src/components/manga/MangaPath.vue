@@ -26,6 +26,10 @@
 import { SetConfig, AutoScanDirs } from '@wails/go/manga/Config'
 import { manga } from '@wails/go/models'
 
+const emit = defineEmits<{
+  (e: 'update:statusConfig', status: boolean): void
+}>()
+
 const configForm = reactive({
   mangaPath: '',
 })
@@ -37,10 +41,15 @@ const saveConfig = () => {
   config.manga_folder = configForm.mangaPath
   statusLoading.value = true
   SetConfig(config).then(() => {
-    AutoScanDirs().then(res => {
-      statusLoading.value = false
-      console.log(res)
-    })
+    AutoScanDirs()
+      .then(res => {
+        statusLoading.value = false
+        console.log(res)
+        emit('update:statusConfig', true)
+      })
+      .catch(() => {
+        emit('update:statusConfig', false)
+      })
   })
 }
 </script>

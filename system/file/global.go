@@ -1,9 +1,11 @@
 package file
 
-import "os"
+import (
+	"os"
+)
 
 // global path for base manga_path
-var MANGA_PATH string = `D:\DATA\Manga`
+var MANGA_PATH string
 
 func ReadDir(path string) []string {
 	dirs, _ := os.ReadDir(path)

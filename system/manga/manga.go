@@ -53,7 +53,7 @@ func (m *Manga) GetPage(id int) Page {
 		Where("chapters.id = ?", id).
 		Take(&p)
 
-	urlPath := filepath.Join(fixMangaTitle(p.Title), p.Chapter)
+	urlPath := filepath.Join(fixMangaTitle(p.Title), fmt.Sprintf("%g", p.Chapter))
 	path := filepath.Join(MangaPath, urlPath)
 	files, err := GetFiles(path)
 	if err != nil {
@@ -86,7 +86,7 @@ func (f *Manga) GetServer() []Server {
 }
 
 func (f *Manga) InsertManga(m Manga) (uint, error) {
-	res := app.DB.Create(&m)
+	res := app.DB.FirstOrCreate(&m, m)
 	if res.Error != nil {
 		return 0, res.Error
 	}
@@ -104,7 +104,7 @@ func (f *Manga) TestHomeApiQuery() interface{} {
 // PageApi for Fetching chapter and Manga title
 type PageApi struct {
 	ID      uint
-	Chapter string
+	Chapter float32
 	Title   string
 	MangaId uint
 }

@@ -32,7 +32,7 @@ type Chapter struct {
 }
 
 func (f *Chapter) InsertChapter(c Chapter) (uint, error) {
-	res := app.DB.Create(&c)
+	res := app.DB.FirstOrCreate(&c, c)
 	if res.Error != nil {
 		return 0, res.Error
 	}

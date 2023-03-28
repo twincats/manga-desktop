@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mangav4/system/app"
 	"mangav4/system/download"
+	"mangav4/system/file"
 	"mangav4/system/manga"
 	"mangav4/system/tool"
 )
@@ -54,7 +55,13 @@ func DatabaseStartUp() {
 		}
 
 	} else {
-		fmt.Println("data is not empty")
+		var configs manga.Config
+		config, err := configs.GetConfig()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		file.MANGA_PATH = config.MangaFolder
 	}
 
 }
