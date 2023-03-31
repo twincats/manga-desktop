@@ -13,9 +13,19 @@
       </a-space>
     </div>
     <div id="overlay" v-if="statusLoading">
-      <div id="text">
+      <div id="text" class="text-center">
         <div style="--un-bg-opacity: 0.9" class="bg-dark-50 rounded p-3">
-          <a-spin tip="This may take a while..." />
+          <div class="w-50vw lg:w-30vw">
+            <span>Saving Chapters</span><br /><br />
+            <a-spin
+              style="--primary-6: var(--orange-4)"
+              tip="This may take a while..."
+            />
+            <br />
+            <div class="title">
+              {{ title }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -24,6 +34,8 @@
 
 <script setup lang="ts">
 import { SetConfig, AutoScanDirs } from '@wails/go/manga/Config'
+import { EventsOn } from '@wails/runtime/runtime'
+
 import { manga } from '@wails/go/models'
 
 const emit = defineEmits<{
@@ -35,6 +47,7 @@ const configForm = reactive({
 })
 
 const statusLoading = ref(false)
+const title = ref('')
 
 const saveConfig = () => {
   let config = new manga.Config()
@@ -50,6 +63,10 @@ const saveConfig = () => {
       .catch(() => {
         emit('update:statusConfig', false)
       })
+
+    EventsOn('status_scans', (mTitle: string) => {
+      title.value = mTitle
+    })
   })
 }
 </script>
@@ -71,9 +88,16 @@ const saveConfig = () => {
   position: absolute;
   top: 50%;
   left: 50%;
-  font-size: 50px;
   color: white;
   transform: translate(-50%, -50%);
   -ms-transform: translate(-50%, -50%);
+}
+
+.title {
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 </style>

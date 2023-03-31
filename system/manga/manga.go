@@ -148,8 +148,8 @@ func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
 		query = app.DB.Table("(?) as mh", query).
 			Select("mh.id", "mh.title", "mdex", "status_ending", "chapter_id", "chapter", "download_time").
 			Joins("left join manga_alternatives on manga_alternatives.manga_id = mh.id").
-			Where("mh.title ILIKE ?", ilike).
-			Or("manga_alternatives.title ILIKE ?", ilike).
+			Where("mh.title LIKE ?", ilike).
+			Or("manga_alternatives.title LIKE ?", ilike).
 			Group("mh.id, mh.title,mdex,status_ending,chapter_id,chapter,download_time").
 			Order("mh.title")
 

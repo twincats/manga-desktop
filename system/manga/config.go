@@ -6,6 +6,8 @@ import (
 	"mangav4/system/file"
 	"path/filepath"
 	"strconv"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Config struct {
@@ -53,17 +55,26 @@ func (f *Config) AutoScanDirs() ([]string, error) {
 		manga.Title = m
 		mid, _ := manga.InsertManga(manga)
 		mangaTitlePath := filepath.Join(cf.MangaFolder, m)
+
+		runtime.EventsEmit(*app.WailsContext, "status_scans", m)
+
 		chaps := file.ReadDir(mangaTitlePath)
-		var chapter Chapter
+		var chapters []Chapter
 		for _, cp := range chaps {
 			cfloat, _ := strconv.ParseFloat(cp, 32)
-			chapter.Chapter = float32(cfloat)
-			chapter.LanguageId = 1
-			chapter.Group = "Unknown"
-			chapter.MangaId = mid
-			fmt.Println(chapter)
-			chapter.InsertChapter(chapter)
+			chapters = append(chapters, Chapter{
+				Chapter:    float32(cfloat),
+				LanguageId: 1,
+				Group:      "Unknown",
+				MangaId:    mid,
+			})
 		}
+		//save chapter
+		res := app.DB.Create(&chapters)
+		if res.Error != nil {
+			fmt.Println(res.Error)
+		}
+		chapters = nil
 	}
 	file.MANGA_PATH = cf.MangaFolder
 	return mangaList, nil
