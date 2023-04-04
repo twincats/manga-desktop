@@ -196,8 +196,11 @@
 <script setup lang="ts">
 import { GetMangas } from '@wails/go/manga/Manga'
 import { SaveDialog } from '@wails/go/tool/Dialog'
-
+import { EventsOnce, EventsOn, EventsOff } from '@wails/runtime/runtime'
 import { MangaTitleURL, DateApp } from '@/composable/helper'
+import { DoConvert } from '@wails/go/file/Convert'
+import { file } from '@wails/go/models'
+import type { RunConvertEventData, StartConvertEventData } from '@/type/convert'
 
 /// COMPONENT INTERFACE
 interface TableManga {
@@ -309,15 +312,53 @@ const showMessage = async () => {
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
+// const clickTest = async () => {
+//   output.sizeBefore = 1500
+//   for (let i = 1; i <= 10; i++) {
+//     output.progress = (i * 10) / 100
+//     output.statusConvert += '<span>Hello world</span><br/>'
+//     await sleep(1000)
+//   }
+//   output.sizeAfter = 950
+//   output.percent = (1500 - 950) / 100
+// }
+
 const clickTest = async () => {
-  output.sizeBefore = 1500
-  for (let i = 1; i <= 10; i++) {
-    output.progress = (i * 10) / 100
-    output.statusConvert += '<span>Hello world</span><br/>'
-    await sleep(1000)
+  let totalConvert: number
+  let cv = new file.Convert()
+  cv.delete = data.delete
+  cv.resize = data.resizeStatus
+  cv.resize_width = data.resize
+  cv.quality = data.quality
+  cv.title = data.title
+  cv.ext = []
+  if (data.format.includes(1)) {
+    cv.ext.push('.jpg', '.jpeg', '.png')
   }
-  output.sizeAfter = 950
-  output.percent = (1500 - 950) / 100
+  if (data.format.includes(2)) {
+    cv.ext.push('.webp')
+  }
+  DoConvert(cv).then(res => {
+    //compelete
+    if (output.progress == 1) {
+      console.log('complete')
+    }
+    console.log(res)
+    output.sizeAfter = res.size_after
+    output.statusConvert += '<span>' + JSON.stringify(res) + '</span><br/>'
+  })
+
+  // listen start_convert
+  EventsOnce('start_convert', (sc: StartConvertEventData) => {
+    output.sizeBefore = sc.size_before
+    totalConvert = sc.total_convert
+  })
+
+  //listen every run_convert
+  EventsOn('run_convert', (rc: RunConvertEventData) => {
+    output.progress += 1 / totalConvert
+    output.statusConvert += '<span>' + JSON.stringify(rc) + '</span><br/>'
+  })
 }
 </script>
 

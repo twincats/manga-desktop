@@ -6,6 +6,8 @@ import (
 	"mangav4/system"
 	"mangav4/system/file"
 
+	vips "github.com/twincats/golibvips/libvips"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -26,6 +28,10 @@ func main() {
 
 	// Connect to database
 	system.DatabaseStartUp()
+
+	// Starting vips & shutdown after finish used
+	vips.Startup(nil)
+	defer vips.Shutdown()
 
 	// Class bind instance
 	binding := system.InitializeBinding()
