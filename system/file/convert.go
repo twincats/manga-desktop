@@ -1,6 +1,7 @@
 package file
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,14 +33,14 @@ type Convert struct {
 }
 
 type ConvertResult struct {
-	Manga       string `json:"manga"`
-	SizeBefore  int64  `json:"size_before"`
-	SizeAfter   int64  `json:"size_after"`
-	SizePercent int    `json:"size_percent"`
-	TotalOK     int    `json:"total_ok"`
-	TotalFailed int    `json:"total_failed"`
-	TotalResize int    `json:"total_resize"`
-	TotalDelete int    `json:"total_delete"`
+	Manga       string  `json:"manga"`
+	SizeBefore  int64   `json:"size_before"`
+	SizeAfter   int64   `json:"size_after"`
+	SizePercent float64 `json:"size_percent"`
+	TotalOK     int     `json:"total_ok"`
+	TotalFailed int     `json:"total_failed"`
+	TotalResize int     `json:"total_resize"`
+	TotalDelete int     `json:"total_delete"`
 }
 
 type StartConvertEventData struct {
@@ -61,6 +62,10 @@ func (f *Convert) DoConvert(c Convert) (ConvertResult, error) {
 	path := filepath.Join(MANGA_PATH, c.Title)
 	ListImages := helper.ListFiles(path, c.Ext)
 
+	if len(ListImages) < 1 {
+		return ConvertResult{}, errors.New("no image to Convert")
+	}
+
 	var res ConvertResult
 	res.Manga = c.Title
 	bfSize, _ := getSize.Parallel(path)
@@ -72,9 +77,10 @@ func (f *Convert) DoConvert(c Convert) (ConvertResult, error) {
 			TotalConvert: len(ListImages),
 		})
 
-	helper.ParallelCode(2, ListImages, func(v string) {
+	helper.ParallelCode(5, ListImages, func(v string) {
 
 		fList := strings.Split(v, "\\")
+		ext := filepath.Ext(v)
 		var rc RunConvertEventData
 		rc.FilePath = v
 
@@ -109,7 +115,7 @@ func (f *Convert) DoConvert(c Convert) (ConvertResult, error) {
 		}
 
 		// save exported byte to file
-		err = os.WriteFile(v[:len(v)-4]+".webp", webpByte, 0644)
+		err = os.WriteFile(v[:len(v)-len(ext)]+".webp", webpByte, 0644)
 		if err != nil {
 			rc.Error += "error save converted image. "
 			fmt.Println(err, rc.Filename)
@@ -117,17 +123,25 @@ func (f *Convert) DoConvert(c Convert) (ConvertResult, error) {
 
 		// delete original
 		if c.Delete {
-			err = os.Remove(v)
-			if err != nil {
-				rc.Error += "error delete image. "
-				fmt.Println(err, rc.Filename)
-			} else {
-				res.TotalDelete += 1
-				rc.Deleted = true
+			// only delete if not converted to webp
+			if ext != ".webp" {
+				err = os.Remove(v)
+				if err != nil {
+					rc.Error += "error delete image. "
+					fmt.Println(err, rc.Filename)
+				} else {
+					res.TotalDelete += 1
+					rc.Deleted = true
+				}
 			}
 		}
 
-		// status sukses
+		// calculate failed convert
+		if rc.Error != "" {
+			res.TotalFailed += 1
+		}
+
+		// calculate OK convert
 		fmt.Println("sukses : " + rc.Filename)
 		res.TotalOK += 1
 
@@ -140,6 +154,7 @@ func (f *Convert) DoConvert(c Convert) (ConvertResult, error) {
 
 	res.SizeBefore = bfSize
 	res.SizeAfter = afSize
+	res.SizePercent = (float64(afSize) - float64(bfSize)) / float64(bfSize) * 100
 
 	return res, nil
 }

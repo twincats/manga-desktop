@@ -157,20 +157,23 @@
       <div class="status">
         <div style="min-width: 128px">
           Size Before :
-          <strong class="text-red-500" v-if="output.sizeBefore > 0"
-            >{{ output.sizeBefore }} MB</strong
-          >
+          <strong class="text-red-500" v-if="output.sizeBefore > 0">{{
+            FormatSize(output.sizeBefore)
+          }}</strong>
         </div>
         <div style="min-width: 117px">
           Size After :
-          <strong class="text-blue-500" v-if="output.sizeAfter > 0"
-            >{{ output.sizeAfter }} MB</strong
-          >
+          <strong class="text-blue-500" v-if="output.sizeAfter > 0">{{
+            FormatSize(output.sizeAfter)
+          }}</strong>
         </div>
         <div style="min-width: 85px">
           Percent :
-          <strong class="text-green-500" v-if="output.percent > 0"
-            >{{ output.percent }}%</strong
+          <strong class="text-green-500" v-if="output.percent < 0"
+            >{{ Math.round(Math.abs(output.percent)) }}%</strong
+          >
+          <strong class="text-red-500" v-else-if="output.percent > 0"
+            >{{ Math.round(output.percent) }}%</strong
           >
         </div>
       </div>
@@ -184,7 +187,7 @@
           <a-button
             :disabled="data.title == ''"
             type="primary"
-            @click="clickTest"
+            @click="clickConvert"
             >Convert</a-button
           >
         </a-space>
@@ -195,9 +198,9 @@
 
 <script setup lang="ts">
 import { GetMangas } from '@wails/go/manga/Manga'
-import { SaveDialog } from '@wails/go/tool/Dialog'
+import { SaveDialog, MessageBoxError } from '@wails/go/tool/Dialog'
 import { EventsOnce, EventsOn, EventsOff } from '@wails/runtime/runtime'
-import { MangaTitleURL, DateApp } from '@/composable/helper'
+import { MangaTitleURL, FormatSize } from '@/composable/helper'
 import { DoConvert } from '@wails/go/file/Convert'
 import { file } from '@wails/go/models'
 import type { RunConvertEventData, StartConvertEventData } from '@/type/convert'
@@ -312,20 +315,10 @@ const showMessage = async () => {
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-// const clickTest = async () => {
-//   output.sizeBefore = 1500
-//   for (let i = 1; i <= 10; i++) {
-//     output.progress = (i * 10) / 100
-//     output.statusConvert += '<span>Hello world</span><br/>'
-//     await sleep(1000)
-//   }
-//   output.sizeAfter = 950
-//   output.percent = (1500 - 950) / 100
-// }
-
-const clickTest = async () => {
+const clickConvert = async () => {
   let totalConvert: number
-  let cv = new file.Convert()
+  const cv = new file.Convert()
+  // fiil parameter
   cv.delete = data.delete
   cv.resize = data.resizeStatus
   cv.resize_width = data.resize
@@ -338,15 +331,22 @@ const clickTest = async () => {
   if (data.format.includes(2)) {
     cv.ext.push('.webp')
   }
-  DoConvert(cv).then(res => {
-    //compelete
-    if (output.progress == 1) {
-      console.log('complete')
-    }
-    console.log(res)
-    output.sizeAfter = res.size_after
-    output.statusConvert += '<span>' + JSON.stringify(res) + '</span><br/>'
-  })
+
+  // doing convert
+  DoConvert(cv)
+    .then(res => {
+      //compelete
+      if (output.progress == 1) {
+        console.log('complete')
+      }
+      console.log(res)
+      output.sizeAfter = res.size_after
+      output.percent = res.size_percent
+      output.statusConvert += LogHTMLConvert(res)
+    })
+    .catch(e => {
+      MessageBoxError(e, 'Error Convert')
+    })
 
   // listen start_convert
   EventsOnce('start_convert', (sc: StartConvertEventData) => {
@@ -357,8 +357,35 @@ const clickTest = async () => {
   //listen every run_convert
   EventsOn('run_convert', (rc: RunConvertEventData) => {
     output.progress += 1 / totalConvert
-    output.statusConvert += '<span>' + JSON.stringify(rc) + '</span><br/>'
+    output.statusConvert += LogHTMLConvert(rc)
+    if (output.progress >= 1) {
+      EventsOff('run_convert')
+    }
   })
+}
+const LogHTMLConvert = (
+  val: RunConvertEventData | file.ConvertResult
+): string => {
+  const line = `<span>${'='.repeat(20)}</span><br/>`
+  if ('error' in val) {
+    const resize = val.resized
+      ? `<span class="text-blue-600"><b>Resized</b></span>`
+      : ``
+    const deleted = val.deleted
+      ? `<span class="text-red-600"><b>Deleted</b></span>`
+      : ``
+    const error = val.error != '' ? `<strong>ERROR</strong> : ${val.error}` : ``
+    return `<span>Chapter : ${val.chap} Page : <b>${val.filename}</b></span> ${resize} ${deleted} ${error}<br/>`
+  } else {
+    const report = `Manga\t\t: ${val.manga}\nTotalOK\t\t: ${
+      val.total_ok
+    }\nTotalFailed\t: ${val.total_failed}\nTotalResize\t: ${
+      val.total_resize
+    }\nTotalDelete\t: ${val.total_delete}\nSizeBefore\t: ${FormatSize(
+      val.size_before
+    )}\nSizeAfter\t: ${FormatSize(val.size_after)}`
+    return `${line}<span style="white-space:pre;">${report}</span>`
+  }
 }
 </script>
 

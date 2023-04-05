@@ -90,3 +90,9 @@ func ListFiles(dir string, exts []string) []string {
 	naturalsort.Sort(res)
 	return res
 }
+
+// incase needed round by precision
+// func RoundFloat(val float64, precision uint) float64 {
+// 	ratio := math.Pow(10, float64(precision))
+// 	return math.Round(val*ratio) / ratio
+// }

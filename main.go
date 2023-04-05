@@ -30,6 +30,7 @@ func main() {
 	system.DatabaseStartUp()
 
 	// Starting vips & shutdown after finish used
+	vips.DisableConsoleLogging()
 	vips.Startup(nil)
 	defer vips.Shutdown()
 
