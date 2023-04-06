@@ -77,7 +77,14 @@ func (f *Convert) DoConvert(c Convert) (ConvertResult, error) {
 			TotalConvert: len(ListImages),
 		})
 
-	helper.ParallelCode(5, ListImages, func(v string) {
+	// setting parallel with default 5 / if not set
+	parallel := c.Parallel
+	if c.Parallel == 0 {
+		parallel = 5
+	}
+
+	// runnung code in parrarel
+	helper.ParallelCode(parallel, ListImages, func(v string) {
 
 		fList := strings.Split(v, "\\")
 		ext := filepath.Ext(v)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mangav4/system/app"
+	"mangav4/system/file"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
@@ -54,7 +55,7 @@ func (m *Manga) GetPage(id int) Page {
 		Take(&p)
 
 	urlPath := filepath.Join(fixMangaTitle(p.Title), fmt.Sprintf("%g", p.Chapter))
-	path := filepath.Join(MangaPath, urlPath)
+	path := filepath.Join(file.MANGA_PATH, urlPath)
 	files, err := GetFiles(path)
 	if err != nil {
 		runtime.LogError(*app.WailsContext, err.Error())

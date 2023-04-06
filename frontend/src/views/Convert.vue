@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full select-none">
     <div>
       <div id="tool" class="text-left">
         <div class="w-150">
@@ -55,13 +55,42 @@
           </a-space>
         </div>
         <div style="flex: 0 0 160px; padding-right: 0">
-          <div>Convert Engine :</div>
-          <a-space direction="vertical" size="mini">
+          <div v-if="!data.parallelStatus">
+            <span
+              class="hover:(underline cursor-pointer)"
+              @click="data.parallelStatus = !data.parallelStatus"
+              >Convert Engine
+            </span>
+            :
+          </div>
+          <div v-else>
+            <span
+              class="hover:(underline cursor-pointer)"
+              @click="data.parallelStatus = !data.parallelStatus"
+              >Parallel Convert
+            </span>
+            <span> : </span>
+            <span>
+              <strong style="color: rgb(var(--primary-6))">{{
+                data.parallel
+              }}</strong></span
+            >
+          </div>
+          <a-space v-if="!data.parallelStatus" direction="vertical" size="mini">
             <a-radio-group v-model="data.covert">
               <a-radio :value="1">libwebp</a-radio>
               <a-radio :value="2">Ext</a-radio>
             </a-radio-group>
           </a-space>
+          <div v-else class="px-2">
+            <a-slider
+              :min="1"
+              :show-ticks="true"
+              :step="1"
+              :max="10"
+              v-model="data.parallel"
+            />
+          </div>
         </div>
         <div style="flex: 0 0 188px; padding-right: 0">
           <div>Format Image :</div>
@@ -76,6 +105,7 @@
     </div>
     <div class="h-20 mb-1" style="background-color: var(--color-bg-4)">
       <a-input
+        v-show="false"
         v-model="data.title"
         size="small"
         :input-attrs="{ class: 'text-center' }"
@@ -83,6 +113,12 @@
         class="mt-1"
         readonly
       />
+      <div class="manga-title">
+        <span v-if="data.title != ''">{{ data.title }}</span>
+        <span class="select-none" style="color: var(--color-text-3)" v-else
+          >Please Select Manga Title to Convert</span
+        >
+      </div>
       <a-input
         ref="hiddenSearch"
         v-model="output.hiddenSearch"
@@ -182,7 +218,7 @@
       <div class="bmenu">
         <a-space>
           <a-button @click="reset">Reset</a-button>
-          <a-button>Cover Fix</a-button>
+          <a-button @click="copyLog">Copy Log</a-button>
           <a-button @click="showMessage">Save Log</a-button>
           <a-button
             :disabled="data.title == ''"
@@ -200,7 +236,11 @@
 import { GetMangas } from '@wails/go/manga/Manga'
 import { SaveDialog, MessageBoxError } from '@wails/go/tool/Dialog'
 import { EventsOnce, EventsOn, EventsOff } from '@wails/runtime/runtime'
-import { MangaTitleURL, FormatSize } from '@/composable/helper'
+import {
+  MangaTitleURL,
+  FormatSize,
+  useClipboardData,
+} from '@/composable/helper'
 import { DoConvert } from '@wails/go/file/Convert'
 import { file } from '@wails/go/models'
 import type { RunConvertEventData, StartConvertEventData } from '@/type/convert'
@@ -223,6 +263,8 @@ const initialData = {
   resizeStatus: true,
   delete: true,
   covert: 1,
+  parallel: 5,
+  parallelStatus: true,
   format: [1],
 }
 
@@ -324,6 +366,7 @@ const clickConvert = async () => {
   cv.resize_width = data.resize
   cv.quality = data.quality
   cv.title = data.title
+  cv.parallel = cv.parallel
   cv.ext = []
   if (data.format.includes(1)) {
     cv.ext.push('.jpg', '.jpeg', '.png')
@@ -387,6 +430,14 @@ const LogHTMLConvert = (
     return `${line}<span style="white-space:pre;">${report}</span>`
   }
 }
+
+const { SetPasteData } = useClipboardData()
+const copyLog = () => {
+  const b = document.getElementById('status_convert')
+  if (b !== null) {
+    SetPasteData(b.innerText)
+  }
+}
 </script>
 
 <style lang="less" scoped>
@@ -434,6 +485,24 @@ const LogHTMLConvert = (
 button,
 .arco-checkbox {
   font-size: 0.75rem !important;
+}
+
+.manga-title {
+  min-height: 24px;
+  padding: 0 0.5rem;
+  color: rgb(var(--primary-6));
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  user-select: none;
+  span {
+    font-size: 14pxem;
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
 }
 </style>
 

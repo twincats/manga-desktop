@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import Router from './router/router'
 
-import 'uno.css'
+import 'virtual:uno.css'
 import './assets/style/app.less'
 
 //create app
