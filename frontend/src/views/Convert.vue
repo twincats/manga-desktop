@@ -141,7 +141,7 @@
         :pagination="false"
         :columns="columnManga"
         :data="tableMangaFilter"
-        @row-click="(c)=>selectManga(<TableManga>c)"
+        @row-click="(c:TableManga)=>selectManga(c)"
       >
         <template v-slot:tr="{ rowIndex }">
           <tr class="my-tr" :id="'manga-' + rowIndex" />
@@ -277,7 +277,7 @@ const initialOutput = {
   statusConvert: '',
 }
 
-const { mid = null } = defineProps<ConvertProps>()
+const { mid } = withDefaults(defineProps<ConvertProps>(), { mid: null })
 const data = reactive({ ...initialData })
 const output = reactive({ ...initialOutput })
 const hiddenSearch = ref<HTMLInputElement | null>(null)

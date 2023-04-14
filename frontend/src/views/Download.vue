@@ -124,11 +124,11 @@
               }"
               :loading="tableLoading"
               @page-change="tablePageChange"
-              @change="(data, extra) => tableChange(<types.ChapterList[]>data, extra)"
+              @change="(data:types.ChapterList[], extra:TableChangeExtra) => tableChange(data, extra)"
               class="select-none"
               size="mini"
               :scroll="{ x: 1200 }"
-              @row-click="(c)=>clickRowTable(<types.ChapterList>c)"
+              @row-click="(c:types.ChapterList)=>clickRowTable(c)"
             >
               <template #columns>
                 <a-table-column
