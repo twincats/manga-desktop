@@ -6,6 +6,8 @@ require (
 	github.com/SamuelTissot/sqltime v0.1.0
 	github.com/climech/naturalsort v0.1.0
 	github.com/google/uuid v1.2.0
+	github.com/markthree/go-get-folder-size v0.2.14
+	github.com/twincats/golibvips v0.1.1
 	github.com/valyala/fasthttp v1.43.0
 	github.com/wailsapp/wails/v2 v2.4.1
 	gorm.io/driver/postgres v1.4.5
@@ -38,6 +40,7 @@ require (
 	github.com/mattn/go-colorable v0.1.11 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-sqlite3 v1.14.15 // indirect
+	github.com/panjf2000/ants/v2 v2.7.1 // indirect
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/samber/lo v1.27.1 // indirect
@@ -47,9 +50,10 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/image v0.6.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.2.0 => D:\Aplikasi\GoPath\pkg\mod

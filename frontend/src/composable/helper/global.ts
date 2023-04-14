@@ -159,3 +159,14 @@ export const UseParseDom = (data: string): Document => {
   const val = parser.parseFromString(data, 'text/html')
   return val
 }
+
+export const FormatSize = (size: number, pow = 2) => {
+  const suff = ['B', 'KB', 'MB', 'GB', 'TB']
+  let base = Math.log(size) / Math.log(1024)
+  let floorbase = Math.floor(base)
+
+  let result =
+    Math.round((1024 ** (base - floorbase) + Number.EPSILON) * 10 ** pow) /
+    10 ** pow
+  return result + ' ' + suff[floorbase]
+}

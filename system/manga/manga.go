@@ -1,13 +1,13 @@
 package manga
 
 import (
-	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"mangav4/system/app"
+	"mangav4/system/file"
 
-	"github.com/SamuelTissot/sqltime"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
 )
@@ -54,8 +54,8 @@ func (m *Manga) GetPage(id int) Page {
 		Where("chapters.id = ?", id).
 		Take(&p)
 
-	urlPath := filepath.Join(fixMangaTitle(p.Title), p.Chapter)
-	path := filepath.Join(MangaPath, urlPath)
+	urlPath := filepath.Join(fixMangaTitle(p.Title), fmt.Sprintf("%g", p.Chapter))
+	path := filepath.Join(file.MANGA_PATH, urlPath)
 	files, err := GetFiles(path)
 	if err != nil {
 		runtime.LogError(*app.WailsContext, err.Error())
@@ -86,10 +86,26 @@ func (f *Manga) GetServer() []Server {
 	return servers
 }
 
+func (f *Manga) InsertManga(m Manga) (uint, error) {
+	res := app.DB.FirstOrCreate(&m, m)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return m.ID, nil
+}
+
+func (f *Manga) TestHomeApiQuery() interface{} {
+	var m MangaHomeApi
+	q := m.FetchQuery()
+	v := []MangaHomeApi{}
+	q.Find(&v)
+	return v
+}
+
 // PageApi for Fetching chapter and Manga title
 type PageApi struct {
 	ID      uint
-	Chapter string
+	Chapter float32
 	Title   string
 	MangaId uint
 }
@@ -100,24 +116,24 @@ type PageApiNav struct {
 
 // Manga Struct for model manga
 type Manga struct {
-	ID           uint         `json:"id"`
-	Title        string       `json:"title"`
-	StatusEnding bool         `json:"status_end"`
-	Mdex         *int         `orm:"null" json:"mdex"`
-	CreatedAt    sqltime.Time `orm:"auto_now_add;type(datetime)" json:"-"`
-	UpdatedAt    sqltime.Time `orm:"auto_now;type(datetime)" json:"-"`
-	Chapter      []Chapter    `json:"chapter"`
-	Alter        []Alter      `json:"alter"`
+	ID           uint      `json:"id"`
+	Title        string    `gorm:"not null" json:"title"`
+	StatusEnding bool      `json:"status_end"`
+	Mdex         string    `gorm:"size:36" orm:"null" json:"mdex"`
+	CreatedAt    time.Time `json:"-"`
+	UpdatedAt    time.Time `json:"-"`
+	Chapter      []Chapter `json:"chapter"`
+	Alter        []Alter   `json:"alter"`
 }
 
 type MangaHomeApi struct {
-	ID           int          `json:"id"`
-	Title        string       `json:"title"`
-	StatusEnding bool         `json:"status_end"`
-	Mdex         *int         `orm:"null" json:"mdex"`
-	ChapterID    int          `json:"chapter_id"`
-	Chapter      json.Number  `json:"chapter"`
-	DownloadTime sqltime.Time `json:"download_time"`
+	ID           uint      `json:"id"`
+	Title        string    `json:"title"`
+	StatusEnding bool      `json:"status_end"`
+	Mdex         string    `orm:"null" json:"mdex"`
+	ChapterID    uint      `json:"chapter_id"`
+	Chapter      float32   `json:"chapter"`
+	DownloadTime time.Time `json:"download_time"`
 }
 
 func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
@@ -133,8 +149,8 @@ func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
 		query = app.DB.Table("(?) as mh", query).
 			Select("mh.id", "mh.title", "mdex", "status_ending", "chapter_id", "chapter", "download_time").
 			Joins("left join manga_alternatives on manga_alternatives.manga_id = mh.id").
-			Where("mh.title ILIKE ?", ilike).
-			Or("manga_alternatives.title ILIKE ?", ilike).
+			Where("mh.title LIKE ?", ilike).
+			Or("manga_alternatives.title LIKE ?", ilike).
 			Group("mh.id, mh.title,mdex,status_ending,chapter_id,chapter,download_time").
 			Order("mh.title")
 
@@ -163,7 +179,7 @@ func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
 func (f MangaHomeApi) FetchQuery() *gorm.DB {
 	latestSubQuery := app.DB.Table("chapters").Select("manga_id", "MAX(CAST(chapter AS decimal)) AS chapter").Group("manga_id").Order("manga_id")
 	homeApiQuery := app.DB.Table("mangas").
-		Select("mangas.id", "mangas.title", "mdex", "status_ending", "chapters.id as chapter_id", "latest.chapter", "TO_DATE(cast(chapters.created_at as TEXT) ,'YYYY-MM-DD') as download_time").
+		Select("mangas.id", "mangas.title", "mdex", "status_ending", "chapters.id as chapter_id", "latest.chapter", "chapters.created_at as download_time").
 		Joins("inner join chapters on mangas.id = chapters.manga_id").
 		Joins("inner join (?) latest on mangas.id = latest.manga_id", latestSubQuery).
 		Where("latest.chapter = CAST(chapters.chapter as decimal)").

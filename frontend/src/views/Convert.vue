@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col h-full select-none">
     <div>
       <div id="tool" class="text-left">
         <div class="w-150">
@@ -55,13 +55,42 @@
           </a-space>
         </div>
         <div style="flex: 0 0 160px; padding-right: 0">
-          <div>Convert Engine :</div>
-          <a-space direction="vertical" size="mini">
+          <div v-if="!data.parallelStatus">
+            <span
+              class="hover:(underline cursor-pointer)"
+              @click="data.parallelStatus = !data.parallelStatus"
+              >Convert Engine
+            </span>
+            :
+          </div>
+          <div v-else>
+            <span
+              class="hover:(underline cursor-pointer)"
+              @click="data.parallelStatus = !data.parallelStatus"
+              >Parallel Convert
+            </span>
+            <span> : </span>
+            <span>
+              <strong style="color: rgb(var(--primary-6))">{{
+                data.parallel
+              }}</strong></span
+            >
+          </div>
+          <a-space v-if="!data.parallelStatus" direction="vertical" size="mini">
             <a-radio-group v-model="data.covert">
               <a-radio :value="1">libwebp</a-radio>
               <a-radio :value="2">Ext</a-radio>
             </a-radio-group>
           </a-space>
+          <div v-else class="px-2">
+            <a-slider
+              :min="1"
+              :show-ticks="true"
+              :step="1"
+              :max="10"
+              v-model="data.parallel"
+            />
+          </div>
         </div>
         <div style="flex: 0 0 188px; padding-right: 0">
           <div>Format Image :</div>
@@ -76,6 +105,7 @@
     </div>
     <div class="h-20 mb-1" style="background-color: var(--color-bg-4)">
       <a-input
+        v-show="false"
         v-model="data.title"
         size="small"
         :input-attrs="{ class: 'text-center' }"
@@ -83,6 +113,12 @@
         class="mt-1"
         readonly
       />
+      <div class="manga-title">
+        <span v-if="data.title != ''">{{ data.title }}</span>
+        <span class="select-none" style="color: var(--color-text-3)" v-else
+          >Please Select Manga Title to Convert</span
+        >
+      </div>
       <a-input
         ref="hiddenSearch"
         v-model="output.hiddenSearch"
@@ -157,20 +193,23 @@
       <div class="status">
         <div style="min-width: 128px">
           Size Before :
-          <strong class="text-red-500" v-if="output.sizeBefore > 0"
-            >{{ output.sizeBefore }} MB</strong
-          >
+          <strong class="text-red-500" v-if="output.sizeBefore > 0">{{
+            FormatSize(output.sizeBefore)
+          }}</strong>
         </div>
         <div style="min-width: 117px">
           Size After :
-          <strong class="text-blue-500" v-if="output.sizeAfter > 0"
-            >{{ output.sizeAfter }} MB</strong
-          >
+          <strong class="text-blue-500" v-if="output.sizeAfter > 0">{{
+            FormatSize(output.sizeAfter)
+          }}</strong>
         </div>
         <div style="min-width: 85px">
           Percent :
-          <strong class="text-green-500" v-if="output.percent > 0"
-            >{{ output.percent }}%</strong
+          <strong class="text-green-500" v-if="output.percent < 0"
+            >{{ Math.round(Math.abs(output.percent)) }}%</strong
+          >
+          <strong class="text-red-500" v-else-if="output.percent > 0"
+            >{{ Math.round(output.percent) }}%</strong
           >
         </div>
       </div>
@@ -179,12 +218,12 @@
       <div class="bmenu">
         <a-space>
           <a-button @click="reset">Reset</a-button>
-          <a-button>Cover Fix</a-button>
+          <a-button @click="copyLog">Copy Log</a-button>
           <a-button @click="showMessage">Save Log</a-button>
           <a-button
             :disabled="data.title == ''"
             type="primary"
-            @click="clickTest"
+            @click="clickConvert"
             >Convert</a-button
           >
         </a-space>
@@ -195,9 +234,16 @@
 
 <script setup lang="ts">
 import { GetMangas } from '@wails/go/manga/Manga'
-import { SaveDialog } from '@wails/go/tool/Dialog'
-
-import { MangaTitleURL, DateApp } from '@/composable/helper'
+import { SaveDialog, MessageBoxError } from '@wails/go/tool/Dialog'
+import { EventsOnce, EventsOn, EventsOff } from '@wails/runtime/runtime'
+import {
+  MangaTitleURL,
+  FormatSize,
+  useClipboardData,
+} from '@/composable/helper'
+import { DoConvert } from '@wails/go/file/Convert'
+import { file } from '@wails/go/models'
+import type { RunConvertEventData, StartConvertEventData } from '@/type/convert'
 
 /// COMPONENT INTERFACE
 interface TableManga {
@@ -217,6 +263,8 @@ const initialData = {
   resizeStatus: true,
   delete: true,
   covert: 1,
+  parallel: 5,
+  parallelStatus: true,
   format: [1],
 }
 
@@ -309,15 +357,86 @@ const showMessage = async () => {
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-const clickTest = async () => {
-  output.sizeBefore = 1500
-  for (let i = 1; i <= 10; i++) {
-    output.progress = (i * 10) / 100
-    output.statusConvert += '<span>Hello world</span><br/>'
-    await sleep(1000)
+const clickConvert = async () => {
+  let totalConvert: number
+  const cv = new file.Convert()
+  // fiil parameter
+  cv.delete = data.delete
+  cv.resize = data.resizeStatus
+  cv.resize_width = data.resize
+  cv.quality = data.quality
+  cv.title = data.title
+  cv.parallel = cv.parallel
+  cv.ext = []
+  if (data.format.includes(1)) {
+    cv.ext.push('.jpg', '.jpeg', '.png')
   }
-  output.sizeAfter = 950
-  output.percent = (1500 - 950) / 100
+  if (data.format.includes(2)) {
+    cv.ext.push('.webp')
+  }
+
+  // doing convert
+  DoConvert(cv)
+    .then(res => {
+      //compelete
+      if (output.progress == 1) {
+        console.log('complete')
+      }
+      console.log(res)
+      output.sizeAfter = res.size_after
+      output.percent = res.size_percent
+      output.statusConvert += LogHTMLConvert(res)
+    })
+    .catch(e => {
+      MessageBoxError(e, 'Error Convert')
+    })
+
+  // listen start_convert
+  EventsOnce('start_convert', (sc: StartConvertEventData) => {
+    output.sizeBefore = sc.size_before
+    totalConvert = sc.total_convert
+  })
+
+  //listen every run_convert
+  EventsOn('run_convert', (rc: RunConvertEventData) => {
+    output.progress += 1 / totalConvert
+    output.statusConvert += LogHTMLConvert(rc)
+    if (output.progress >= 1) {
+      EventsOff('run_convert')
+    }
+  })
+}
+const LogHTMLConvert = (
+  val: RunConvertEventData | file.ConvertResult
+): string => {
+  const line = `<span>${'='.repeat(20)}</span><br/>`
+  if ('error' in val) {
+    const resize = val.resized
+      ? `<span class="text-blue-600"><b>Resized</b></span>`
+      : ``
+    const deleted = val.deleted
+      ? `<span class="text-red-600"><b>Deleted</b></span>`
+      : ``
+    const error = val.error != '' ? `<strong>ERROR</strong> : ${val.error}` : ``
+    return `<span>Chapter : ${val.chap} Page : <b>${val.filename}</b></span> ${resize} ${deleted} ${error}<br/>`
+  } else {
+    const report = `Manga\t\t: ${val.manga}\nTotalOK\t\t: ${
+      val.total_ok
+    }\nTotalFailed\t: ${val.total_failed}\nTotalResize\t: ${
+      val.total_resize
+    }\nTotalDelete\t: ${val.total_delete}\nSizeBefore\t: ${FormatSize(
+      val.size_before
+    )}\nSizeAfter\t: ${FormatSize(val.size_after)}`
+    return `${line}<span style="white-space:pre;">${report}</span>`
+  }
+}
+
+const { SetPasteData } = useClipboardData()
+const copyLog = () => {
+  const b = document.getElementById('status_convert')
+  if (b !== null) {
+    SetPasteData(b.innerText)
+  }
 }
 </script>
 
@@ -366,6 +485,24 @@ const clickTest = async () => {
 button,
 .arco-checkbox {
   font-size: 0.75rem !important;
+}
+
+.manga-title {
+  min-height: 24px;
+  padding: 0 0.5rem;
+  color: rgb(var(--primary-6));
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  user-select: none;
+  span {
+    font-size: 14pxem;
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
 }
 </style>
 

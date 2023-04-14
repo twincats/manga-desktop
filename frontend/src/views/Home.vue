@@ -57,7 +57,7 @@
         :total="mangaHome?.pagination?.total ? mangaHome?.pagination?.total : 0"
       />
     </div>
-    <teleport to="#main">
+    <teleport to="#app">
       <context-menu ref="refMenu" v-slot="{ item }: { item: manga.Manga }">
         <li>Add Alternatif</li>
         <li @click="$router.push('/convert/' + item.id)">Convert Manga</li>

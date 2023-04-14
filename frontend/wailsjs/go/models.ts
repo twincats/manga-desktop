@@ -1,3 +1,60 @@
+export namespace file {
+	
+	export class Convert {
+	    title: string;
+	    quality: number;
+	    parallel: number;
+	    resize_width: number;
+	    resize: boolean;
+	    delete: boolean;
+	    engine: boolean;
+	    ext: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Convert(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.title = source["title"];
+	        this.quality = source["quality"];
+	        this.parallel = source["parallel"];
+	        this.resize_width = source["resize_width"];
+	        this.resize = source["resize"];
+	        this.delete = source["delete"];
+	        this.engine = source["engine"];
+	        this.ext = source["ext"];
+	    }
+	}
+	export class ConvertResult {
+	    manga: string;
+	    size_before: number;
+	    size_after: number;
+	    size_percent: number;
+	    total_ok: number;
+	    total_failed: number;
+	    total_resize: number;
+	    total_delete: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConvertResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manga = source["manga"];
+	        this.size_before = source["size_before"];
+	        this.size_after = source["size_after"];
+	        this.size_percent = source["size_percent"];
+	        this.total_ok = source["total_ok"];
+	        this.total_failed = source["total_failed"];
+	        this.total_resize = source["total_resize"];
+	        this.total_delete = source["total_delete"];
+	    }
+	}
+
+}
+
 export namespace manga {
 	
 	export class Alter {
@@ -34,7 +91,7 @@ export namespace manga {
 	}
 	export class Chapter {
 	    id: number;
-	    chapter: string;
+	    chapter: number;
 	    title: string;
 	    volume: string;
 	    group: string;
@@ -84,12 +141,26 @@ export namespace manga {
 		    return a;
 		}
 	}
+	export class Config {
+	    id: number;
+	    manga_folder: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Config(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.manga_folder = source["manga_folder"];
+	    }
+	}
 	
 	export class Manga {
 	    id: number;
 	    title: string;
 	    status_end: boolean;
-	    mdex?: number;
+	    mdex: string;
 	    chapter: Chapter[];
 	    alter: Alter[];
 	
@@ -151,10 +222,10 @@ export namespace manga {
 	    id: number;
 	    title: string;
 	    status_end: boolean;
-	    mdex?: number;
+	    mdex: string;
 	    chapter_id: number;
-	    chapter: string;
-	    // Go type: sqltime
+	    chapter: number;
+	    // Go type: time
 	    download_time: any;
 	
 	    static createFrom(source: any = {}) {
