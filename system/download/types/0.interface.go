@@ -60,7 +60,7 @@ type Chapter struct {
 	Manga      string        `json:"manga"`
 	Cover      string        `json:"cover_url"`
 	Mdex       string        `json:"mdex"`
-	MangaId    *int          `json:"manga_id"`
+	MangaId    uint          `json:"manga_id"`
 	ServerName string        `json:"server_name"`
 	Chapter    []ChapterList `json:"chapter"`
 	Limit      int           `json:"limit"`

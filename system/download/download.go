@@ -1,7 +1,9 @@
 package download
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"mangav4/system/app"
 	"mangav4/system/download/types"
 	"reflect"
@@ -31,23 +33,26 @@ func (f *Download) getDownloads(className string) types.Downloads {
 	return d
 }
 
-func (f *Download) GetChapter(o types.Option) (*types.Chapter, error) {
+func (f *Download) GetChapter(o types.Option) (types.Chapter, error) {
 	if d := f.getDownloads(o.ServerName); d != nil {
 		//need database check
 		//change title base on db manga table
 		//change status chapter base on db chapter table
-		return d.GetChapter(o)
+		chap, err := d.GetChapter(o)
+		chaps := CheckChapterDB(*chap)
+		return chaps, err
 	}
-	return nil, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
+	return types.Chapter{}, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }
 
-func (f *Download) GetPage(o types.Option) (*types.Page, error) {
+func (f *Download) GetPage(o types.Option) (types.Page, error) {
 	// option change to []types.ChapterList
+	var nilpage types.Page
 	if d := f.getDownloads(o.ServerName); d != nil {
 		//simulation download
 		pages_data, err := d.GetPage(o)
 		if err != nil {
-			return nil, err
+			return nilpage, err
 		}
 		//
 		var parallel = 2
@@ -83,9 +88,9 @@ func (f *Download) GetPage(o types.Option) (*types.Page, error) {
 		// return data of all finished download
 		// save to db if no err
 		// global failed url return failed
-		return pages_data, err
+		return *pages_data, err
 	}
-	return nil, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
+	return nilpage, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }
 
 func (f *Download) GetChapterMdexPagination(url string, limit, offset int) ([]types.ChapterList, error) {
@@ -96,4 +101,44 @@ func (f *Download) GetChapterMdexPagination(url string, limit, offset int) ([]ty
 type DownloadChannel struct {
 	Index int    `json:"index"`
 	Url   string `json:"Url"`
+}
+
+// check dbChapter
+// 1. check mangaId
+// 2. chapter is already downloaded
+type CheckTitleDB struct {
+	Id    uint
+	Title string
+}
+
+type CheckChapDB struct {
+	ID      uint    `json:"id"`
+	Chapter float32 `json:"chapter"`
+	Title   string  `json:"title"`
+}
+
+func CheckChapterDB(c types.Chapter) types.Chapter {
+	var checkTitleDB CheckTitleDB
+	ilike := fmt.Sprintf("%%%s%%", c.Manga)
+	app.DB.Table("mangas").Select("mangas.id", "mangas.title").
+		Joins("left join manga_alternatives on manga_alternatives.manga_id = mangas.id").
+		Where("mangas.title LIKE ?", ilike).
+		Or("manga_alternatives.title LIKE ?", ilike).Scan(&checkTitleDB)
+
+	c.MangaId = checkTitleDB.Id
+
+	if checkTitleDB.Id > 0 {
+		var checkChapDb []CheckChapDB
+		app.DB.Table("chapters").
+			Select("id", "chapter", "title").
+			Where("manga_id = ?", checkTitleDB.Id).Scan(&checkChapDb)
+		for i, cp := range c.Chapter {
+			for _, v := range checkChapDb {
+				if cp.Chapter == json.Number(fmt.Sprintf("%v", v.Chapter)) {
+					c.Chapter[i].Status = true
+				}
+			}
+		}
+	}
+	return c
 }

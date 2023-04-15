@@ -22,7 +22,7 @@ type Pagination struct {
 	Offset      int `json:"-"`
 }
 
-//set value for pagination struct
+// set value for pagination struct
 func (p *Pagination) Paginate() {
 	//set From
 	p.From = p.PerPage*p.CurrentPage - (p.PerPage - 1)
@@ -53,7 +53,7 @@ func (p *Pagination) Paginate() {
 
 }
 
-//GetFiles fetch all files within directory
+// GetFiles fetch all files within directory
 func GetFiles(path string) ([]string, error) {
 	var files []string
 	list, err := os.ReadDir(path)

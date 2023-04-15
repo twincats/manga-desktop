@@ -107,8 +107,9 @@
               </div>
               <div class="p-2 self-end" v-if="chapterList">
                 <a-button
-                  :disabled="chapterList.manga_id == null"
+                  :disabled="chapterList.manga_id < 1"
                   status="warning"
+                  @click="$router.push(`chapter/${chapterList?.manga_id}`)"
                   >Read</a-button
                 >
               </div>
@@ -176,7 +177,7 @@
                       v-if="record.status"
                       >OK</span
                     >
-                    <span class="bg-red-600 px-2 rounded-lg">No</span>
+                    <span v-else class="bg-red-600 px-2 rounded-lg">No</span>
                   </template>
                 </a-table-column>
                 <a-table-column
@@ -191,7 +192,7 @@
                       class="text-green-600"
                       ><icon-check
                     /></span>
-                    <span v-else class="text-red-600"><icon-minus /></span>
+                    <span v-else class="text-red-600"><icon-minus /> </span>
                   </template>
                 </a-table-column>
                 <a-table-column
@@ -254,8 +255,9 @@ import {
 } from '@wails/go/download/Download'
 import { Message, TableChangeExtra } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
-import { manga, types } from '@wails/go/models'
+import { types } from '@wails/go/models'
 import { UseTable, UseServer } from '@/composable/downloads/download'
+import { useDownloadState } from '@/store/global'
 
 //// STARTING CODE BOOTUP ////
 const { tableDownload, tableLoading, tablePageSize } = UseTable()
@@ -263,12 +265,11 @@ const { servers, getSelectedServer } = UseServer()
 
 // GLOBAL VALUE
 const tabsActive = ref(1)
-const urldata = ref('') // url chapter modelValue
-const selectedServer = ref(1) // selectedServer modelValue
+const { chapterList, urldata, selectedServer } = useDownloadState()
 
 // GET CHAPTER DATA
 const { GetPasteData } = useClipboardData()
-const chapterList = ref<types.Chapter | null>(null) // result of get chapter data
+
 const goGetchDownload = async () => {
   // auto fetch paste URL(only)
   const paste = await GetPasteData()
@@ -288,7 +289,7 @@ const goGetchDownload = async () => {
       .then(res => {
         //warning torefs expect reactive
         chapterList.value = res
-        res.chapter.forEach((item: types.ChapterList) => {
+        res.chapter.forEach(item => {
           tableDownload.push(item)
         })
         // console.log(res)
@@ -299,6 +300,18 @@ const goGetchDownload = async () => {
       })
   }
 }
+
+// if chapter is avalable insert table
+chapterList.value?.chapter.forEach(item => {
+  tableDownload.push(item)
+})
+
+// const testUpdatedTable = () => {
+//   const i = tableDownload.findIndex(
+//     i => i.id == 'ff944168-9143-44f2-979c-a3df74d14075'
+//   )
+//   tableDownload[i].status = true
+// }
 
 ///TESTING FOR TEMPORARY FILL DATA DOWNLOAD
 // DOWNLOAD SINGLE OR MULTIPLE CHAPTER
@@ -327,7 +340,7 @@ const testDownload = (c: types.ChapterList | null = null) => {
 }
 
 // SET SELECTED CHAPTER TO DOWNLOAD
-const selected_chapter_url = ref<types.ChapterList[]>([]) // data for list selected chapter to download
+const selected_chapter_url = ref<types.ChapterList[]>([])
 const clickRowTable = (c: types.ChapterList) => {
   const i = selected_chapter_url.value.findIndex(i => i.chapter == c.chapter)
   if (i != -1) {

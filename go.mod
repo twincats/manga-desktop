@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/SamuelTissot/sqltime v0.1.0
+	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/climech/naturalsort v0.1.0
 	github.com/google/uuid v1.2.0
 	github.com/markthree/go-get-folder-size v0.2.14

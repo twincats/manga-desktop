@@ -391,7 +391,7 @@ export namespace types {
 	    manga: string;
 	    cover_url: string;
 	    mdex: string;
-	    manga_id?: number;
+	    manga_id: number;
 	    server_name: string;
 	    chapter: ChapterList[];
 	    limit: number;
