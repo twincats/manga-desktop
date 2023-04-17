@@ -112,6 +112,9 @@
                   @click="$router.push(`chapter/${chapterList?.manga_id}`)"
                   >Read</a-button
                 >
+                <a-button @click="progress_dl.modal_dl = !progress_dl.modal_dl"
+                  >Test</a-button
+                >
               </div>
             </div>
           </div>
@@ -125,11 +128,11 @@
               }"
               :loading="tableLoading"
               @page-change="tablePageChange"
-              @change="(data:types.ChapterList[], extra:TableChangeExtra) => tableChange(data, extra)"
+              @change="(data, extra) => tableChange(<types.ChapterList[]>data, <TableChangeExtra>extra)"
               class="select-none"
               size="mini"
               :scroll="{ x: 1200 }"
-              @row-click="(c:types.ChapterList)=>clickRowTable(c)"
+              @row-click="(c)=>clickRowTable(<types.ChapterList>c)"
             >
               <template #columns>
                 <a-table-column
@@ -216,6 +219,7 @@
                 <custom-download-th
                   :active="selected_chapter_url.length > 1"
                   :column="column"
+                  @click-download="testDownload()"
                 />
               </template>
               <template #empty>
@@ -241,6 +245,39 @@
         <download-web />
       </a-tab-pane>
     </a-tabs>
+    <!-- modal -->
+    <a-modal
+      v-model:visible="progress_dl.modal_dl"
+      :footer="false"
+      :mask-closable="false"
+      :body-style="{ padding: '.5rem 1.5rem' }"
+    >
+      <template #title> Download Progress </template>
+      <div class="select-none">
+        <div class="text-center mb-3">Chapter {{ progress_dl.chapter }}</div>
+        <div id="mprogress" class="mt-1 text-center">
+          <a-progress
+            status="success"
+            :show-text="false"
+            :stroke-width="15"
+            :percent="progress_dl.chap"
+          />
+          {{ progress_dl.index_chap }} to {{ progress_dl.total_chap }}
+        </div>
+        <div id="mprogress" class="mt-1 text-center">
+          <a-progress
+            status="normal"
+            :show-text="false"
+            :stroke-width="15"
+            :percent="progress_dl.page"
+          />
+          {{ progress_dl.index_page }} to {{ progress_dl.total_page }}
+        </div>
+        <div class="text-center mt-3">
+          Please Wait <a-spin style="--primary-6: 255, 117, 24" :size="14" />
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -258,6 +295,7 @@ import '@arco-design/web-vue/es/message/style/index'
 import { types } from '@wails/go/models'
 import { UseTable, UseServer } from '@/composable/downloads/download'
 import { useDownloadState } from '@/store/global'
+import type { EventChap, EventPage } from '@/type/download'
 
 //// STARTING CODE BOOTUP ////
 const { tableDownload, tableLoading, tablePageSize } = UseTable()
@@ -266,6 +304,24 @@ const { servers, getSelectedServer } = UseServer()
 // GLOBAL VALUE
 const tabsActive = ref(1)
 const { chapterList, urldata, selectedServer } = useDownloadState()
+const progress_dl = ref({
+  modal_dl: false,
+  chapter: 0,
+  index_chap: 0,
+  index_page: 0,
+  total_chap: 0,
+  total_page: 0,
+  chap: 0,
+  page: 0,
+})
+
+// FOR NEXT PROGRESS
+/*
+  1. status check
+  2. status download
+  3. save db
+  4. retry
+*/
 
 // GET CHAPTER DATA
 const { GetPasteData } = useClipboardData()
@@ -317,25 +373,41 @@ chapterList.value?.chapter.forEach(item => {
 // DOWNLOAD SINGLE OR MULTIPLE CHAPTER
 const mdexPageServer = ref(false) // modelValue mdex datasaver server
 const testDownload = (c: types.ChapterList | null = null) => {
-  if (c == null) {
-    console.log('Download multiple')
-  } else {
-    console.log('download single')
-    const server = getSelectedServer(selectedServer.value)
-    if (server && urldata.value != '') {
-      GetPage({
-        url: c.id,
-        server_name: server.name,
-        datasaver: mdexPageServer.value,
-      })
-        .then(res => {
-          console.log(res)
-        })
-        .catch(e => {
-          console.log(e)
-        })
-      EventsOn('dlProgress', p => console.log(p))
+  const server = getSelectedServer(selectedServer.value)
+  if (server && urldata.value != '' && chapterList.value != null) {
+    var oPage = new types.OptionPage()
+    oPage.server_name = server.name
+    oPage.datasaver = mdexPageServer.value
+    oPage.manga_title = chapterList.value.manga
+    if (c == null) {
+      oPage.chapters = selected_chapter_url.value
+    } else {
+      oPage.chapters = [c]
     }
+
+    // call
+    progress_dl.value.modal_dl = true
+    GetPage(oPage)
+      .then(res => {
+        console.log(res)
+      })
+      .catch(e => {
+        console.log(e)
+      })
+
+    EventsOn('dl_eventchap', (p: EventChap) => {
+      progress_dl.value.chapter = p.chapter
+      progress_dl.value.index_chap = p.index_chap
+      progress_dl.value.total_chap = p.total_chap
+      progress_dl.value.total_page = p.total_page
+      progress_dl.value.index_page = 0
+      progress_dl.value.chap = p.index_chap / p.total_chap
+    })
+    EventsOn('dl_eventpage', (p: EventPage) => {
+      progress_dl.value.index_page += 1
+      progress_dl.value.page =
+        progress_dl.value.index_page / progress_dl.value.total_page
+    })
   }
 }
 
@@ -411,25 +483,14 @@ watchDebounced(
 )
 </script>
 
-<style lang="less">
-#download {
-  .arco-input-append {
-    padding: 0 0 0 0.25rem;
-  }
+<style>
+#mprogress .arco-progress-line {
+  border-radius: 0.25rem !important;
 }
-
-#servers {
-  .arco-radio-group-button {
-    display: flex;
-  }
-
-  .arco-radio-button:nth-of-type(8n + 1)::before {
-    content: none;
-  }
+#mprogress .arco-progress-line-bar {
+  border-radius: 0.25rem !important;
 }
-
-.icons {
-  font-size: 1rem;
-  line-height: 1rem;
+#mtable .arco-table-td {
+  font-size: 0.75rem !important;
 }
 </style>

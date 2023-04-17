@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"mangav4/system/app"
+	"mangav4/system/app/helper"
+	"mangav4/system/app/internet"
 	"mangav4/system/download/types"
+	"mangav4/system/file"
+	"path/filepath"
 	"reflect"
-	"sync"
-	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -38,59 +40,107 @@ func (f *Download) GetChapter(o types.Option) (types.Chapter, error) {
 		//need database check
 		//change title base on db manga table
 		//change status chapter base on db chapter table
+		var nilChap types.Chapter
 		chap, err := d.GetChapter(o)
+		if err != nil {
+			return nilChap, err
+		}
 		chaps := CheckChapterDB(*chap)
-		return chaps, err
+		return chaps, nil
 	}
 	return types.Chapter{}, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }
 
-func (f *Download) GetPage(o types.Option) (types.Page, error) {
+func (f *Download) GetPage(o types.OptionPage) (PageReport, error) {
 	// option change to []types.ChapterList
-	var nilpage types.Page
+	var pageReport PageReport
 	if d := f.getDownloads(o.ServerName); d != nil {
-		//simulation download
-		pages_data, err := d.GetPage(o)
-		if err != nil {
-			return nilpage, err
-		}
-		//
-		var parallel = 2
-		var wg sync.WaitGroup
-		wg.Add(parallel)
+		// setup download
+		dl := internet.NewFileDownloader()
 
-		channel := make(chan DownloadChannel)
-		//loop parrarel
-		for ii := 0; ii < parallel; ii++ {
-			go func() {
-				for {
-					v, more := <-channel
-					if !more {
-						wg.Done()
-						return
-					}
-					//testing long download time 1 second
-					//place to download image one by one
-					time.Sleep(time.Second)
-					runtime.EventsEmit(*app.WailsContext, "dlProgress", v)
-					//ouput ok needed :index, chapter, totalpages, mangaTitle
-					//ouput err global failed url
+		pageReport.Manga = o.MangaTitle
+
+		for ichap, chap := range o.Chapters {
+
+			var failChap FiledChapReport
+			failChap.ChapID = chap.ID
+			failChap.Chapter = chap.Chapter
+
+			chapRes, err := d.GetPage(types.Option{
+				URL:        chap.ID,
+				ServerName: o.ServerName,
+				DataSaver:  &o.DataSaver,
+			})
+
+			if err != nil {
+				failChap.Err = err
+				pageReport.FailChap = append(pageReport.FailChap, failChap)
+				continue
+			}
+
+			// report event 1
+			/*
+				1. List Page, []string
+				2. Index Chapter, int
+				3. Total Chapter, int
+				4. Total Pages, int
+				5.  Chapter Dl, json.number
+			*/
+			eventChap := EventChap{
+				ListPage:  chapRes.Pages,
+				IndexChap: ichap + 1,
+				TotalChap: len(o.Chapters),
+				TotalPage: len(chapRes.Pages),
+				Chapter:   chap.Chapter,
+			}
+
+			runtime.EventsEmit(*app.WailsContext, "dl_eventchap", eventChap)
+
+			title := helper.FixMangaTitle(o.MangaTitle)
+			dlPath := filepath.Join(file.MANGA_PATH, title, chap.Chapter.String())
+
+			ch := dl.BatchDownload(2, dlPath, chapRes.Pages)
+
+			_, stats := dl.StatusBatch(ch, func(s internet.StatusBatch) {
+				eventPage := EventPage{
+					Images:    s.URL,
+					IndexPage: s.Index,
+					StatError: s.Err,
 				}
-			}()
-		}
+				runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
+			})
+			err_stats := dl.FilterStatusErr(stats)
 
-		for i, p := range pages_data.Pages {
-			channel <- DownloadChannel{Index: i + 1, Url: p}
-		}
+			// for _, s := range stats {
+			// 	fmt.Println(s)
+			// 	// report event 2
+			// 	/*
+			// 		1. Index Pages, int
+			// 		2. Status Error, bool
+			// 		3. URL Images, string
+			// 	*/
 
-		close(channel)
-		wg.Wait()
-		// return data of all finished download
-		// save to db if no err
-		// global failed url return failed
-		return *pages_data, err
+			// }
+
+			// save to DB
+			if len(err_stats) < len(chapRes.Pages) {
+				// SAVE DB CHAPTER
+				failChap.StatusDB = true
+			} else {
+				dl.RemoveFolder(dlPath)
+			}
+
+			if len(err_stats) > 0 {
+				failChap.FailPage = err_stats
+				pageReport.FailChap = append(pageReport.FailChap, failChap)
+			}
+
+		} // END FOR
+
+		// return finish complete report
+		return pageReport, nil
 	}
-	return nilpage, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
+	return pageReport, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }
 
 func (f *Download) GetChapterMdexPagination(url string, limit, offset int) ([]types.ChapterList, error) {
@@ -98,25 +148,34 @@ func (f *Download) GetChapterMdexPagination(url string, limit, offset int) ([]ty
 	return mdex.GetChapterMdexPagination(url, limit, offset)
 }
 
-type DownloadChannel struct {
-	Index int    `json:"index"`
-	Url   string `json:"Url"`
+type EventChap struct {
+	ListPage  []string    `json:"list_page"`
+	IndexChap int         `json:"index_chap"`
+	TotalChap int         `json:"total_chap"`
+	TotalPage int         `json:"total_page"`
+	Chapter   json.Number `json:"chapter"`
 }
 
-// check dbChapter
-// 1. check mangaId
-// 2. chapter is already downloaded
+type EventPage struct {
+	Images    string `json:"images"`
+	IndexPage int    `json:"index_page"`
+	StatError error  `json:"stat_error"`
+}
+
+// CheckTitleDB is id used for update status CheckChapterDB
 type CheckTitleDB struct {
 	Id    uint
 	Title string
 }
 
+// CheckChapDB chapter  used for update status CheckChapterDB
 type CheckChapDB struct {
 	ID      uint    `json:"id"`
 	Chapter float32 `json:"chapter"`
 	Title   string  `json:"title"`
 }
 
+// CheckChapterDB changing status based on DB
 func CheckChapterDB(c types.Chapter) types.Chapter {
 	var checkTitleDB CheckTitleDB
 	ilike := fmt.Sprintf("%%%s%%", c.Manga)
@@ -141,4 +200,18 @@ func CheckChapterDB(c types.Chapter) types.Chapter {
 		}
 	}
 	return c
+}
+
+type PageReport struct {
+	Manga    string            `json:"manga_id"`
+	StatusDL bool              `json:"status_dl"`
+	FailChap []FiledChapReport `json:"fail_chap"`
+}
+
+type FiledChapReport struct {
+	ChapID   string                 `json:"chap_id"`
+	Chapter  json.Number            `json:"chapter"`
+	StatusDB bool                   `json:"status_db"`
+	Err      error                  `json:"error"`
+	FailPage []internet.StatusBatch `json:"fail_page"`
 }

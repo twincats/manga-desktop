@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"regexp"
 	"sync"
 
 	"github.com/climech/naturalsort"
@@ -89,6 +90,17 @@ func ListFiles(dir string, exts []string) []string {
 	})
 	naturalsort.Sort(res)
 	return res
+}
+
+func StringReplace(regexString string, match string, replaceString string) string {
+	reg := regexp.MustCompile(regexString)
+	return reg.ReplaceAllString(match, replaceString)
+}
+
+func FixMangaTitle(title string) string {
+	mTitle := StringReplace(`(?m)[^\w\-[\]()' ~.,!@&]|\.+$`, title, "")
+	mTitle = StringReplace("(?m) $|^ ", mTitle, "")
+	return mTitle
 }
 
 // incase needed round by precision

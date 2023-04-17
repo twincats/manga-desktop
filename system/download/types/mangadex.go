@@ -74,11 +74,19 @@ func (d Mangadex) GetPage(o Option) (*Page, error) {
 
 	var c Page
 	c.Title = "Mangadex"
+	var pages []string
 	if *o.DataSaver {
-		c.Pages = mdex_page.Chapter.DataSaver
+		for _, v := range mdex_page.Chapter.DataSaver {
+			url := fmt.Sprintf("%s/data-saver/%s/%s", mdex_page.BaseUrl, mdex_page.Chapter.Hash, v)
+			pages = append(pages, url)
+		}
 	} else {
-		c.Pages = mdex_page.Chapter.Data
+		for _, v := range mdex_page.Chapter.Data {
+			url := fmt.Sprintf("%s/data/%s/%s", mdex_page.BaseUrl, mdex_page.Chapter.Hash, v)
+			pages = append(pages, url)
+		}
 	}
+	c.Pages = pages
 
 	return &c, nil
 }

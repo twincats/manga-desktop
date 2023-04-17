@@ -43,6 +43,13 @@ type Option struct {
 	DataSaver  *bool  `json:"datasaver"`
 }
 
+type OptionPage struct {
+	ServerName string        `json:"server_name"`
+	MangaTitle string        `json:"manga_title"`
+	DataSaver  bool          `json:"datasaver"`
+	Chapters   []ChapterList `json:"chapters"`
+}
+
 // NewDownload return Downloads interface from manga struct with nil as not found
 func NewDownload(className string) *Downloads {
 	var d Downloads

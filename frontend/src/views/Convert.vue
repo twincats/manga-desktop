@@ -141,7 +141,7 @@
         :pagination="false"
         :columns="columnManga"
         :data="tableMangaFilter"
-        @row-click="(c:TableManga)=>selectManga(c)"
+        @row-click="(c)=>selectManga(<TableManga>c)"
       >
         <template v-slot:tr="{ rowIndex }">
           <tr class="my-tr" :id="'manga-' + rowIndex" />

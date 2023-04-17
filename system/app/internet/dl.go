@@ -21,10 +21,10 @@ type FileDownloader struct {
 
 // StatusBatch is ouput from StatusBatch reading chan from DownloadBatch
 type StatusBatch struct {
-	Err      error
-	Index    int
-	Filename string
-	URL      string
+	Err      error  `json:"err"`
+	Index    int    `json:"index"`
+	Filename string `json:"filename"`
+	URL      string `json:"url"`
 }
 
 // setupClient() is internal methods for creating grab client
@@ -90,7 +90,7 @@ func (f *FileDownloader) BatchDownload(worker int, dst string, remote_urls []str
 }
 
 // StatusBatch read channael from BatchDownload return failed url and statusBatch
-func (f *FileDownloader) StatusBatch(ch <-chan *grab.Response) ([]string, []StatusBatch) {
+func (f *FileDownloader) StatusBatch(ch <-chan *grab.Response, emit func(f StatusBatch)) ([]string, []StatusBatch) {
 	var statusBatch []StatusBatch
 	var failed []string
 	for resp := range ch {
@@ -103,6 +103,7 @@ func (f *FileDownloader) StatusBatch(ch <-chan *grab.Response) ([]string, []Stat
 		status.URL = resp.Request.HTTPRequest.URL.String()
 		status.Index = resp.Request.Tag.(int)
 		statusBatch = append(statusBatch, status)
+		emit(status)
 	}
 	return failed, statusBatch
 }
