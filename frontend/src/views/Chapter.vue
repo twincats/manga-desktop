@@ -57,7 +57,9 @@
           <a-table-column :width="185" title="Download Time">
             <template #cell="{ record }: { record: manga.Chapter }">
               {{
-                DateApp.NewDate(record.created_at).Format('DD-MM-YYYY HH:mm:ss')
+                DateApp.NewDate(record.created_at.toString()).Format(
+                  'DD-MM-YYYY HH:mm:ss'
+                )
               }}
             </template>
           </a-table-column>

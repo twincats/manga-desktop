@@ -133,7 +133,7 @@ type MangaHomeApi struct {
 	Mdex         string    `orm:"null" json:"mdex"`
 	ChapterID    uint      `json:"chapter_id"`
 	Chapter      float32   `json:"chapter"`
-	DownloadTime time.Time `json:"download_time"`
+	DownloadTime time.Time `json:"download_time" ts_type:"Date" ts_transform:"new Date(__VALUE__)"`
 }
 
 func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
@@ -189,7 +189,7 @@ func (f MangaHomeApi) FetchQuery() *gorm.DB {
 
 type MangaHome struct {
 	Manga      []MangaHomeApi `json:"manga"`
-	Pagination *Pagination    `json:"pagination"`
+	Pagination *Pagination    `json:"pagination" ts_type:"Pagination"`
 }
 
 type Page struct {

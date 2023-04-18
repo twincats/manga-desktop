@@ -39,7 +39,7 @@
         <div
           v-if="
             DateApp.NewDate().Format('DD-MM-YYYY') ==
-            DateApp.NewDate(manga.download_time).Format('DD-MM-YYYY')
+            DateApp.NewDate(manga.download_time.toString()).Format('DD-MM-YYYY')
           "
           class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-orange-500"
         >

@@ -173,6 +173,52 @@ export namespace manga {
 	        this.manga_id = source["manga_id"];
 	    }
 	}
+	export class Chapter {
+	    id: number;
+	    chapter: number;
+	    title: string;
+	    volume: string;
+	    group: string;
+	    timestamp_release: number;
+	    status_read: boolean;
+	    language_id: number;
+	    language: Language;
+	    created_at: Date;
+	    updated_at: Date;
+	
+	    static createFrom(source: any = {}) {
+	        return new Chapter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.chapter = source["chapter"];
+	        this.title = source["title"];
+	        this.volume = source["volume"];
+	        this.group = source["group"];
+	        this.timestamp_release = source["timestamp_release"];
+	        this.status_read = source["status_read"];
+	        this.language_id = source["language_id"];
+	        this.language = source["language"];
+	        this.created_at = new Date(source["created_at"]);
+	        this.updated_at = new Date(source["updated_at"]);
+	    }
+	}
+	export class Config {
+	    id: number;
+	    manga_folder: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Config(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.manga_folder = source["manga_folder"];
+	    }
+	}
 	export class Language {
 	    id: number;
 	    lang: string;
@@ -189,73 +235,6 @@ export namespace manga {
 	        this.lang_code = source["lang_code"];
 	    }
 	}
-	export class Chapter {
-	    id: number;
-	    chapter: number;
-	    title: string;
-	    volume: string;
-	    group: string;
-	    timestamp_release: number;
-	    status_read: boolean;
-	    language_id: number;
-	    language: Language;
-	    // Go type: sqltime
-	    created_at: any;
-	    // Go type: sqltime
-	    updated_at: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new Chapter(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.chapter = source["chapter"];
-	        this.title = source["title"];
-	        this.volume = source["volume"];
-	        this.group = source["group"];
-	        this.timestamp_release = source["timestamp_release"];
-	        this.status_read = source["status_read"];
-	        this.language_id = source["language_id"];
-	        this.language = this.convertValues(source["language"], Language);
-	        this.created_at = this.convertValues(source["created_at"], null);
-	        this.updated_at = this.convertValues(source["updated_at"], null);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class Config {
-	    id: number;
-	    manga_folder: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Config(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.manga_folder = source["manga_folder"];
-	    }
-	}
-	
 	export class Manga {
 	    id: number;
 	    title: string;
@@ -296,28 +275,6 @@ export namespace manga {
 		    return a;
 		}
 	}
-	export class Pagination {
-	    current_page: number;
-	    from: number;
-	    to: number;
-	    total: number;
-	    last_page: number;
-	    perpage: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new Pagination(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.current_page = source["current_page"];
-	        this.from = source["from"];
-	        this.to = source["to"];
-	        this.total = source["total"];
-	        this.last_page = source["last_page"];
-	        this.perpage = source["perpage"];
-	    }
-	}
 	export class MangaHomeApi {
 	    id: number;
 	    title: string;
@@ -325,8 +282,7 @@ export namespace manga {
 	    mdex: string;
 	    chapter_id: number;
 	    chapter: number;
-	    // Go type: time
-	    download_time: any;
+	    download_time: Date;
 	
 	    static createFrom(source: any = {}) {
 	        return new MangaHomeApi(source);
@@ -340,26 +296,8 @@ export namespace manga {
 	        this.mdex = source["mdex"];
 	        this.chapter_id = source["chapter_id"];
 	        this.chapter = source["chapter"];
-	        this.download_time = this.convertValues(source["download_time"], null);
+	        this.download_time = new Date(source["download_time"]);
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class MangaHome {
 	    manga: MangaHomeApi[];
@@ -372,7 +310,7 @@ export namespace manga {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.manga = this.convertValues(source["manga"], MangaHomeApi);
-	        this.pagination = this.convertValues(source["pagination"], Pagination);
+	        this.pagination = source["pagination"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -412,7 +350,28 @@ export namespace manga {
 	        this.manga_id = source["manga_id"];
 	    }
 	}
+	export class Pagination {
+	    current_page: number;
+	    from: number;
+	    to: number;
+	    total: number;
+	    last_page: number;
+	    perpage: number;
 	
+	    static createFrom(source: any = {}) {
+	        return new Pagination(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.current_page = source["current_page"];
+	        this.from = source["from"];
+	        this.to = source["to"];
+	        this.total = source["total"];
+	        this.last_page = source["last_page"];
+	        this.perpage = source["perpage"];
+	    }
+	}
 	export class Server {
 	    id: number;
 	    name: string;
