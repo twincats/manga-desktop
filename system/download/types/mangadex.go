@@ -22,29 +22,31 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 	urlManga := fmt.Sprintf("https://api.mangadex.org/manga/%s?includes[]=cover_art", mdex)
 	urlChapter := fmt.Sprintf("https://api.mangadex.org/manga/%s/feed?translatedLanguage[]=en&translatedLanguage[]=id&includes[]=scanlation_group&limit=%d&offset=%d&order[chapter]=desc", mdex, limit, offset)
 
-	var UrlList = []string{urlManga, urlChapter}
-	result := ParallelFetch(UrlList)
-
 	var mdexmanga MdexManga
 	var mdexChapter MdexChapter
 
-	for _, fetchResult := range result {
-		if fetchResult.Err != nil {
-			return nil, fetchResult.Err
-		}
+	// Fetch manga
+	mByte, err := app.Client.Get(urlManga).Bytes()
+	if err != nil {
+		return nil, err
+	}
 
-		switch fetchResult.ID {
-		case 0:
-			err := internet.BodyParser(fetchResult.Body, &mdexmanga)
-			if err != nil {
-				return nil, err
-			}
-		case 1:
-			err := internet.BodyParser(fetchResult.Body, &mdexChapter)
-			if err != nil {
-				return nil, err
-			}
-		}
+	// Parse manga
+	err = internet.BodyParser(mByte, &mdexmanga)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch chapter
+	cByte, err := app.Client.Get(urlChapter).Bytes()
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse Chapter
+	err = internet.BodyParser(cByte, &mdexChapter)
+	if err != nil {
+		return nil, err
 	}
 
 	var c Chapter

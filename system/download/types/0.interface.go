@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"mangav4/system/app"
 	"reflect"
 )
@@ -44,6 +45,9 @@ type Option struct {
 }
 
 type OptionPage struct {
+	MangaId    uint          `json:"manga_id"`
+	Mdex       string        `json:"mdex,omitempty"`
+	Cover      string        `json:"cover_url"`
 	ServerName string        `json:"server_name"`
 	MangaTitle string        `json:"manga_title"`
 	DataSaver  bool          `json:"datasaver"`
@@ -66,13 +70,13 @@ func NewDownload(className string) *Downloads {
 type Chapter struct {
 	Manga      string        `json:"manga"`
 	Cover      string        `json:"cover_url"`
-	Mdex       string        `json:"mdex"`
+	Mdex       string        `json:"mdex,omitempty"`
 	MangaId    uint          `json:"manga_id"`
 	ServerName string        `json:"server_name"`
 	Chapter    []ChapterList `json:"chapter"`
+	DataSaver  bool          `json:"datasaver"`
 	Limit      int           `json:"limit"`
 	Total      int           `json:"total"`
-	MdexData   interface{}   `json:"mdextest"`
 }
 
 // ChapterList is list of chapter for main data Chapter for GetChapter mehotds
@@ -119,6 +123,10 @@ func ParallelFetch(urlList []string) []ParallelFetchResult {
 				Url:  url,
 				Body: bodyByte,
 				Err:  err,
+			}
+			//test
+			if err != nil {
+				fmt.Println("ERROR PARALLEL FETCH : ", err)
 			}
 		}(s, i)
 	}

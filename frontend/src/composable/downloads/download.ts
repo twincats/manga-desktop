@@ -7,6 +7,7 @@ export const UseTable = () => {
   const tableDownload = reactive<types.ChapterList[]>([]) // data for display chapter in table
   const tablePageSize = ref(5) // data shown how much data perpage in table default 5=>15
   const tableLoading = ref(false) // data for status loading table
+  const tablePageCurrent = ref(1)
   const { lg } = GetBreakPoints() // global breakpoint
   // set default perpage table
   if (lg.value) {
@@ -28,6 +29,7 @@ export const UseTable = () => {
     tableDownload,
     tablePageSize,
     tableLoading,
+    tablePageCurrent,
   }
 }
 

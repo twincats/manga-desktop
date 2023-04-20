@@ -79,7 +79,7 @@
                 <div class="h-full min-h-120px">
                   Server : {{ chapterList.server_name }} <br />
                   Total Chapter : {{ chapterList.chapter.length }} <br />
-                  Download : <br />
+                  Download : {{ chapterList.manga_id }} <br />
                   Selected :
                   <span v-if="selected_chapter_url.length > 0">Chapter </span>
                   <span v-for="(item, i) in selected_chapter_url" :key="i">
@@ -107,14 +107,12 @@
               </div>
               <div class="p-2 self-end" v-if="chapterList">
                 <a-button
-                  :disabled="chapterList.manga_id < 1"
+                  :disabled="chapterList.manga_id == 0"
                   status="warning"
                   @click="$router.push(`chapter/${chapterList?.manga_id}`)"
                   >Read</a-button
                 >
-                <a-button @click="progress_dl.modal_dl = !progress_dl.modal_dl"
-                  >Test</a-button
-                >
+                <a-button @click="progress_dl.modal_dl = true">Test</a-button>
               </div>
             </div>
           </div>
@@ -125,6 +123,7 @@
                 pageSize: tablePageSize,
                 total: chapterList.total,
                 size: 'mini',
+                current: tablePageCurrent,
               }"
               :loading="tableLoading"
               @page-change="tablePageChange"
@@ -290,7 +289,7 @@ import {
   GetChapterMdexPagination,
   GetPage,
 } from '@wails/go/download/Download'
-import { Message, TableChangeExtra } from '@arco-design/web-vue'
+import { Message, Modal, TableChangeExtra } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
 import { types } from '@wails/go/models'
 import { UseTable, UseServer } from '@/composable/downloads/download'
@@ -298,13 +297,15 @@ import { useDownloadState } from '@/store/global'
 import type { EventChap, EventPage } from '@/type/download'
 
 //// STARTING CODE BOOTUP ////
-const { tableDownload, tableLoading, tablePageSize } = UseTable()
+const { tableDownload, tableLoading, tablePageSize, tablePageCurrent } =
+  UseTable()
 const { servers, getSelectedServer } = UseServer()
 
 // GLOBAL VALUE
 const tabsActive = ref(1)
 const { chapterList, urldata, selectedServer } = useDownloadState()
-const progress_dl = ref({
+
+const inititalProgressDL = {
   modal_dl: false,
   chapter: 0,
   index_chap: 0,
@@ -313,20 +314,23 @@ const progress_dl = ref({
   total_page: 0,
   chap: 0,
   page: 0,
-})
+}
+
+const progress_dl = reactive({ ...inititalProgressDL })
 
 // FOR NEXT PROGRESS
 /*
-  1. status check
-  2. status download
-  3. save db
-  4. retry
+OK  1. status check
+OK  2. status download
+OK  3. save db
+next  4. retry
 */
 
 // GET CHAPTER DATA
 const { GetPasteData } = useClipboardData()
 
-const goGetchDownload = async () => {
+let afterGetChapURL = ''
+const goGetchDownload = useDebounceFn(async () => {
   // auto fetch paste URL(only)
   const paste = await GetPasteData()
   const pasteURL = IsURL(paste)
@@ -343,70 +347,109 @@ const goGetchDownload = async () => {
       server_name: server.name,
     })
       .then(res => {
+        // reset table
+        if (afterGetChapURL != '' && urldata.value != afterGetChapURL) {
+          tableDownload.splice(0)
+          selected_chapter_url.value = []
+          tablePageCurrent.value = 1
+        }
         //warning torefs expect reactive
         chapterList.value = res
         res.chapter.forEach(item => {
           tableDownload.push(item)
         })
-        // console.log(res)
+        if (res.total > res.chapter.length) {
+          var dummyChap = new types.ChapterList()
+          dummyChap.chapter = ''
+          dummyChap.id = ''
+          dummyChap.group_name = ''
+          dummyChap.language = ''
+          dummyChap.timestamp = 0
+          dummyChap.title = ''
+          dummyChap.volume = ''
+
+          const dumArr = Array.from(
+            { length: res.total - res.chapter.length },
+            (_, i) => dummyChap
+          )
+          tableDownload.splice(res.chapter.length, 0, ...dumArr)
+        }
       })
-      .catch(e => {
-        console.log(e)
-        Message.error(e)
+      .catch(err => {
+        console.log(err)
+        Message.error(err)
+      })
+      .finally(() => {
+        afterGetChapURL = toValue(urldata)
       })
   }
-}
+}, 500)
 
 // if chapter is avalable insert table
 chapterList.value?.chapter.forEach(item => {
   tableDownload.push(item)
 })
 
-// const testUpdatedTable = () => {
-//   const i = tableDownload.findIndex(
-//     i => i.id == 'ff944168-9143-44f2-979c-a3df74d14075'
-//   )
-//   tableDownload[i].status = true
-// }
-
-///TESTING FOR TEMPORARY FILL DATA DOWNLOAD
 // DOWNLOAD SINGLE OR MULTIPLE CHAPTER
 const mdexPageServer = ref(false) // modelValue mdex datasaver server
 const testDownload = (c: types.ChapterList | null = null) => {
   const server = getSelectedServer(selectedServer.value)
   if (server && urldata.value != '' && chapterList.value != null) {
-    var oPage = new types.OptionPage()
-    oPage.server_name = server.name
-    oPage.datasaver = mdexPageServer.value
-    oPage.manga_title = chapterList.value.manga
+    var param = new types.Chapter(chapterList.value)
+    param.datasaver = mdexPageServer.value
+
     if (c == null) {
-      oPage.chapters = selected_chapter_url.value
+      param.chapter = selected_chapter_url.value
     } else {
-      oPage.chapters = [c]
+      param.chapter = [c]
     }
 
     // call
-    progress_dl.value.modal_dl = true
-    GetPage(oPage)
+    Object.assign(progress_dl, inititalProgressDL)
+    progress_dl.modal_dl = true
+    progress_dl.index_page = 0
+
+    GetPage(param)
       .then(res => {
-        console.log(res)
+        if (res.fail_chap.length > 0 || res.error != null) {
+          console.log(res)
+          Modal.error({
+            title: 'Error Some Download',
+            content: () => {
+              h('div', res.error)
+            },
+          })
+        }
       })
       .catch(e => {
         console.log(e)
       })
 
     EventsOn('dl_eventchap', (p: EventChap) => {
-      progress_dl.value.chapter = p.chapter
-      progress_dl.value.index_chap = p.index_chap
-      progress_dl.value.total_chap = p.total_chap
-      progress_dl.value.total_page = p.total_page
-      progress_dl.value.index_page = 0
-      progress_dl.value.chap = p.index_chap / p.total_chap
+      progress_dl.chapter = p.chapter
+      progress_dl.index_chap = p.index_chap
+      progress_dl.total_chap = p.total_chap
+      progress_dl.total_page = p.total_page
+      progress_dl.index_page = 0
+      progress_dl.chap = p.index_chap / p.total_chap
     })
     EventsOn('dl_eventpage', (p: EventPage) => {
-      progress_dl.value.index_page += 1
-      progress_dl.value.page =
-        progress_dl.value.index_page / progress_dl.value.total_page
+      progress_dl.index_page += 1
+      progress_dl.page = progress_dl.index_page / progress_dl.total_page
+      // if (p.stat_error != null) {
+      //   console.log(p)
+      // }
+      if (progress_dl.page == 1) {
+        const i = tableDownload.findIndex(
+          i => i.chapter == p.chapter.toString()
+        )
+        tableDownload[i].status = true
+        tableDownload[i].check = false
+        if (chapterList.value) {
+          chapterList.value.chapter[i].status = true
+          chapterList.value.chapter[i].check = false
+        }
+      }
     })
   }
 }
@@ -425,9 +468,37 @@ const clickRowTable = (c: types.ChapterList) => {
   )
 }
 
-///TESTING
+/// tablePageChange dynamic load rest of chapter download
 const tablePageChange = (p: number) => {
-  console.log(p)
+  console.log('pagination PAGE change')
+  console.log('pagination PAGE SIze', tablePageSize)
+  tablePageCurrent.value = p
+  if (chapterList.value) {
+    const limit = 30
+    const pagesize = tablePageSize.value //5
+
+    const seq = limit / pagesize
+    const pSeq = Sequence(seq, p)
+    const offset = pSeq * limit - limit
+
+    const tbl = tableDownload[offset]
+    if (tbl.id == '') {
+      tableLoading.value = true
+
+      GetChapterMdexPagination(urldata.value, limit, offset)
+        .then(res => {
+          console.log(res)
+          if (res) {
+            tableDownload.splice(offset, res.length, ...res)
+          }
+          tableLoading.value = false
+        })
+        .catch(e => {
+          console.log(e)
+          tableLoading.value = false
+        })
+    }
+  } //chaplist
 }
 
 const tableChange = (chap: types.ChapterList[], extra: TableChangeExtra) => {
@@ -436,27 +507,27 @@ const tableChange = (chap: types.ChapterList[], extra: TableChangeExtra) => {
   const pageSize = extra.pageSize ? extra.pageSize : limit
   const page = extra.page ? extra.page : 1
 
-  if (chap.length == 0) {
-    tableLoading.value = true
-    const seq = limit / pageSize
-    const pSeq = Sequence(seq, page)
-    const offset = pSeq * limit - limit
-    // const startIndex = pSeq * limit
-    // console.log(pSeq, offset, startIndex)
-    GetChapterMdexPagination(urldata.value, limit, offset)
-      .then(res => {
-        console.log(res)
-        if (res) {
-          tableDownload.splice(offset, 0, ...res)
-        }
-        tableLoading.value = false
-      })
-      .catch(e => {
-        console.log(e)
-        tableLoading.value = false
-      })
-    // console.log(extra)
-  }
+  console.log('table DATA change')
+
+  // if (chap.length == 0) {
+  //   tableLoading.value = true
+  //   const seq = limit / pageSize
+  //   const pSeq = Sequence(seq, page)
+  //   const offset = pSeq * limit - limit
+
+  //   GetChapterMdexPagination(urldata.value, limit, offset)
+  //     .then(res => {
+  //       console.log(res)
+  //       if (res) {
+  //         tableDownload.splice(offset, 0, ...res)
+  //       }
+  //       tableLoading.value = false
+  //     })
+  //     .catch(e => {
+  //       console.log(e)
+  //       tableLoading.value = false
+  //     })
+  // }
 }
 
 //clearDownload
@@ -465,6 +536,7 @@ const clearDownload = () => {
   selectedServer.value = 1
   chapterList.value = null
   tableDownload.length = 0
+  tablePageCurrent.value = 1
 }
 
 //watch URL DATA => auto select servers

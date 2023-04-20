@@ -49,8 +49,8 @@ func Contains[T comparable](s []T, e T) bool {
 	return false
 }
 
-// AutoCrop crop manga image to desired width with contstrait
-func AutoCrop(image *vips.ImageRef, w int) bool {
+// AutoCropManga crop manga image to desired width with limit contstrait
+func AutoCropManga(image *vips.ImageRef, w int) bool {
 	width := image.Width()
 	height := image.Height()
 
@@ -66,6 +66,21 @@ func AutoCrop(image *vips.ImageRef, w int) bool {
 				w = 1000
 			}
 		}
+		err := image.ResizeWidthPixel(float64(w), vips.KernelMitchell)
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+// AutoCrop crop manga image to desired width with contstrait
+func AutoCrop(image *vips.ImageRef, w int) bool {
+	width := image.Width()
+
+	if width > w {
 		err := image.ResizeWidthPixel(float64(w), vips.KernelMitchell)
 		if err != nil {
 			fmt.Println(err)

@@ -29,7 +29,6 @@ func (d Lhtranslation) GetChapter(o Option) (*Chapter, error) {
 
 	var c Chapter
 	c.Manga = "Lhtranslation " + mdex
-	c.MdexData = mdexmanga
 	c.Mdex = mdex
 	return &c, nil
 }

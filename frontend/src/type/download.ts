@@ -9,5 +9,6 @@ export interface EventChap {
 export interface EventPage {
   images: string
   index_page: number
-  stat_error: string
+  stat_error: string | null
+  chapter: number
 }

@@ -34,8 +34,8 @@ func (f *FileDownloader) setupClient() *grab.Client {
 	return client
 }
 
-// setupDirectory() is internal methods for creating emty directory
-func (f *FileDownloader) setupDirectory(path string) error {
+// SetupDirectory() is internal methods for creating emty directory
+func (f *FileDownloader) SetupDirectory(path string) error {
 	return os.MkdirAll(path, os.ModePerm)
 }
 
@@ -59,7 +59,7 @@ func (f *FileDownloader) SetHeader(key, value string) *FileDownloader {
 
 // BatchDownload is methods for download in Batch with auto rename filename by index
 func (f *FileDownloader) BatchDownload(worker int, dst string, remote_urls []string) <-chan *grab.Response {
-	f.setupDirectory(dst)
+	f.SetupDirectory(dst)
 
 	clinet := f.setupClient()
 

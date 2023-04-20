@@ -6,12 +6,16 @@ import (
 	"fmt"
 	"mangav4/system/app"
 	"mangav4/system/app/helper"
+
 	"mangav4/system/app/internet"
 	"mangav4/system/download/types"
 	"mangav4/system/file"
+	"mangav4/system/manga"
+	"os"
 	"path/filepath"
 	"reflect"
 
+	vips "github.com/twincats/golibvips/libvips"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -43,6 +47,7 @@ func (f *Download) GetChapter(o types.Option) (types.Chapter, error) {
 		var nilChap types.Chapter
 		chap, err := d.GetChapter(o)
 		if err != nil {
+
 			return nilChap, err
 		}
 		chaps := CheckChapterDB(*chap)
@@ -51,16 +56,39 @@ func (f *Download) GetChapter(o types.Option) (types.Chapter, error) {
 	return types.Chapter{}, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
 }
 
-func (f *Download) GetPage(o types.OptionPage) (PageReport, error) {
+func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 	// option change to []types.ChapterList
 	var pageReport PageReport
 	if d := f.getDownloads(o.ServerName); d != nil {
 		// setup download
 		dl := internet.NewFileDownloader()
+		title := helper.FixMangaTitle(o.Manga)
 
-		pageReport.Manga = o.MangaTitle
+		tx := app.DB.Begin()
+		var mg manga.Manga
+		if o.MangaId == 0 {
+			mg.Title = o.Manga
+			mg.Mdex = o.Mdex
+			err := tx.Create(&mg).Error
+			if err != nil {
+				tx.Rollback()
+				return pageReport, err
+			}
 
-		for ichap, chap := range o.Chapters {
+			cvPath := filepath.Join(file.MANGA_PATH, title)
+			dl.SetupDirectory(cvPath)
+			err = downloadCover(filepath.Join(cvPath, "cover.webp"), o.Cover)
+			if err != nil {
+				dl.RemoveFolder(cvPath)
+				tx.Rollback()
+				return pageReport, err
+			}
+		}
+		tx.SavePoint("manga")
+
+		pageReport.Manga = o.Manga
+
+		for ichap, chap := range o.Chapter {
 
 			var failChap FiledChapReport
 			failChap.ChapID = chap.ID
@@ -89,14 +117,13 @@ func (f *Download) GetPage(o types.OptionPage) (PageReport, error) {
 			eventChap := EventChap{
 				ListPage:  chapRes.Pages,
 				IndexChap: ichap + 1,
-				TotalChap: len(o.Chapters),
+				TotalChap: len(o.Chapter),
 				TotalPage: len(chapRes.Pages),
 				Chapter:   chap.Chapter,
 			}
 
 			runtime.EventsEmit(*app.WailsContext, "dl_eventchap", eventChap)
 
-			title := helper.FixMangaTitle(o.MangaTitle)
 			dlPath := filepath.Join(file.MANGA_PATH, title, chap.Chapter.String())
 
 			ch := dl.BatchDownload(2, dlPath, chapRes.Pages)
@@ -106,36 +133,51 @@ func (f *Download) GetPage(o types.OptionPage) (PageReport, error) {
 					Images:    s.URL,
 					IndexPage: s.Index,
 					StatError: s.Err,
+					Chapter:   chap.Chapter,
 				}
 				runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
 			})
 			err_stats := dl.FilterStatusErr(stats)
 
-			// for _, s := range stats {
-			// 	fmt.Println(s)
-			// 	// report event 2
-			// 	/*
-			// 		1. Index Pages, int
-			// 		2. Status Error, bool
-			// 		3. URL Images, string
-			// 	*/
-
-			// }
-
-			// save to DB
+			// SAVE DB
 			if len(err_stats) < len(chapRes.Pages) {
-				// SAVE DB CHAPTER
-				failChap.StatusDB = true
+				// save cover & manga
+				var mcp manga.Chapter
+				tx.Where("manga_id")
+				mcpChap, _ := chap.Chapter.Float64()
+				mcpLang := manga.LangByLang(chap.Languange)
+				mcp.Chapter = float32(mcpChap)
+				mcp.Volume = chap.Volume
+				mcp.Group = chap.GroupName
+				mcp.LanguageId = uint(mcpLang.ID)
+				mcp.Language = mcpLang
+				mcp.MangaId = o.MangaId
+
+				if o.MangaId == 0 {
+					mcp.MangaId = mg.ID
+				}
+
+				err := tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
+				if err == nil {
+					failChap.StatusDB = true
+				}
+
 			} else {
 				dl.RemoveFolder(dlPath)
 			}
 
-			if len(err_stats) > 0 {
+			if len(err_stats) > 0 || failChap.Err != nil {
 				failChap.FailPage = err_stats
 				pageReport.FailChap = append(pageReport.FailChap, failChap)
 			}
 
 		} // END FOR
+
+		// save cover for new manga
+		err := tx.Commit().Error
+		if err != nil {
+			pageReport.Error = err.Error()
+		}
 
 		// return finish complete report
 		return pageReport, nil
@@ -157,9 +199,10 @@ type EventChap struct {
 }
 
 type EventPage struct {
-	Images    string `json:"images"`
-	IndexPage int    `json:"index_page"`
-	StatError error  `json:"stat_error"`
+	Images    string      `json:"images"`
+	IndexPage int         `json:"index_page"`
+	StatError error       `json:"stat_error"`
+	Chapter   json.Number `json:"chapter"`
 }
 
 // CheckTitleDB is id used for update status CheckChapterDB
@@ -205,6 +248,7 @@ func CheckChapterDB(c types.Chapter) types.Chapter {
 type PageReport struct {
 	Manga    string            `json:"manga_id"`
 	StatusDL bool              `json:"status_dl"`
+	Error    string            `json:"error"`
 	FailChap []FiledChapReport `json:"fail_chap"`
 }
 
@@ -214,4 +258,35 @@ type FiledChapReport struct {
 	StatusDB bool                   `json:"status_db"`
 	Err      error                  `json:"error"`
 	FailPage []internet.StatusBatch `json:"fail_page"`
+}
+
+// Download Cover
+func downloadCover(dst, url string) error {
+	bytes, err := app.Client.Get(url).Bytes()
+	if err != nil {
+		return err
+	}
+
+	imgRef, err := vips.NewImageFromBuffer(bytes)
+	if err != nil {
+		return err
+	}
+
+	// autocrop to 300
+	helper.AutoCrop(imgRef, 300)
+
+	ep := vips.NewWebpExportParams()
+	ep.StripMetadata = true
+	ep.Quality = 60
+
+	webpByte, _, err := imgRef.ExportWebp(ep)
+	if err != nil {
+		return err
+	}
+	// save exported byte to file
+	err = os.WriteFile(dst, webpByte, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
