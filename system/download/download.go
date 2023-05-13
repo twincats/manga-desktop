@@ -50,7 +50,7 @@ func (f *Download) GetChapter(o types.Option) (types.Chapter, error) {
 
 			return nilChap, err
 		}
-		chaps := CheckChapterDB(*chap)
+		chaps := f.CheckChapterDB(*chap)
 		return chaps, nil
 	}
 	return types.Chapter{}, errors.New("error Server Name : " + o.ServerName + " Not Found or Implemented")
@@ -167,7 +167,14 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 			}
 
 			if len(err_stats) > 0 || failChap.Err != nil {
-				failChap.FailPage = err_stats
+				for _, v := range err_stats {
+					failChap.FailPage = append(failChap.FailPage, internet.StatDownload{
+						Index:    v.Index,
+						Filename: v.Filename,
+						URL:      v.URL,
+						Err:      v.Err,
+					})
+				}
 				pageReport.FailChap = append(pageReport.FailChap, failChap)
 			}
 
@@ -188,6 +195,110 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 func (f *Download) GetChapterMdexPagination(url string, limit, offset int) ([]types.ChapterList, error) {
 	mdex := new(types.Mangadex)
 	return mdex.GetChapterMdexPagination(url, limit, offset)
+}
+
+// download from frontend
+func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
+	dlPath := filepath.Join(file.MANGA_PATH, p.Manga, string(p.Chapter.Chapter))
+	fd := internet.NewFileDownload(app.C)
+	failed := fd.DownloadBatch(3, dlPath, p.Pages, func(s internet.StatDownload) {
+		if s.Err == nil {
+			eventPage := EventPage{
+				Images:    s.URL,
+				IndexPage: s.Index,
+				StatError: s.Err,
+				Chapter:   p.Chapter.Chapter,
+			}
+			runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
+		}
+	})
+
+	// auto retry 3 times
+	failedRetry := fd.RetryDownloadsCounter(3, failed, func(s internet.StatDownload) {
+		if s.Err == nil {
+			eventPage := EventPage{
+				Images:    s.URL,
+				IndexPage: s.Index,
+				StatError: s.Err,
+				Chapter:   p.Chapter.Chapter,
+			}
+			runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
+		}
+	})
+
+	// SAvae chapter
+	if len(failed) < len(p.Pages) {
+		//save chapter
+		tx := app.DB.Begin()
+		tx.Where("manga_id")
+		var mcp manga.Chapter
+		mcpChap, _ := p.Chapter.Chapter.Float64()
+		mcpLang := manga.LangByLang(p.Chapter.Languange)
+		mcp.Chapter = float32(mcpChap)
+		mcp.Volume = p.Chapter.Volume
+		mcp.Group = p.Chapter.GroupName
+		mcp.LanguageId = uint(mcpLang.ID)
+		mcp.Language = mcpLang
+		mcp.MangaId = p.MangaID
+
+		err := tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
+		if err == nil {
+			// failChap.StatusDB = true
+			tx.Rollback()
+		}
+		err = tx.Commit()
+		if err != nil {
+			fmt.Println("Error save chapter")
+		}
+	}
+
+	// return value
+	if len(failedRetry) > 0 {
+		return failedRetry
+	} else {
+		return failed
+	}
+}
+
+func (f *Download) SaveMangaCover(c types.Chapter) (uint, error) {
+	if c.MangaId > 0 {
+		return 0, errors.New("error: Already Have MangaID")
+	} else {
+		var mg manga.Manga
+		mg.Title = c.Manga
+		mg.Mdex = c.Mdex
+		tx := app.DB.Begin()
+		err := tx.Create(&mg).Error
+		if err != nil {
+			tx.Rollback()
+			return 0, err
+		}
+
+		dl := internet.NewFileDownloader()
+		title := helper.FixMangaTitle(c.Manga)
+		cvPath := filepath.Join(file.MANGA_PATH, title)
+		dl.SetupDirectory(cvPath)
+		err = downloadCover(filepath.Join(cvPath, "cover.webp"), c.Cover)
+		if err != nil {
+			dl.RemoveFolder(cvPath)
+			tx.Rollback()
+			return 0, err
+		}
+
+		err = tx.Commit().Error
+		if err != nil {
+			return 0, err
+		}
+
+		return mg.ID, nil
+	}
+}
+
+type ParamJS struct {
+	MangaID uint              `json:"manga_id"`
+	Manga   string            `json:"manga"`
+	Chapter types.ChapterList `json:"chapter" ts_type:"types.ChapterList"`
+	Pages   []string          `json:"pages"`
 }
 
 type EventChap struct {
@@ -219,7 +330,7 @@ type CheckChapDB struct {
 }
 
 // CheckChapterDB changing status based on DB
-func CheckChapterDB(c types.Chapter) types.Chapter {
+func (f *Download) CheckChapterDB(c types.Chapter) types.Chapter {
 	var checkTitleDB CheckTitleDB
 	ilike := fmt.Sprintf("%%%s%%", c.Manga)
 	app.DB.Table("mangas").Select("mangas.id", "mangas.title").
@@ -246,18 +357,18 @@ func CheckChapterDB(c types.Chapter) types.Chapter {
 }
 
 type PageReport struct {
-	Manga    string            `json:"manga_id"`
+	Manga    string            `json:"manga"`
 	StatusDL bool              `json:"status_dl"`
 	Error    string            `json:"error"`
 	FailChap []FiledChapReport `json:"fail_chap"`
 }
 
 type FiledChapReport struct {
-	ChapID   string                 `json:"chap_id"`
-	Chapter  json.Number            `json:"chapter"`
-	StatusDB bool                   `json:"status_db"`
-	Err      error                  `json:"error"`
-	FailPage []internet.StatusBatch `json:"fail_page"`
+	ChapID   string                  `json:"chap_id"`
+	Chapter  json.Number             `json:"chapter"`
+	StatusDB bool                    `json:"status_db"`
+	Err      error                   `json:"error"`
+	FailPage []internet.StatDownload `json:"fail_page"`
 }
 
 // Download Cover

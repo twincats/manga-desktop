@@ -37,5 +37,10 @@ export default createRouter({
       name: 'test',
       component: () => import('../views/Test.vue'),
     },
+    {
+      path: '/dlcode',
+      name: 'dlcode',
+      component: () => import('../views/admin/DownloadCodeEditor.vue'),
+    },
   ],
 })

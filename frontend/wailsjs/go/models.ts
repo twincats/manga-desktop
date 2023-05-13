@@ -5,7 +5,7 @@ export namespace download {
 	    chapter: string;
 	    status_db: boolean;
 	    error: any;
-	    fail_page: internet.StatusBatch[];
+	    fail_page: internet.StatDownload[];
 	
 	    static createFrom(source: any = {}) {
 	        return new FiledChapReport(source);
@@ -17,7 +17,7 @@ export namespace download {
 	        this.chapter = source["chapter"];
 	        this.status_db = source["status_db"];
 	        this.error = source["error"];
-	        this.fail_page = this.convertValues(source["fail_page"], internet.StatusBatch);
+	        this.fail_page = this.convertValues(source["fail_page"], internet.StatDownload);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -39,7 +39,7 @@ export namespace download {
 		}
 	}
 	export class PageReport {
-	    manga_id: string;
+	    manga: string;
 	    status_dl: boolean;
 	    error: string;
 	    fail_chap: FiledChapReport[];
@@ -50,7 +50,7 @@ export namespace download {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.manga_id = source["manga_id"];
+	        this.manga = source["manga"];
 	        this.status_dl = source["status_dl"];
 	        this.error = source["error"];
 	        this.fail_chap = this.convertValues(source["fail_chap"], FiledChapReport);
@@ -73,6 +73,24 @@ export namespace download {
 		    }
 		    return a;
 		}
+	}
+	export class ParamJS {
+	    manga_id: number;
+	    manga: string;
+	    chapter: types.ChapterList;
+	    pages: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ParamJS(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manga_id = source["manga_id"];
+	        this.manga = source["manga"];
+	        this.chapter = source["chapter"];
+	        this.pages = source["pages"];
+	    }
 	}
 
 }
@@ -136,22 +154,26 @@ export namespace file {
 
 export namespace internet {
 	
-	export class StatusBatch {
-	    err: any;
+	export class StatDownload {
 	    index: number;
+	    status_resume: boolean;
 	    filename: string;
+	    name: string;
 	    url: string;
+	    err: any;
 	
 	    static createFrom(source: any = {}) {
-	        return new StatusBatch(source);
+	        return new StatDownload(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.err = source["err"];
 	        this.index = source["index"];
+	        this.status_resume = source["status_resume"];
 	        this.filename = source["filename"];
+	        this.name = source["name"];
 	        this.url = source["url"];
+	        this.err = source["err"];
 	    }
 	}
 
@@ -380,6 +402,7 @@ export namespace manga {
 	    url: string;
 	    search: boolean;
 	    status_active: boolean;
+	    js_code: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Server(source);
@@ -392,6 +415,7 @@ export namespace manga {
 	        this.url = source["url"];
 	        this.search = source["search"];
 	        this.status_active = source["status_active"];
+	        this.js_code = source["js_code"];
 	    }
 	}
 

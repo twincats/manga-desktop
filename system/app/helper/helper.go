@@ -39,6 +39,39 @@ func ParallelCode[T any](p int, val []T, f func(v T)) {
 	wg.Wait()
 }
 
+// ParallelCodeI is multiple code in concurrency run as parrarel with slice data with Index
+func ParallelCodeI[T any](p int, val []T, f func(i int, v T)) {
+	var wg sync.WaitGroup
+	wg.Add(p)
+
+	type SChan struct {
+		i int
+		v T
+	}
+
+	channel := make(chan SChan)
+	for i := 0; i < p; i++ {
+		go func() {
+			for {
+				c, more := <-channel
+				if !more {
+					wg.Done()
+					return
+				}
+
+				f(c.i, c.v)
+			}
+		}()
+	}
+
+	for i, v := range val {
+		channel <- SChan{i: i, v: v}
+	}
+
+	close(channel)
+	wg.Wait()
+}
+
 // Contains return boolean if T is included in slice []T
 func Contains[T comparable](s []T, e T) bool {
 	for _, v := range s {

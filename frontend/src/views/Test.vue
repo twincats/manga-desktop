@@ -11,7 +11,7 @@
       </a-space>
     </div>
     <div>
-      {{ manga }}
+      {{ mangaHome }}
     </div>
     <div>
       <ContextMenuApp ref="refMenu">
@@ -31,10 +31,10 @@ import type { manga } from '@wails/go/models'
 import ContextMenuApp from '@/components/app/ContextMenu.vue'
 import { UseContextMenu } from '@/composable/helper'
 
-const manga = ref<manga.MangaHome>()
+const mangaHome = ref<manga.MangaHome>()
 const showManga = () => {
   GetMangaHome(null, 1, 5).then(res => {
-    manga.value = res
+    mangaHome.value = res
   })
 }
 const { refMenu, openContextMenu, closeContextMenu } = UseContextMenu()

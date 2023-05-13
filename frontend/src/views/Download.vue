@@ -295,6 +295,7 @@ import { types } from '@wails/go/models'
 import { UseTable, UseServer } from '@/composable/downloads/download'
 import { useDownloadState } from '@/store/global'
 import type { EventChap, EventPage } from '@/type/download'
+import { toValue } from '@vueuse/core'
 
 //// STARTING CODE BOOTUP ////
 const { tableDownload, tableLoading, tablePageSize, tablePageCurrent } =

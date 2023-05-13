@@ -2,6 +2,7 @@ package tool
 
 import (
 	"io"
+	"mangav4/system/app"
 	"net/http"
 )
 
@@ -13,6 +14,22 @@ type Web struct {
 
 func NewWeb() *Web {
 	return &Web{}
+}
+
+func (w *Web) Fetch(u string) (string, error) {
+	res, err := app.C.R().Get(u)
+	if err != nil {
+		return "", err
+	}
+	return res.String(), nil
+}
+
+func (f *Web) FetchPost(u string, data interface{}) (string, error) {
+	res, err := app.C.R().SetBody(data).Post(u)
+	if err != nil {
+		return "", err
+	}
+	return res.String(), nil
 }
 
 func (f *Web) WebBrowser(url string) (*Web, error) {

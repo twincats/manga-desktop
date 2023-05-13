@@ -375,6 +375,12 @@ const clickConvert = async () => {
     cv.ext.push('.webp')
   }
 
+  // reset progress
+  output.sizeBefore = 0
+  output.sizeAfter = 0
+  output.percent = 0
+  output.progress = 0
+
   // doing convert
   DoConvert(cv)
     .then(res => {
