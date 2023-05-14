@@ -402,7 +402,8 @@ export namespace manga {
 	    url: string;
 	    search: boolean;
 	    status_active: boolean;
-	    js_code: string;
+	    chap_jscode: string;
+	    page_jscode: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Server(source);
@@ -415,7 +416,8 @@ export namespace manga {
 	        this.url = source["url"];
 	        this.search = source["search"];
 	        this.status_active = source["status_active"];
-	        this.js_code = source["js_code"];
+	        this.chap_jscode = source["chap_jscode"];
+	        this.page_jscode = source["page_jscode"];
 	    }
 	}
 

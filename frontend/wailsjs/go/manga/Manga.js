@@ -33,3 +33,11 @@ export function InsertManga(arg1) {
 export function TestHomeApiQuery() {
   return window['go']['manga']['Manga']['TestHomeApiQuery']();
 }
+
+export function UpdateChapJS(arg1, arg2) {
+  return window['go']['manga']['Manga']['UpdateChapJS'](arg1, arg2);
+}
+
+export function UpdatePagesJS(arg1, arg2) {
+  return window['go']['manga']['Manga']['UpdatePagesJS'](arg1, arg2);
+}

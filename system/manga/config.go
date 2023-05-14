@@ -79,3 +79,8 @@ func (f *Config) AutoScanDirs() ([]string, error) {
 	file.MANGA_PATH = cf.MangaFolder
 	return mangaList, nil
 }
+
+func (f *Config) MigrateServer() bool {
+	err := app.DB.AutoMigrate(&Server{})
+	return err == nil
+}

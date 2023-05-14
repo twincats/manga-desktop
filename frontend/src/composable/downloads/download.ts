@@ -35,15 +35,23 @@ export const UseTable = () => {
 
 export const UseServer = () => {
   const servers = ref<manga.Server[] | null>(null) // to fill list server
-  GetServer().then(res => {
-    // to fetch server only active server
-    servers.value = res.filter(item => item.status_active === true)
-  })
+
+  const refreshServer = () => {
+    GetServer().then(res => {
+      // to fetch server only active server
+      servers.value = res.filter(item => item.status_active === true)
+    })
+  }
+
+  // fetch server
+  refreshServer()
+
   const getSelectedServer = (id: number): manga.Server | undefined => {
     return servers.value?.find(item => item.id == id)
   }
   return {
     servers,
     getSelectedServer,
+    refreshServer,
   }
 }

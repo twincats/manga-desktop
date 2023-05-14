@@ -296,6 +296,7 @@ import { UseTable, UseServer } from '@/composable/downloads/download'
 import { useDownloadState } from '@/store/global'
 import type { EventChap, EventPage } from '@/type/download'
 import { toValue } from '@vueuse/core'
+import { Download } from '@/composable/downloads/wrapper'
 
 //// STARTING CODE BOOTUP ////
 const { tableDownload, tableLoading, tablePageSize, tablePageCurrent } =
@@ -329,6 +330,7 @@ next  4. retry
 
 // GET CHAPTER DATA
 const { GetPasteData } = useClipboardData()
+const dl = new Download()
 
 let afterGetChapURL = ''
 const goGetchDownload = useDebounceFn(async () => {
@@ -343,10 +345,10 @@ const goGetchDownload = useDebounceFn(async () => {
   //testing download chapter
   const server = getSelectedServer(selectedServer.value)
   if (server && urldata.value != '') {
-    GetChapter({
-      url: urldata.value,
-      server_name: server.name,
-    })
+    const o = new types.Option()
+    o.url = urldata.value
+    o.server_name = server.name
+    dl.GetChap(o, server)
       .then(res => {
         // reset table
         if (afterGetChapURL != '' && urldata.value != afterGetChapURL) {

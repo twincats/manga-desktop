@@ -8,4 +8,6 @@ export function ClearAllConfig():Promise<void>;
 
 export function GetConfig():Promise<manga.Config>;
 
+export function MigrateServer():Promise<boolean>;
+
 export function SetConfig(arg1:manga.Config):Promise<void>;

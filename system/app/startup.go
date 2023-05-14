@@ -15,7 +15,7 @@ var (
 	arguments    []string
 	BlockClose   = false
 	Client       = new(internet.Client)
-	C            = new(internet.RemoteClient)
+	C            = internet.NewRemoteClient()
 )
 
 func Startup(ctx *context.Context) {

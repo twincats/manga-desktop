@@ -14,6 +14,10 @@ export function GetConfig() {
   return window['go']['manga']['Config']['GetConfig']();
 }
 
+export function MigrateServer() {
+  return window['go']['manga']['Config']['MigrateServer']();
+}
+
 export function SetConfig(arg1) {
   return window['go']['manga']['Config']['SetConfig'](arg1);
 }

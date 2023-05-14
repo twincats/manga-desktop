@@ -102,6 +102,26 @@ func (f *Manga) TestHomeApiQuery() interface{} {
 	return v
 }
 
+func (f *Manga) UpdateChapJS(serverID uint, chapJS string) (bool, error) {
+	var server Server
+	server.ID = serverID
+	res := app.DB.Model(&server).Update("chap_js_code", chapJS)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}
+
+func (f *Manga) UpdatePagesJS(serverID uint, pageJS string) (bool, error) {
+	var server Server
+	server.ID = serverID
+	res := app.DB.Model(&server).Update("page_js_code", pageJS)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}
+
 // PageApi for Fetching chapter and Manga title
 type PageApi struct {
 	ID      uint

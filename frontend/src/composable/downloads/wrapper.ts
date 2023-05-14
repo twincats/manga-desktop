@@ -15,13 +15,13 @@ export class Download {
   constructor() {
     this.#p = new MangaParser()
   }
-  GetChap(u: string, o: types.Option, s: manga.Server): Promise<types.Chapter> {
+  GetChap(o: types.Option, s: manga.Server): Promise<types.Chapter> {
     if (s.id == 1) {
       return GetChapter(o)
     } else {
       return new Promise((res, rej) => {
         this.#p
-          .getManga(u, '')
+          .getManga(o.url, s.chap_jscode)
           .then(r => {
             r.server_name = s.name
             CheckChapterDB(r)
@@ -75,7 +75,7 @@ export class Download {
           fc.chapter = cc.chapter
 
           this.#p
-            .getPages(cc.id, '')
+            .getPages(cc.id, s.page_jscode)
             .then(r => {
               // do event
               const evc: EventChap = {

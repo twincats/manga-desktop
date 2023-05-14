@@ -69,7 +69,7 @@
               renderLineHighlight: 'none',
               readOnly: true,
             }"
-            v-model="jsonCode"
+            v-model="TestResult"
           />
         </div>
       </div>
@@ -81,6 +81,8 @@
 import models from '@wails/go/models.ts?raw'
 import parser from '@/composable/downloads/parser.ts?raw'
 import { UseServer } from '@/composable/downloads/download'
+import { MangaParser } from '@/composable/downloads/parser'
+import { UpdateChapJS, UpdatePagesJS } from '@wails/go/manga/Manga'
 
 const lib = [
   models,
@@ -95,18 +97,88 @@ const lib = [
   .replace(`import { Fetch, FetchPost } from '@wails/go/tool/Web'`, '')
 
 const JSCode = ref('')
-const { servers } = UseServer()
-const TestResult = ref()
+const { servers, getSelectedServer, refreshServer } = UseServer()
+const TestResult = ref('')
 const selectedServerID = ref<number | string>('')
 const urlTest = ref('')
 
-const loadChapFunc = () => {}
-const loadPageFunc = () => {}
-const saveChapFunc = () => {}
-const savePageFunc = () => {}
-const testChapFunc = () => {}
+const loadChapFunc = () => {
+  if (
+    typeof selectedServerID.value === 'number' &&
+    selectedServerID.value > 1
+  ) {
+    const sv = getSelectedServer(selectedServerID.value)
+    JSCode.value = sv?.chap_jscode!
+  }
+}
+const loadPageFunc = () => {
+  if (
+    typeof selectedServerID.value === 'number' &&
+    selectedServerID.value > 1
+  ) {
+    const sv = getSelectedServer(selectedServerID.value)
+    JSCode.value = sv?.chap_jscode!
+  }
+}
+const saveChapFunc = () => {
+  if (
+    typeof selectedServerID.value === 'number' &&
+    selectedServerID.value > 1
+  ) {
+    if (JSCode.value != '') {
+      UpdateChapJS(selectedServerID.value, JSCode.value)
+        .then(stat => {
+          console.log('UpdateChapJS : ', stat)
+          refreshServer()
+        })
+        .catch(e => {
+          console.log('Error UpdateChapJS : ', e)
+        })
+    }
+  }
+}
+const savePageFunc = () => {
+  if (
+    typeof selectedServerID.value === 'number' &&
+    selectedServerID.value > 1
+  ) {
+    if (JSCode.value != '') {
+      UpdatePagesJS(selectedServerID.value, JSCode.value)
+        .then(stat => {
+          console.log('UpdatePagesJS : ', stat)
+          refreshServer()
+        })
+        .catch(e => {
+          console.log('Error UpdatePagesJS : ', e)
+        })
+    }
+  }
+}
+const testChapFunc = () => {
+  const mp = new MangaParser()
+  if (urlTest.value != '' && JSCode.value != '') {
+    mp.getManga(urlTest.value, JSCode.value)
+      .then(res => {
+        TestResult.value = JSON.stringify(res, null, 4)
+      })
+      .catch(e => {
+        console.log('Error Test ChapterJS : ', e)
+      })
+  } else {
+    console.log('URL / JS is EMPTY')
+  }
+}
 const testPageFunc = () => {
-  console.log(JSCode.value)
+  const mp = new MangaParser()
+  if (urlTest.value != '' && JSCode.value != '') {
+    mp.getPages(urlTest.value, JSCode.value)
+      .then(res => {
+        TestResult.value = JSON.stringify(res, null, 4)
+      })
+      .catch(e => {
+        console.log('Error Test PagesJS : ', e)
+      })
+  }
 }
 const clearFunc = () => {
   // console.log(jsonCode.value)
@@ -114,10 +186,7 @@ const clearFunc = () => {
   selectedServerID.value = ''
   urlTest.value = ''
   TestResult.value = ''
-  jsonCode.value = ''
 }
-
-const jsonCode = ref('')
 </script>
 
 <style scoped></style>

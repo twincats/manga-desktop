@@ -17,3 +17,7 @@ export function GetServer():Promise<Array<manga.Server>>;
 export function InsertManga(arg1:manga.Manga):Promise<number>;
 
 export function TestHomeApiQuery():Promise<any>;
+
+export function UpdateChapJS(arg1:number,arg2:string):Promise<boolean>;
+
+export function UpdatePagesJS(arg1:number,arg2:string):Promise<boolean>;
