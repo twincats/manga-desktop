@@ -14,4 +14,6 @@ export function GetChapterMdexPagination(arg1:string,arg2:number,arg3:number):Pr
 
 export function GetPage(arg1:types.Chapter):Promise<download.PageReport>;
 
+export function RetryDownloads(arg1:number,arg2:Array<internet.StatDownload>):Promise<Array<internet.StatDownload>>;
+
 export function SaveMangaCover(arg1:types.Chapter):Promise<number>;

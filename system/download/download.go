@@ -61,7 +61,7 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 	var pageReport PageReport
 	if d := f.getDownloads(o.ServerName); d != nil {
 		// setup download
-		dl := internet.NewFileDownloader()
+		h := internet.NewFileDownloader()
 		title := helper.FixMangaTitle(o.Manga)
 
 		tx := app.DB.Begin()
@@ -76,10 +76,10 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 			}
 
 			cvPath := filepath.Join(file.MANGA_PATH, title)
-			dl.SetupDirectory(cvPath)
+			h.SetupDirectory(cvPath)
 			err = downloadCover(filepath.Join(cvPath, "cover.webp"), o.Cover)
 			if err != nil {
-				dl.RemoveFolder(cvPath)
+				h.RemoveFolder(cvPath)
 				tx.Rollback()
 				return pageReport, err
 			}
@@ -88,6 +88,8 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 
 		pageReport.Manga = o.Manga
 
+		// batch download
+		dl := internet.NewFileDownload(app.C)
 		for ichap, chap := range o.Chapter {
 
 			var failChap FiledChapReport
@@ -106,14 +108,6 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 				continue
 			}
 
-			// report event 1
-			/*
-				1. List Page, []string
-				2. Index Chapter, int
-				3. Total Chapter, int
-				4. Total Pages, int
-				5.  Chapter Dl, json.number
-			*/
 			eventChap := EventChap{
 				ListPage:  chapRes.Pages,
 				IndexChap: ichap + 1,
@@ -121,26 +115,39 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 				TotalPage: len(chapRes.Pages),
 				Chapter:   chap.Chapter,
 			}
-
 			runtime.EventsEmit(*app.WailsContext, "dl_eventchap", eventChap)
 
 			dlPath := filepath.Join(file.MANGA_PATH, title, chap.Chapter.String())
 
-			ch := dl.BatchDownload(2, dlPath, chapRes.Pages)
-
-			_, stats := dl.StatusBatch(ch, func(s internet.StatusBatch) {
-				eventPage := EventPage{
-					Images:    s.URL,
-					IndexPage: s.Index,
-					StatError: s.Err,
-					Chapter:   chap.Chapter,
+			failed := dl.DownloadBatch(3, dlPath, chapRes.Pages, func(s internet.StatDownload) {
+				if s.Err == nil {
+					eventPage := EventPage{
+						Images:       s.URL,
+						IndexPage:    s.Index,
+						StatError:    s.Err,
+						Chapter:      chap.Chapter,
+						StatusResume: s.StatusResume,
+					}
+					runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
 				}
-				runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
 			})
-			err_stats := dl.FilterStatusErr(stats)
+
+			// auto retry 3 times
+			failedRetry := dl.RetryDownloadsCounter(3, failed, func(s internet.StatDownload) {
+				if s.Err == nil {
+					eventPage := EventPage{
+						Images:       s.URL,
+						IndexPage:    s.Index,
+						StatError:    s.Err,
+						Chapter:      chap.Chapter,
+						StatusResume: s.StatusResume,
+					}
+					runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
+				}
+			})
 
 			// SAVE DB
-			if len(err_stats) < len(chapRes.Pages) {
+			if len(failedRetry) < len(chapRes.Pages) {
 				// save cover & manga
 				var mcp manga.Chapter
 				tx.Where("manga_id")
@@ -163,18 +170,11 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 				}
 
 			} else {
-				dl.RemoveFolder(dlPath)
+				h.RemoveFolder(dlPath)
 			}
 
-			if len(err_stats) > 0 || failChap.Err != nil {
-				for _, v := range err_stats {
-					failChap.FailPage = append(failChap.FailPage, internet.StatDownload{
-						Index:    v.Index,
-						Filename: v.Filename,
-						URL:      v.URL,
-						Err:      v.Err,
-					})
-				}
+			if len(failedRetry) > 0 || failChap.Err != nil {
+				failChap.FailPage = failedRetry
 				pageReport.FailChap = append(pageReport.FailChap, failChap)
 			}
 
@@ -204,10 +204,11 @@ func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
 	failed := fd.DownloadBatch(3, dlPath, p.Pages, func(s internet.StatDownload) {
 		if s.Err == nil {
 			eventPage := EventPage{
-				Images:    s.URL,
-				IndexPage: s.Index,
-				StatError: s.Err,
-				Chapter:   p.Chapter.Chapter,
+				Images:       s.URL,
+				IndexPage:    s.Index,
+				StatError:    s.Err,
+				Chapter:      p.Chapter.Chapter,
+				StatusResume: s.StatusResume,
 			}
 			runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
 		}
@@ -217,10 +218,11 @@ func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
 	failedRetry := fd.RetryDownloadsCounter(3, failed, func(s internet.StatDownload) {
 		if s.Err == nil {
 			eventPage := EventPage{
-				Images:    s.URL,
-				IndexPage: s.Index,
-				StatError: s.Err,
-				Chapter:   p.Chapter.Chapter,
+				Images:       s.URL,
+				IndexPage:    s.Index,
+				StatError:    s.Err,
+				Chapter:      p.Chapter.Chapter,
+				StatusResume: s.StatusResume,
 			}
 			runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
 		}
@@ -294,6 +296,27 @@ func (f *Download) SaveMangaCover(c types.Chapter) (uint, error) {
 	}
 }
 
+func (f *Download) RetryDownloads(count int, retryData []internet.StatDownload) ([]internet.StatDownload, error) {
+
+	if count == 0 {
+		return retryData, errors.New("retryDownload : count must be more than 0")
+	}
+
+	dl := internet.NewFileDownload(app.C)
+
+	moreFailed := dl.RetryDownloadsCounter(count, retryData, func(s internet.StatDownload) {
+		eventPage := EventPage{
+			Images:       s.URL,
+			IndexPage:    s.Index,
+			StatError:    s.Err,
+			StatusResume: s.StatusResume,
+		}
+		runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
+	})
+
+	return moreFailed, nil
+}
+
 type ParamJS struct {
 	MangaID uint              `json:"manga_id"`
 	Manga   string            `json:"manga"`
@@ -310,10 +333,11 @@ type EventChap struct {
 }
 
 type EventPage struct {
-	Images    string      `json:"images"`
-	IndexPage int         `json:"index_page"`
-	StatError error       `json:"stat_error"`
-	Chapter   json.Number `json:"chapter"`
+	Images       string      `json:"images"`
+	IndexPage    int         `json:"index_page"`
+	StatError    error       `json:"stat_error"`
+	Chapter      json.Number `json:"chapter"`
+	StatusResume bool        `json:"status_resume"`
 }
 
 // CheckTitleDB is id used for update status CheckChapterDB

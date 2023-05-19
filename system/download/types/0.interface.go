@@ -9,24 +9,8 @@ import (
 
 // CLASS is collection of manga server struct
 var CLASS = map[string]interface{}{
-	"Mangadex":      new(Mangadex),
-	"Lhtranslation": new(Lhtranslation),
-	"Ksgroupscans":  new(Ksgroupscans),
-	"Gdegenscans":   new(Gdegenscans),
-	"Westmanga":     new(Westmanga),
-	"Mangasushi":    new(Mangasushi),
-	"Flamescans":    new(Flamescans),
-	"Readmanganato": new(Readmanganato),
-	"KomikCast":     new(KomikCast),
-	"Kiryuu":        new(Kiryuu),
-	"PlatinumScans": new(PlatinumScans),
-	"Komikindo":     new(Komikindo),
-	"Mangatale":     new(Mangatale),
-	"Mangkomik":     new(Mangkomik),
-	"Inazumanga":    new(Inazumanga),
-	"Maid":          new(Maid),
-	"Mangaindo":     new(Mangaindo),
-	"Masterkomik":   new(Masterkomik),
+	"Mangadex":  new(Mangadex),
+	"Westmanga": new(Westmanga),
 }
 
 // Downloads is interface for every manga server struct

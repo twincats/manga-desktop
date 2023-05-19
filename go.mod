@@ -10,7 +10,7 @@ require (
 	github.com/markthree/go-get-folder-size v0.2.14
 	github.com/twincats/golibvips v0.1.2
 	github.com/valyala/fasthttp v1.43.0
-	github.com/wailsapp/wails/v2 v2.4.1
+	github.com/wailsapp/wails/v2 v2.5.1
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/driver/sqlite v1.4.3
 	gorm.io/gorm v1.24.1

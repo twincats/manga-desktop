@@ -157,6 +157,7 @@ export class MangaParser {
    * @type {Function} func holding generated text func
    */
   func: Function | null = null
+  funcSync: Function | null = null
 
   /**
    * chapter is types.Chapter
@@ -165,16 +166,25 @@ export class MangaParser {
   chapter: types.Chapter
 
   /**
-   * url
-   * @type {string | null } holind temporary url
+   * urlFetch
+   * @type {string | null } holind temporary urlFetch
    */
-  url: string | null = null
+  urlFetch: string | null = null
+
+  /**
+   * urlFetchPost
+   * @type {string | null } holind temporary urlFetchPost
+   */
+  urlFetchPost: string | null = null
 
   /**
    * pages is list of url image
    * @type {types.Chapter} pages for holding get pages
    */
   pages: string[] = []
+
+  #tmpHTMLFetch: string = ''
+  #tmpHTMLFetchPost: string = ''
 
   constructor() {
     this.chapter = this.#setDefault()
@@ -186,6 +196,11 @@ export class MangaParser {
    */
   #setFuncA(c: string, ...args: any): Function {
     return new Function(args, c)
+  }
+
+  #setFuncB(c: string, ...args: any): Function {
+    const AsyncFunction = <FunctionConstructor>async function () {}.constructor
+    return new AsyncFunction(args, c)
   }
 
   /**
@@ -215,7 +230,11 @@ export class MangaParser {
   setT(v: string | null): number {
     if (v != null) {
       const d = Date.parse(v)
-      return Math.floor(d / 1000)
+      if (isNaN(d)) {
+        return Math.floor(Date.now() / 1000)
+      } else {
+        return Math.floor(d / 1000)
+      }
     } else {
       return 0
     }
@@ -273,15 +292,23 @@ export class MangaParser {
     return c
   }
 
-  /**
-   * setURl() is setting temporary url
-   * @return {MangaParser} instance of MangaParser
-   */
   setURl(s: string): MangaParser {
-    if (this.url == null) {
-      this.url = s
+    if (this.urlFetch == null) {
+      this.urlFetch = s
     }
     return this
+  }
+
+  setURLPost(s: string): MangaParser {
+    if (this.urlFetchPost == null) {
+      this.urlFetchPost = s
+    }
+    return this
+  }
+
+  clearURLAll(): void {
+    this.urlFetchPost = null
+    this.urlFetchPost = null
   }
 
   /**
@@ -293,6 +320,14 @@ export class MangaParser {
       return this.func
     } else {
       return (this.func = this.#setFuncA(c, 'C', ...args))
+    }
+  }
+
+  getFuncSync(c: string = '', ...args: any): Function {
+    if (typeof this.funcSync == 'function' && c == '') {
+      return this.funcSync
+    } else {
+      return (this.func = this.#setFuncB(c, 'C', ...args))
     }
   }
 
@@ -309,13 +344,43 @@ export class MangaParser {
    * @return {void}
    */
   fetch(u: string): Promise<string> {
-    this.url = u
-    return Fetch(u)
+    return new Promise((res, rej) => {
+      if (this.urlFetch != u) {
+        this.urlFetch = u
+        Fetch(u)
+          .then(out => {
+            this.#tmpHTMLFetch = out
+            res(out)
+          })
+          .catch(e => rej(e))
+      } else {
+        if (this.#tmpHTMLFetch != '') {
+          res(this.#tmpHTMLFetch)
+        } else {
+          rej('please clear urlFetch')
+        }
+      }
+    })
   }
 
-  fetchPost(u: string, postData: any = null): Promise<any> {
-    this.url = u
-    return FetchPost(u, postData)
+  fetchPost(u: string, postData: any = null): Promise<string> {
+    return new Promise((res, rej) => {
+      if (this.urlFetchPost != u) {
+        this.urlFetchPost = u
+        FetchPost(u, postData)
+          .then(out => {
+            this.#tmpHTMLFetchPost = out
+            res(out)
+          })
+          .catch(e => rej(e))
+      } else {
+        if (this.#tmpHTMLFetchPost != '') {
+          res(this.#tmpHTMLFetchPost)
+        } else {
+          rej('please clear urlFetchPost')
+        }
+      }
+    })
   }
   getParser(s: string): Parser {
     return new Parser(s)
@@ -327,8 +392,17 @@ export class MangaParser {
     return new Promise((res, rej) => {
       this.fetch(u).then(out => {
         try {
-          const func = this.getFunc(fn, 'p')(this, this.getParser(out))
-          res(this.#getManga())
+          const func = this.getFuncSync(fn, 'p')
+          func(this, this.getParser(out))
+            .then((ro: unknown) => {
+              if (ro) {
+                console.log(ro)
+              }
+            })
+            .catch((e: unknown) => rej(e))
+            .finally(() => {
+              res(this.#getManga())
+            })
         } catch (e) {
           rej(e)
         }
@@ -342,12 +416,29 @@ export class MangaParser {
     return new Promise((res, rej) => {
       this.fetch(u).then(out => {
         try {
-          const func = this.getFunc(fn, 'p')(this, this.getParser(out))
-          res(this.#getPages())
+          const func = this.getFunc(fn, 'p')
+          func(this, this.getParser(out))
+            .then((ro: unknown) => {
+              if (ro) {
+                console.log(ro)
+              }
+            })
+            .catch((e: unknown) => rej(e))
+            .finally(() => {
+              res(this.#getPages())
+            })
         } catch (e) {
           rej(e)
         }
       })
     })
+  }
+
+  isEmptyChapter(): boolean {
+    return JSON.stringify(this.chapter) === JSON.stringify(this.#setDefault())
+  }
+
+  isEmptyPage(): boolean {
+    return this.pages.length == 0
   }
 }

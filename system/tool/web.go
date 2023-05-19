@@ -4,6 +4,8 @@ import (
 	"io"
 	"mangav4/system/app"
 	"net/http"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Web struct {
@@ -19,6 +21,7 @@ func NewWeb() *Web {
 func (w *Web) Fetch(u string) (string, error) {
 	res, err := app.C.R().Get(u)
 	if err != nil {
+		runtime.LogErrorf(*app.WailsContext, "Error Fetch : %v", err)
 		return "", err
 	}
 	return res.String(), nil
@@ -27,6 +30,7 @@ func (w *Web) Fetch(u string) (string, error) {
 func (f *Web) FetchPost(u string, data interface{}) (string, error) {
 	res, err := app.C.R().SetBody(data).Post(u)
 	if err != nil {
+		runtime.LogErrorf(*app.WailsContext, "Error Fetch : %v", err)
 		return "", err
 	}
 	return res.String(), nil

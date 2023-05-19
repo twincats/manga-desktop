@@ -295,7 +295,7 @@ import { types } from '@wails/go/models'
 import { UseTable, UseServer } from '@/composable/downloads/download'
 import { useDownloadState } from '@/store/global'
 import type { EventChap, EventPage } from '@/type/download'
-import { toValue } from '@vueuse/core'
+import { promiseTimeout, toValue } from '@vueuse/core'
 import { Download } from '@/composable/downloads/wrapper'
 
 //// STARTING CODE BOOTUP ////
@@ -341,6 +341,9 @@ const goGetchDownload = useDebounceFn(async () => {
     urldata.value = pasteURL.href
     //here testing download chapter
   }
+
+  // wait watch serverID
+  await promiseTimeout(26)
 
   //testing download chapter
   const server = getSelectedServer(selectedServer.value)
@@ -554,7 +557,7 @@ watchDebounced(
       }
     }
   },
-  { debounce: 50 }
+  { debounce: 25 }
 )
 </script>
 

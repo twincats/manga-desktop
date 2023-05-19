@@ -22,6 +22,10 @@ export function GetPage(arg1) {
   return window['go']['download']['Download']['GetPage'](arg1);
 }
 
+export function RetryDownloads(arg1, arg2) {
+  return window['go']['download']['Download']['RetryDownloads'](arg1, arg2);
+}
+
 export function SaveMangaCover(arg1) {
   return window['go']['download']['Download']['SaveMangaCover'](arg1);
 }

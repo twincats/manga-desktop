@@ -53,10 +53,6 @@
         <div
           class="p-3 mt-2 bg-[#1E1E1E] h-[calc(100vh-364px)] overflow-y-auto"
         >
-          <!-- <div class="whitespace-pre">
-            {{ selectedServerID }}
-            {{ JSON.stringify(TestResult, null, 4) }}
-          </div> -->
           <Monaco
             :config="{
               language: 'json',
@@ -83,6 +79,9 @@ import parser from '@/composable/downloads/parser.ts?raw'
 import { UseServer } from '@/composable/downloads/download'
 import { MangaParser } from '@/composable/downloads/parser'
 import { UpdateChapJS, UpdatePagesJS } from '@wails/go/manga/Manga'
+import { Message, Modal } from '@arco-design/web-vue'
+import '@arco-design/web-vue/es/message/style/index'
+import '@arco-design/web-vue/es/modal/style/index'
 
 const lib = [
   models,
@@ -102,6 +101,7 @@ const TestResult = ref('')
 const selectedServerID = ref<number | string>('')
 const urlTest = ref('')
 
+// LOAD CHAPTER JS
 const loadChapFunc = () => {
   if (
     typeof selectedServerID.value === 'number' &&
@@ -109,17 +109,25 @@ const loadChapFunc = () => {
   ) {
     const sv = getSelectedServer(selectedServerID.value)
     JSCode.value = sv?.chap_jscode!
+  } else {
+    Message.warning('Please Select Server Before LOAD ChapterJS')
   }
 }
+
+// LOAD PAGE JS
 const loadPageFunc = () => {
   if (
     typeof selectedServerID.value === 'number' &&
     selectedServerID.value > 1
   ) {
     const sv = getSelectedServer(selectedServerID.value)
-    JSCode.value = sv?.chap_jscode!
+    JSCode.value = sv?.page_jscode!
+  } else {
+    Message.warning('Please Select Server Before LOAD PagesJS')
   }
 }
+
+// SAVE CHAPTER JS
 const saveChapFunc = () => {
   if (
     typeof selectedServerID.value === 'number' &&
@@ -128,15 +136,23 @@ const saveChapFunc = () => {
     if (JSCode.value != '') {
       UpdateChapJS(selectedServerID.value, JSCode.value)
         .then(stat => {
-          console.log('UpdateChapJS : ', stat)
+          if (stat) {
+            Message.success('ChapterJS SAVED')
+          }
           refreshServer()
         })
         .catch(e => {
           console.log('Error UpdateChapJS : ', e)
         })
+    } else {
+      Message.warning('Editor must contain valid JSCODE')
     }
+  } else {
+    Message.warning('Please Select Server and Entry Editor JSCODE')
   }
 }
+
+// SAVE PAGE JS
 const savePageFunc = () => {
   if (
     typeof selectedServerID.value === 'number' &&
@@ -146,46 +162,101 @@ const savePageFunc = () => {
       UpdatePagesJS(selectedServerID.value, JSCode.value)
         .then(stat => {
           console.log('UpdatePagesJS : ', stat)
+          if (stat) {
+            Message.success('PagesJS SAVED')
+          }
           refreshServer()
         })
         .catch(e => {
           console.log('Error UpdatePagesJS : ', e)
         })
+    } else {
+      Message.warning('Editor must contain valid JSCODE')
     }
+  } else {
+    Message.warning('Please Select Server and Entry Editor JSCODE')
   }
 }
+
+const mp = new MangaParser()
+// TEST CHAPTER JS
 const testChapFunc = () => {
-  const mp = new MangaParser()
   if (urlTest.value != '' && JSCode.value != '') {
-    mp.getManga(urlTest.value, JSCode.value)
-      .then(res => {
-        TestResult.value = JSON.stringify(res, null, 4)
+    mp.fetch(urlTest.value)
+      .then(out => {
+        const func = mp.getFuncSync(JSCode.value, 'p')
+        func(mp, mp.getParser(out))
+          .then((returnVal: unknown) => {
+            if (returnVal) {
+              TestResult.value = JSON.stringify(returnVal, null, 4)
+            }
+          })
+          .catch((e: unknown) => {
+            TestResult.value = JSON.stringify(e, null, 4)
+          })
+          .finally(() => {
+            if (!mp.isEmptyChapter()) {
+              TestResult.value = JSON.stringify(mp.chapter, null, 4)
+            }
+          })
       })
       .catch(e => {
-        console.log('Error Test ChapterJS : ', e)
+        Modal.error({
+          title: 'Error Test ChapterJS',
+          okText: 'OK',
+          content: () => {
+            return ['Error ChapterJS : ', h('br'), JSON.stringify(e)]
+          },
+        })
       })
   } else {
-    console.log('URL / JS is EMPTY')
+    Message.warning('Please fill Valid URL TEST and JSCode in Editor')
   }
 }
+
+// TEST PAGE JS
 const testPageFunc = () => {
-  const mp = new MangaParser()
   if (urlTest.value != '' && JSCode.value != '') {
-    mp.getPages(urlTest.value, JSCode.value)
-      .then(res => {
-        TestResult.value = JSON.stringify(res, null, 4)
+    mp.fetch(urlTest.value)
+      .then(out => {
+        const func = mp.getFuncSync(JSCode.value, 'p')
+        func(mp, mp.getParser(out))
+          .then((returnVal: unknown) => {
+            if (returnVal) {
+              TestResult.value = JSON.stringify(returnVal, null, 4)
+            }
+          })
+          .catch((e: unknown) => {
+            TestResult.value = JSON.stringify(e, null, 4)
+          })
+          .finally(() => {
+            if (!mp.isEmptyPage()) {
+              TestResult.value = JSON.stringify(mp.pages, null, 4)
+            }
+          })
       })
       .catch(e => {
-        console.log('Error Test PagesJS : ', e)
+        Modal.error({
+          title: 'Error Test PagesJS',
+          okText: 'OK',
+          content: () => {
+            return ['Error PagesJS : ', h('br'), JSON.stringify(e)]
+          },
+        })
       })
+  } else {
+    Message.warning('Please fill Valid URL TEST and JSCode in Editor')
   }
 }
+
+// CLEAR function
 const clearFunc = () => {
-  // console.log(jsonCode.value)
   JSCode.value = ''
   selectedServerID.value = ''
   urlTest.value = ''
   TestResult.value = ''
+
+  Message.info('Data is Cleared')
 }
 </script>
 
