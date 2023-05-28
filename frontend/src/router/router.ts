@@ -42,5 +42,11 @@ export default createRouter({
       name: 'dlcode',
       component: () => import('../views/admin/DownloadCodeEditor.vue'),
     },
+    {
+      path: '/addalter/:mid',
+      name: 'addalter',
+      props: typedProps({ mid: Number }),
+      component: () => import('../views/admin/AddAlter.vue'),
+    },
   ],
 })

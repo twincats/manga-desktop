@@ -10,6 +10,10 @@ export function GetMangaHome(arg1, arg2, arg3) {
   return window['go']['manga']['Manga']['GetMangaHome'](arg1, arg2, arg3);
 }
 
+export function GetMangaWithAlter(arg1) {
+  return window['go']['manga']['Manga']['GetMangaWithAlter'](arg1);
+}
+
 export function GetMangaWithChapter(arg1) {
   return window['go']['manga']['Manga']['GetMangaWithChapter'](arg1);
 }

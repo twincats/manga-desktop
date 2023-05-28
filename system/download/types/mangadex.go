@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"mangav4/system/app"
-	"mangav4/system/app/internet"
 	"strings"
 	"time"
 
@@ -25,26 +24,14 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 	var mdexmanga MdexManga
 	var mdexChapter MdexChapter
 
-	// Fetch manga
-	mByte, err := app.Client.Get(urlManga).Bytes()
+	// Fetch & Parse manga
+	_, err := app.C.R().SetSuccessResult(&mdexmanga).Get(urlManga)
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse manga
-	err = internet.BodyParser(mByte, &mdexmanga)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch chapter
-	cByte, err := app.Client.Get(urlChapter).Bytes()
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse Chapter
-	err = internet.BodyParser(cByte, &mdexChapter)
+	// Fetch & Parse chapter
+	_, err = app.C.R().SetSuccessResult(&mdexChapter).Get(urlChapter)
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +50,10 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 
 func (d Mangadex) GetPage(o Option) (*Page, error) {
 	mdex_page_url := fmt.Sprintf("https://api.mangadex.org/at-home/server/%s", o.URL)
-	pageByte, err := app.Client.Get(mdex_page_url).Bytes()
-	if err != nil {
-		return nil, err
-	}
 
+	// fetch & parse MdexPages
 	var mdex_page MdexPages
-	err = internet.BodyParser(pageByte, &mdex_page)
+	_, err := app.C.R().SetSuccessResult(&mdex_page).Get(mdex_page_url)
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +80,10 @@ func (d Mangadex) GetPage(o Option) (*Page, error) {
 func (f *Mangadex) GetChapterMdexPagination(url string, limit, offset int) ([]ChapterList, error) {
 	mdex := getMangadexIdFromUrl(url)
 	urlChapter := fmt.Sprintf("https://api.mangadex.org/manga/%s/feed?translatedLanguage[]=en&translatedLanguage[]=id&includes[]=scanlation_group&limit=%d&offset=%d&order[chapter]=desc", mdex, limit, offset)
-	bodyByte, err := app.Client.Get(urlChapter).Bytes()
-	if err != nil {
-		return nil, err
-	}
 
+	// fetch & parse MdexChapter
 	var mdexChap MdexChapter
-	err = internet.BodyParser(bodyByte, &mdexChap)
+	_, err := app.C.R().SetSuccessResult(&mdexChap).Get(urlChapter)
 	if err != nil {
 		return nil, err
 	}

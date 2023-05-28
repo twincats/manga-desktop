@@ -59,7 +59,7 @@
     </div>
     <teleport to="#app">
       <context-menu ref="refMenu" v-slot="{ item }: { item: manga.Manga }">
-        <li>Add Alternatif</li>
+        <li @click="$router.push(`/addalter/${item.id}`)">Add Alternatif</li>
         <li @click="$router.push('/convert/' + item.id)">Convert Manga</li>
         <div class="divider"></div>
         <li class="text-red-500 font-serif font-bold">DELETE</li>

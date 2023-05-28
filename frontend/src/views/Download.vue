@@ -41,7 +41,7 @@
                 class=""
                 type="button"
               >
-                <div class="grid grid-cols-8 w-full">
+                <div class="grid md:grid-cols-8 lg:grid-cols-16 w-full">
                   <a-radio
                     v-for="(item, i) in servers"
                     :key="i"
@@ -76,7 +76,7 @@
                 <div></div>
               </div>
               <div class="w-full flex flex-col" v-if="chapterList">
-                <div class="h-full min-h-120px">
+                <div class="h-full min-h-120px leading-5">
                   Server : {{ chapterList.server_name }} <br />
                   Total Chapter : {{ chapterList.chapter.length }} <br />
                   Download : {{ chapterList.manga_id }} <br />
@@ -127,9 +127,9 @@
               }"
               :loading="tableLoading"
               @page-change="tablePageChange"
-              @change="(data, extra) => tableChange(<types.ChapterList[]>data, <TableChangeExtra>extra)"
               class="select-none"
               size="mini"
+              stripe
               :scroll="{ x: 1200 }"
               @row-click="(c)=>clickRowTable(<types.ChapterList>c)"
             >
@@ -207,7 +207,7 @@
                   <template #cell="{ record }: { record: types.ChapterList }">
                     <a-button
                       size="mini"
-                      @click.stop="testDownload(record)"
+                      @click.stop="downloadChapter(record)"
                       :disabled="selected_chapter_url.length > 1"
                       >Download</a-button
                     >
@@ -218,7 +218,7 @@
                 <custom-download-th
                   :active="selected_chapter_url.length > 1"
                   :column="column"
-                  @click-download="testDownload()"
+                  @click-download="downloadChapter()"
                 />
               </template>
               <template #empty>
@@ -359,6 +359,10 @@ const goGetchDownload = useDebounceFn(async () => {
           selected_chapter_url.value = []
           tablePageCurrent.value = 1
         }
+        // top empty table if new manga
+        if (chapterList.value?.manga != res.manga) {
+          tableDownload.length = 0
+        }
         //warning torefs expect reactive
         chapterList.value = res
         res.chapter.forEach(item => {
@@ -398,16 +402,16 @@ chapterList.value?.chapter.forEach(item => {
 
 // DOWNLOAD SINGLE OR MULTIPLE CHAPTER
 const mdexPageServer = ref(false) // modelValue mdex datasaver server
-const testDownload = (c: types.ChapterList | null = null) => {
+const downloadChapter = (c: types.ChapterList | null = null) => {
   const server = getSelectedServer(selectedServer.value)
   if (server && urldata.value != '' && chapterList.value != null) {
     var param = new types.Chapter(chapterList.value)
     param.datasaver = mdexPageServer.value
 
     if (c == null) {
-      param.chapter = selected_chapter_url.value
+      param.chapter = JSON.parse(JSON.stringify(selected_chapter_url.value))
     } else {
-      param.chapter = [c]
+      param.chapter = [JSON.parse(JSON.stringify(c))]
     }
 
     // call
@@ -415,10 +419,10 @@ const testDownload = (c: types.ChapterList | null = null) => {
     progress_dl.modal_dl = true
     progress_dl.index_page = 0
 
-    GetPage(param)
+    dl.GetPage(param, server)
       .then(res => {
-        if (res.fail_chap.length > 0 || res.error != null) {
-          console.log(res)
+        console.log(res)
+        if (res.status_dl == false || res.error != null) {
           Modal.error({
             title: 'Error Some Download',
             content: () => {
@@ -455,6 +459,11 @@ const testDownload = (c: types.ChapterList | null = null) => {
           chapterList.value.chapter[i].status = true
           chapterList.value.chapter[i].check = false
         }
+        //clear selected
+        const ix = selected_chapter_url.value.findIndex(
+          item => item.chapter == p.chapter.toString()
+        )
+        selected_chapter_url.value.splice(ix, 1)
       }
     })
   }
@@ -476,8 +485,6 @@ const clickRowTable = (c: types.ChapterList) => {
 
 /// tablePageChange dynamic load rest of chapter download
 const tablePageChange = (p: number) => {
-  console.log('pagination PAGE change')
-  console.log('pagination PAGE SIze', tablePageSize)
   tablePageCurrent.value = p
   if (chapterList.value) {
     const limit = 30
@@ -507,35 +514,6 @@ const tablePageChange = (p: number) => {
   } //chaplist
 }
 
-const tableChange = (chap: types.ChapterList[], extra: TableChangeExtra) => {
-  //basic limit = 30 ==> Offset calculation, offset = page * limit - limit
-  const limit = 30
-  const pageSize = extra.pageSize ? extra.pageSize : limit
-  const page = extra.page ? extra.page : 1
-
-  console.log('table DATA change')
-
-  // if (chap.length == 0) {
-  //   tableLoading.value = true
-  //   const seq = limit / pageSize
-  //   const pSeq = Sequence(seq, page)
-  //   const offset = pSeq * limit - limit
-
-  //   GetChapterMdexPagination(urldata.value, limit, offset)
-  //     .then(res => {
-  //       console.log(res)
-  //       if (res) {
-  //         tableDownload.splice(offset, 0, ...res)
-  //       }
-  //       tableLoading.value = false
-  //     })
-  //     .catch(e => {
-  //       console.log(e)
-  //       tableLoading.value = false
-  //     })
-  // }
-}
-
 //clearDownload
 const clearDownload = () => {
   urldata.value = ''
@@ -543,6 +521,7 @@ const clearDownload = () => {
   chapterList.value = null
   tableDownload.length = 0
   tablePageCurrent.value = 1
+  selected_chapter_url.value = []
 }
 
 //watch URL DATA => auto select servers

@@ -20,6 +20,10 @@ export class Download {
       return GetChapter(o)
     } else {
       return new Promise((res, rej) => {
+        if (s.chap_jscode == '') {
+          rej(`ChapJS Code is Empty. Implement ChapJS server ${s.name}`)
+          return
+        }
         this.#p
           .getManga(o.url, s.chap_jscode)
           .then(r => {
@@ -44,7 +48,12 @@ export class Download {
       return GetPage(c)
     } else {
       return new Promise(async (res, rej) => {
+        if (s.page_jscode == '') {
+          rej(`PagesJS Code is Empty. Implement PagesJS server ${s.name}`)
+          return
+        }
         const p = new download.PageReport()
+        p.fail_chap = []
         var manga_id = c.manga_id
         // save mangaDB
         if (manga_id == 0) {
@@ -54,13 +63,15 @@ export class Download {
               if (id != 0) {
                 manga_id = id
               }
+              return false
             })
-            .then(e => {
+            .catch(e => {
               rej(e)
               return true
             })
           // return if being rejected
           if (ret) {
+            rej('error when SaveMangaCover')
             return
           }
         }
@@ -74,13 +85,13 @@ export class Download {
           fc.chap_id = cc.id
           fc.chapter = cc.chapter
 
-          this.#p
+          await this.#p
             .getPages(cc.id, s.page_jscode)
-            .then(r => {
+            .then(async r => {
               // do event
               const evc: EventChap = {
                 chapter: parseFloat(cc.chapter),
-                index_chap: i,
+                index_chap: i + 1,
                 total_chap: c.chapter.length,
                 total_page: r.length,
                 list_page: r,
@@ -94,33 +105,42 @@ export class Download {
               paramJs.manga = c.manga
               paramJs.chapter = cc
               paramJs.pages = r
-              DownloadJS(paramJs)
+              await DownloadJS(paramJs)
                 .then(rd => {
                   // finish complete
-                  if (rd.length > 0) {
+                  if (rd) {
                     fc.error = 'Error some pages failed download'
                     fc.fail_page = rd
+                    p.status_dl = false
                     p.fail_chap.push(fc)
+                    console.log('partial downloadJS finish', fc)
                     // add error retry list files
                   }
                 })
                 .catch(e => {
                   // error download all pages / single chapter
                   fc.error = e
+                  p.status_dl = false
                   p.fail_chap.push(fc)
+                  console.log('downloadJS err', e)
                 })
 
-              console.log(r)
+              // console.log(r)
             })
             .catch(e => {
               // error getting list pages
+              console.log('err get pages', e)
               fc.error = e
+              p.status_dl = false
               p.fail_chap.push(fc)
+              this.#p.clearURLAll()
             })
         } // endloop
 
         // end return pageresult
+        p.status_dl = true
         res(p)
+        this.#p.clearURLAll()
       })
     }
   }

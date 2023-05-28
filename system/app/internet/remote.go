@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
 	"mangav4/system/app/helper"
 	"net/http"
@@ -108,6 +109,7 @@ type FileDownload struct {
 	c       *RemoteClient
 	r       *req.Request
 	counter int
+	sync.Mutex
 }
 
 func NewFileDownload(client *RemoteClient) *FileDownload {
@@ -144,7 +146,11 @@ func (f *FileDownload) SetHeader(key, val string) *FileDownload {
 
 // Download is to download and resume failed download with filename path and url
 func (f *FileDownload) Download(filename, url string) StatDownload {
+	f.Lock()
+	defer f.Unlock()
+
 	f.c.DisableAutoReadResponse()
+	f.autoSetReq()
 
 	var s StatDownload
 	s.Filename = filename
@@ -162,8 +168,6 @@ func (f *FileDownload) Download(filename, url string) StatDownload {
 		}
 	}
 
-	// setup getting req for download
-	f.autoSetReq()
 	// check if file already exist, check complete file
 	if fs != nil {
 		// Do Req to get Header Content-length
@@ -172,24 +176,33 @@ func (f *FileDownload) Download(filename, url string) StatDownload {
 			return *s.SetError(err)
 		}
 
+		contentLengthString := resp.Header.Get("Content-Length")
+		// change contentLength "" to prevent error parseInt
+		if contentLengthString == "" {
+			contentLengthString = "0"
+		}
+
 		// convert content length to int64
-		contentLength, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+		contentLength, err := strconv.ParseInt(contentLengthString, 10, 64)
 		if err != nil {
 			return *s.SetError(err)
 		}
 
 		// check header accept ranges bytes & Remote ContentLength > File Size
-		if resp.Header.Get("Accept-Ranges") == "bytes" && contentLength > fs.Size() {
-			// set flag append and seek file to end
-			flag = os.O_APPEND | os.O_WRONLY
-			whence = io.SeekEnd
+		if resp.Header.Get("Accept-Ranges") == "bytes" {
+			if contentLength > fs.Size() {
+				// set flag append and seek file to end
+				flag = os.O_APPEND | os.O_WRONLY
+				whence = io.SeekEnd
 
-			// set Range Header to download only needed body
-			f.r.SetHeader("Range", fmt.Sprintf("bytes=%d-", fs.Size()))
-			s.StatusResume = true
-		} else {
-			// return error file already complete because content-length <= file size
-			return *s.SetError(ErrFinishDownload)
+				// set Range Header to download only needed body
+				f.r.SetHeader("Range", fmt.Sprintf("bytes=%d-", fs.Size()))
+				s.StatusResume = true
+			} else {
+				// return error file already complete because content-length <= file size
+				return *s.SetError(ErrFinishDownload)
+			}
+
 		}
 
 		// close response from getting header
@@ -203,6 +216,7 @@ func (f *FileDownload) Download(filename, url string) StatDownload {
 	}
 
 	// Get Req Download
+	f.autoSetReq()
 	res, err := f.r.Get(url)
 	if err != nil {
 		return *s.SetError(err)
@@ -280,10 +294,15 @@ func (f *FileDownload) RetryDownloads(o []StatDownload, fn func(s StatDownload))
 	})
 
 	if len(new_o) > 0 && f.counter > 0 {
-		f.RetryDownloads(new_o, fn)
+		fnew := f.RetryDownloads(new_o, fn)
+		if len(fnew) > 0 {
+			return fnew
+		} else {
+			return new_o
+		}
 	}
-	f.counter -= 1
-	return new_o
+
+	return []StatDownload{}
 }
 
 func (f *FileDownload) RetryDownloadsCounter(counter int, o []StatDownload, fn func(s StatDownload)) []StatDownload {

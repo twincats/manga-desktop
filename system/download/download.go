@@ -164,7 +164,7 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 					mcp.MangaId = mg.ID
 				}
 
-				err := tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
+				err := tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp).Error
 				if err == nil {
 					failChap.StatusDB = true
 				}
@@ -243,27 +243,28 @@ func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
 		mcp.Language = mcpLang
 		mcp.MangaId = p.MangaID
 
-		err := tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
-		if err == nil {
-			// failChap.StatusDB = true
-			tx.Rollback()
-		}
-		err = tx.Commit()
+		tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
+
+		err := tx.Commit().Error
 		if err != nil {
-			fmt.Println("Error save chapter")
+			fmt.Println("Error save chapter", err)
 		}
+		fmt.Println("sukses save")
 	}
 
 	// return value
 	if len(failedRetry) > 0 {
+		fmt.Println("return from failed retry")
 		return failedRetry
 	} else {
+		fmt.Println("return from failed")
 		return failed
 	}
 }
 
 func (f *Download) SaveMangaCover(c types.Chapter) (uint, error) {
 	if c.MangaId > 0 {
+		fmt.Println("error already have mangaid")
 		return 0, errors.New("error: Already Have MangaID")
 	} else {
 		var mg manga.Manga
@@ -273,6 +274,7 @@ func (f *Download) SaveMangaCover(c types.Chapter) (uint, error) {
 		err := tx.Create(&mg).Error
 		if err != nil {
 			tx.Rollback()
+			fmt.Println("error save manga trx")
 			return 0, err
 		}
 
@@ -284,11 +286,13 @@ func (f *Download) SaveMangaCover(c types.Chapter) (uint, error) {
 		if err != nil {
 			dl.RemoveFolder(cvPath)
 			tx.Rollback()
+			fmt.Println("error save cover")
 			return 0, err
 		}
 
 		err = tx.Commit().Error
 		if err != nil {
+			fmt.Println("error commit trx")
 			return 0, err
 		}
 
@@ -363,6 +367,9 @@ func (f *Download) CheckChapterDB(c types.Chapter) types.Chapter {
 		Or("manga_alternatives.title LIKE ?", ilike).Scan(&checkTitleDB)
 
 	c.MangaId = checkTitleDB.Id
+	if checkTitleDB.Title != "" {
+		c.Manga = checkTitleDB.Title
+	}
 
 	if checkTitleDB.Id > 0 {
 		var checkChapDb []CheckChapDB

@@ -370,11 +370,13 @@ export class MangaParser {
         FetchPost(u, postData)
           .then(out => {
             this.#tmpHTMLFetchPost = out
+            console.log('out', out.substring(0, 100))
             res(out)
           })
           .catch(e => rej(e))
       } else {
         if (this.#tmpHTMLFetchPost != '') {
+          console.log('out', 'darisini')
           res(this.#tmpHTMLFetchPost)
         } else {
           rej('please clear urlFetchPost')
@@ -396,7 +398,7 @@ export class MangaParser {
           func(this, this.getParser(out))
             .then((ro: unknown) => {
               if (ro) {
-                console.log(ro)
+                // console.log(ro)
               }
             })
             .catch((e: unknown) => rej(e))
@@ -416,11 +418,11 @@ export class MangaParser {
     return new Promise((res, rej) => {
       this.fetch(u).then(out => {
         try {
-          const func = this.getFunc(fn, 'p')
+          const func = this.getFuncSync(fn, 'p')
           func(this, this.getParser(out))
             .then((ro: unknown) => {
               if (ro) {
-                console.log(ro)
+                // console.log(ro)
               }
             })
             .catch((e: unknown) => rej(e))

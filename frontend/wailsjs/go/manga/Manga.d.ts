@@ -6,6 +6,8 @@ export function GetManga(arg1:number):Promise<manga.Manga>;
 
 export function GetMangaHome(arg1:any,arg2:number,arg3:number):Promise<manga.MangaHome>;
 
+export function GetMangaWithAlter(arg1:number):Promise<manga.Manga>;
+
 export function GetMangaWithChapter(arg1:number):Promise<manga.Manga>;
 
 export function GetMangas():Promise<Array<manga.Manga>>;

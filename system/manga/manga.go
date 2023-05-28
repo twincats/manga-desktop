@@ -219,7 +219,11 @@ type Page struct {
 	MangaId uint     `json:"manga_id"`
 }
 
-// type Nav struct {
-// 	Next string `json:"next"`
-// 	Prev string `json:"prev"`
-// }
+func (f *Manga) GetMangaWithAlter(id uint) (Manga, error) {
+	var manga Manga
+	res := app.DB.Preload("Alter").First(&manga, id)
+	if res.Error != nil {
+		return manga, res.Error
+	}
+	return manga, nil
+}
