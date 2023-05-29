@@ -112,7 +112,7 @@
                   @click="$router.push(`chapter/${chapterList?.manga_id}`)"
                   >Read</a-button
                 >
-                <a-button @click="progress_dl.modal_dl = true">Test</a-button>
+                <a-button @click="testFunc">Test</a-button>
               </div>
             </div>
           </div>
@@ -284,19 +284,15 @@
 import { IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
 import { useClipboardData, IsURL, DateApp, Sequence } from '@/composable/helper'
 import { EventsOn } from '@wails/runtime/runtime'
-import {
-  GetChapter,
-  GetChapterMdexPagination,
-  GetPage,
-} from '@wails/go/download/Download'
-import { Message, Modal, TableChangeExtra } from '@arco-design/web-vue'
+import { GetChapterMdexPagination } from '@wails/go/download/Download'
+import { Message, Modal } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
 import { types } from '@wails/go/models'
 import { UseTable, UseServer } from '@/composable/downloads/download'
 import { useDownloadState } from '@/store/global'
-import type { EventChap, EventPage } from '@/type/download'
 import { promiseTimeout, toValue } from '@vueuse/core'
 import { Download } from '@/composable/downloads/wrapper'
+import type { EventChap, EventPage } from '@/type/download'
 
 //// STARTING CODE BOOTUP ////
 const { tableDownload, tableLoading, tablePageSize, tablePageCurrent } =
@@ -422,52 +418,63 @@ const downloadChapter = (c: types.ChapterList | null = null) => {
     dl.GetPage(param, server)
       .then(res => {
         console.log(res)
-        if (res.status_dl == false || res.error != null) {
+        if (res.status_dl == false || res.fail_chap.length > 0) {
           Modal.error({
             title: 'Error Some Download',
-            content: () => {
-              h('div', res.error)
-            },
+            okText: 'OK',
+            content: () => [h('div', [res.error])],
           })
         }
       })
       .catch(e => {
         console.log(e)
       })
-
-    EventsOn('dl_eventchap', (p: EventChap) => {
-      progress_dl.chapter = p.chapter
-      progress_dl.index_chap = p.index_chap
-      progress_dl.total_chap = p.total_chap
-      progress_dl.total_page = p.total_page
-      progress_dl.index_page = 0
-      progress_dl.chap = p.index_chap / p.total_chap
-    })
-    EventsOn('dl_eventpage', (p: EventPage) => {
-      progress_dl.index_page += 1
-      progress_dl.page = progress_dl.index_page / progress_dl.total_page
-      // if (p.stat_error != null) {
-      //   console.log(p)
-      // }
-      if (progress_dl.page == 1) {
-        const i = tableDownload.findIndex(
-          i => i.chapter == p.chapter.toString()
-        )
-        tableDownload[i].status = true
-        tableDownload[i].check = false
-        if (chapterList.value) {
-          chapterList.value.chapter[i].status = true
-          chapterList.value.chapter[i].check = false
-        }
-        //clear selected
-        const ix = selected_chapter_url.value.findIndex(
-          item => item.chapter == p.chapter.toString()
-        )
-        selected_chapter_url.value.splice(ix, 1)
-      }
-    })
+    // end
   }
 }
+
+// Listening Download Event : dl_eventchap
+EventsOn('dl_eventchap', (p: EventChap) => {
+  progress_dl.chapter = p.chapter
+  progress_dl.index_chap = p.index_chap
+  progress_dl.total_chap = p.total_chap
+  progress_dl.total_page = p.total_page
+  progress_dl.index_page = 0
+  progress_dl.chap = p.index_chap / p.total_chap
+  console.log(
+    '%cEventChap : %o',
+    'color:orange',
+    JSON.parse(JSON.stringify(progress_dl))
+  )
+})
+
+// Listening Download Event : dl_eventpage
+EventsOn('dl_eventpage', (p: EventPage) => {
+  progress_dl.index_page += 1
+  progress_dl.page = progress_dl.index_page / progress_dl.total_page
+  console.log(
+    '%cEventPage : index : %o = total %o == %i%',
+    'color:Tomato',
+    progress_dl.index_page,
+    progress_dl.total_page,
+    100 * progress_dl.page
+  )
+
+  if (progress_dl.page == 1) {
+    const i = tableDownload.findIndex(i => i.chapter == p.chapter.toString())
+    tableDownload[i].status = true
+    tableDownload[i].check = false
+    if (chapterList.value) {
+      chapterList.value.chapter[i].status = true
+      chapterList.value.chapter[i].check = false
+    }
+    //clear selected
+    const ix = selected_chapter_url.value.findIndex(
+      item => item.chapter == p.chapter.toString()
+    )
+    selected_chapter_url.value.splice(ix, 1)
+  }
+})
 
 // SET SELECTED CHAPTER TO DOWNLOAD
 const selected_chapter_url = ref<types.ChapterList[]>([])
@@ -538,6 +545,15 @@ watchDebounced(
   },
   { debounce: 25 }
 )
+
+const testFunc = () => {
+  const error = 'ini error dari variable'
+  Modal.error({
+    title: 'Error Some Download',
+    okText: 'OK',
+    content: () => [h('br'), h('div', [error])],
+  })
+}
 </script>
 
 <style>

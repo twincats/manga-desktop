@@ -254,11 +254,11 @@ func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
 
 	// return value
 	if len(failedRetry) > 0 {
-		fmt.Println("return from failed retry")
+		fmt.Println("some download failed after retry")
 		return failedRetry
 	} else {
-		fmt.Println("return from failed")
-		return failed
+		fmt.Println("sukses download")
+		return []internet.StatDownload{}
 	}
 }
 
