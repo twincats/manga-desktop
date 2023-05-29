@@ -71,7 +71,7 @@
           >
             <template #cell="{ record }: { record: manga.Chapter }">
               <i-twemoji-flag-for-flag-indonesia
-                v-if="record.language.lang_code == 'id'"
+                v-if="record.language.id == 2"
               />
               <i-twemoji-flag-for-flag-united-kingdom v-else />
             </template>
@@ -122,6 +122,7 @@ GetMangaWithChapter(Number(props.mid)).then(res => {
   res.chapter.forEach(item => {
     tableData.push(item)
   })
+  console.log(res)
 })
 
 const pprop = reactive<PaginationProps>({

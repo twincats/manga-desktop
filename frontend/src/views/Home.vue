@@ -15,6 +15,7 @@
         v-for="(manga, i) in mangaHome?.manga"
         :key="i"
         class="box relative"
+        :class="today(manga.download_time)"
         @contextmenu.prevent="openContextMenu($event, manga)"
       >
         <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
@@ -41,7 +42,7 @@
             DateApp.NewDate().Format('DD-MM-YYYY') ==
             DateApp.NewDate(manga.download_time.toString()).Format('DD-MM-YYYY')
           "
-          class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-orange-500"
+          class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-blue-500"
         >
           New
         </div>
@@ -127,6 +128,18 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
     loadManga(searchManga.value)
   }
 })
+
+//today class
+const today = (date: Date): string => {
+  if (
+    DateApp.NewDate().Format('DD-MM-YYYY') ==
+    DateApp.NewDate(date.toString()).Format('DD-MM-YYYY')
+  ) {
+    return 'today'
+  } else {
+    return ''
+  }
+}
 </script>
 
 <style lang="less" scoped>
@@ -139,6 +152,7 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
   margin-bottom: 0.25rem;
   .cover {
     padding: 0.25rem;
+    border-bottom: 1px solid transparent;
     div {
       overflow: hidden;
       position: relative;
@@ -184,6 +198,35 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
     .cover,
     .title {
       cursor: pointer;
+    }
+  }
+}
+
+@border: rgba(255, 117, 24, 1);
+.today {
+  border-color: @border !important;
+  .cover {
+    background-color: screen(@border, #cccccc);
+    border-bottom: 1px solid @border;
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+  .title {
+    background-color: screen(@border, #cccccc);
+    color: black;
+  }
+  .chapter {
+    background-color: @border;
+    button {
+      &:hover {
+        color: white;
+        background-color: rgb(59, 130, 246);
+      }
+    }
+  }
+  &:hover {
+    .cover,
+    .title {
+      background-color: tint(@border, 60%);
     }
   }
 }

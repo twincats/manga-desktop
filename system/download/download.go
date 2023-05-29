@@ -59,6 +59,7 @@ func (f *Download) GetChapter(o types.Option) (types.Chapter, error) {
 func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 	// option change to []types.ChapterList
 	var pageReport PageReport
+	pageReport.FailChap = []FiledChapReport{}
 	if d := f.getDownloads(o.ServerName); d != nil {
 		// setup download
 		h := internet.NewFileDownloader()
@@ -132,47 +133,41 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 				}
 			})
 
-			// auto retry 3 times
-			failedRetry := dl.RetryDownloadsCounter(3, failed, func(s internet.StatDownload) {
-				if s.Err == nil {
-					eventPage := EventPage{
-						Images:       s.URL,
-						IndexPage:    s.Index,
-						StatError:    s.Err,
-						Chapter:      chap.Chapter,
-						StatusResume: s.StatusResume,
+			var failedRetry []internet.StatDownload
+			if len(failed) > 0 {
+				// auto retry 3 times
+				failedRetry = dl.RetryDownloadsCounter(3, failed, func(s internet.StatDownload) {
+					if s.Err == nil {
+						eventPage := EventPage{
+							Images:       s.URL,
+							IndexPage:    s.Index,
+							StatError:    s.Err,
+							Chapter:      chap.Chapter,
+							StatusResume: s.StatusResume,
+						}
+						runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
 					}
-					runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
-				}
-			})
-
-			// SAVE DB
-			if len(failedRetry) < len(chapRes.Pages) {
-				// save cover & manga
-				var mcp manga.Chapter
-				tx.Where("manga_id")
-				mcpChap, _ := chap.Chapter.Float64()
-				mcpLang := manga.LangByLang(chap.Languange)
-				mcp.Chapter = float32(mcpChap)
-				mcp.Volume = chap.Volume
-				mcp.Group = chap.GroupName
-				mcp.LanguageId = uint(mcpLang.ID)
-				mcp.Language = mcpLang
-				mcp.MangaId = o.MangaId
-
-				if o.MangaId == 0 {
-					mcp.MangaId = mg.ID
-				}
-
-				err := tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp).Error
-				if err == nil {
-					failChap.StatusDB = true
-				}
-
-			} else {
-				h.RemoveFolder(dlPath)
+				})
 			}
 
+			// SAVE DB
+			var mcp manga.Chapter
+			tx.Where("manga_id")
+			mcpChap, _ := chap.Chapter.Float64()
+			mcpLang := manga.LangByLang(chap.Languange)
+			mcp.Chapter = float32(mcpChap)
+			mcp.Volume = chap.Volume
+			mcp.Group = chap.GroupName
+			mcp.LanguageId = uint(mcpLang.ID)
+			mcp.MangaId = o.MangaId
+
+			if o.MangaId == 0 {
+				mcp.MangaId = mg.ID
+			}
+
+			tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
+
+			// append error if not null
 			if len(failedRetry) > 0 || failChap.Err != nil {
 				failChap.FailPage = failedRetry
 				pageReport.FailChap = append(pageReport.FailChap, failChap)
@@ -180,11 +175,18 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 
 		} // END FOR
 
-		// save cover for new manga
+		// commit tx
 		err := tx.Commit().Error
 		if err != nil {
-			pageReport.Error = err.Error()
+			fmt.Println("Error save DB", err)
+			pageReport.Error = "Error Save DB Commit TRX"
 		}
+
+		if len(pageReport.FailChap) == 0 {
+			pageReport.StatusDL = true
+		}
+
+		pageReport.MangaId = mg.ID
 
 		// return finish complete report
 		return pageReport, nil
@@ -215,18 +217,21 @@ func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
 	})
 
 	// auto retry 3 times
-	failedRetry := fd.RetryDownloadsCounter(3, failed, func(s internet.StatDownload) {
-		if s.Err == nil {
-			eventPage := EventPage{
-				Images:       s.URL,
-				IndexPage:    s.Index,
-				StatError:    s.Err,
-				Chapter:      p.Chapter.Chapter,
-				StatusResume: s.StatusResume,
+	var failedRetry []internet.StatDownload
+	if len(failed) > 0 {
+		failedRetry = fd.RetryDownloadsCounter(3, failed, func(s internet.StatDownload) {
+			if s.Err == nil {
+				eventPage := EventPage{
+					Images:       s.URL,
+					IndexPage:    s.Index,
+					StatError:    s.Err,
+					Chapter:      p.Chapter.Chapter,
+					StatusResume: s.StatusResume,
+				}
+				runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
 			}
-			runtime.EventsEmit(*app.WailsContext, "dl_eventpage", eventPage)
-		}
-	})
+		})
+	}
 
 	// SAvae chapter
 	if len(failed) < len(p.Pages) {
@@ -361,21 +366,24 @@ type CheckChapDB struct {
 func (f *Download) CheckChapterDB(c types.Chapter) types.Chapter {
 	var checkTitleDB CheckTitleDB
 	ilike := fmt.Sprintf("%%%s%%", c.Manga)
-	app.DB.Table("mangas").Select("mangas.id", "mangas.title").
-		Joins("left join manga_alternatives on manga_alternatives.manga_id = mangas.id").
-		Where("mangas.title LIKE ?", ilike).
-		Or("manga_alternatives.title LIKE ?", ilike).Scan(&checkTitleDB)
 
-	c.MangaId = checkTitleDB.Id
-	if checkTitleDB.Title != "" {
-		c.Manga = checkTitleDB.Title
+	if c.MangaId == 0 {
+		app.DB.Table("mangas").Select("mangas.id", "mangas.title").
+			Joins("left join manga_alternatives on manga_alternatives.manga_id = mangas.id").
+			Where("mangas.title LIKE ?", ilike).
+			Or("manga_alternatives.title LIKE ?", ilike).Scan(&checkTitleDB)
+
+		c.MangaId = checkTitleDB.Id
+		if checkTitleDB.Title != "" {
+			c.Manga = checkTitleDB.Title
+		}
 	}
 
-	if checkTitleDB.Id > 0 {
+	if c.MangaId > 0 {
 		var checkChapDb []CheckChapDB
 		app.DB.Table("chapters").
 			Select("id", "chapter", "title").
-			Where("manga_id = ?", checkTitleDB.Id).Scan(&checkChapDb)
+			Where("manga_id = ?", c.MangaId).Scan(&checkChapDb)
 		for i, cp := range c.Chapter {
 			for _, v := range checkChapDb {
 				if cp.Chapter == json.Number(fmt.Sprintf("%v", v.Chapter)) {
@@ -388,6 +396,7 @@ func (f *Download) CheckChapterDB(c types.Chapter) types.Chapter {
 }
 
 type PageReport struct {
+	MangaId  uint              `json:"manga_id"`
 	Manga    string            `json:"manga"`
 	StatusDL bool              `json:"status_dl"`
 	Error    string            `json:"error"`

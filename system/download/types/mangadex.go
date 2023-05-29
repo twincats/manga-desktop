@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"mangav4/system/app"
+	"regexp"
 	"strings"
 	"time"
 
@@ -149,7 +150,7 @@ func setMangadexChapter(m MdexChapter) []ChapterList {
 	for _, v := range m.Data {
 		chapterList = append(chapterList, ChapterList{
 			ID:        v.Id,
-			Chapter:   v.Attributes.Chapter,
+			Chapter:   ChapterJSON(v.Attributes.Chapter),
 			Volume:    v.Attributes.Volume,
 			Title:     v.Attributes.Title,
 			Timestamp: int(v.Attributes.PublishAt.Unix()),
@@ -203,6 +204,18 @@ func joinString(ss []string) string {
 	return v
 }
 
+// ChapterJSON convert string to Json string (save with leading zero)
+func ChapterJSON(c string) json.Number {
+	re := regexp.MustCompile(`(?m)0+\B`)
+	numstring := re.ReplaceAllString(c, "")
+	var num json.Number
+	json.Unmarshal([]byte(numstring), &num)
+	if num == "" {
+		num = "0"
+	}
+	return num
+}
+
 type MdexManga struct {
 	Data struct {
 		Id         string
@@ -234,7 +247,7 @@ type MdexChapter struct {
 	Data []struct {
 		Id         string
 		Attributes struct {
-			Chapter            json.Number
+			Chapter            string
 			Volume             string
 			Title              string
 			TranslatedLanguage string

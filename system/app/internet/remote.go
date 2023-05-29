@@ -298,7 +298,7 @@ func (f *FileDownload) RetryDownloads(o []StatDownload, fn func(s StatDownload))
 		if len(fnew) > 0 {
 			return fnew
 		} else {
-			return new_o
+			return []StatDownload{}
 		}
 	}
 

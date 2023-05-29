@@ -1,4 +1,4 @@
-import { createGlobalState, StorageSerializers } from '@vueuse/core'
+import { createGlobalState, StorageSerializers, useStorage } from '@vueuse/core'
 import { types } from '@wails/go/models'
 
 export const useDownloadState = createGlobalState(() => {
@@ -14,7 +14,7 @@ export const useDownloadState = createGlobalState(() => {
   const urldata = useStorage('my-download-url', '', sessionStorage)
 
   // data for selected server ID
-  const selectedServer = useStorage('my-download-serverID', 1, sessionStorage)
+  const selectedServer = useStorage('my-download-serverID', 2, sessionStorage)
 
   // data for list selected chapter to download
   const selected_chapter_url = useStorage<types.ChapterList[]>(
@@ -22,5 +22,6 @@ export const useDownloadState = createGlobalState(() => {
     [],
     sessionStorage
   )
+
   return { chapterList, urldata, selectedServer, selected_chapter_url }
 })

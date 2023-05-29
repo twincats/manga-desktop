@@ -8,6 +8,7 @@
       <a-tab-pane :key="1" title="Download">
         <div class="px-2 my-2">
           <a-input
+            id="urlinput"
             v-model="urldata"
             :style="{ width: '100%' }"
             :input-attrs="{ class: 'text-center' }"
@@ -45,7 +46,7 @@
                   <a-radio
                     v-for="(item, i) in servers"
                     :key="i"
-                    :value="item.id"
+                    :value="item.id + 1"
                   >
                     {{ item.name }}</a-radio
                   >
@@ -112,7 +113,6 @@
                   @click="$router.push(`chapter/${chapterList?.manga_id}`)"
                   >Read</a-button
                 >
-                <a-button @click="testFunc">Test</a-button>
               </div>
             </div>
           </div>
@@ -284,7 +284,10 @@
 import { IconCheck, IconMinus } from '@arco-design/web-vue/es/icon'
 import { useClipboardData, IsURL, DateApp, Sequence } from '@/composable/helper'
 import { EventsOn } from '@wails/runtime/runtime'
-import { GetChapterMdexPagination } from '@wails/go/download/Download'
+import {
+  GetChapterMdexPagination,
+  CheckChapterDB,
+} from '@wails/go/download/Download'
 import { Message, Modal } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
 import { types } from '@wails/go/models'
@@ -342,7 +345,7 @@ const goGetchDownload = useDebounceFn(async () => {
   await promiseTimeout(26)
 
   //testing download chapter
-  const server = getSelectedServer(selectedServer.value)
+  const server = getSelectedServer(selectedServer.value - 1)
   if (server && urldata.value != '') {
     const o = new types.Option()
     o.url = urldata.value
@@ -351,10 +354,11 @@ const goGetchDownload = useDebounceFn(async () => {
       .then(res => {
         // reset table
         if (afterGetChapURL != '' && urldata.value != afterGetChapURL) {
-          tableDownload.splice(0)
+          tableDownload.length = 0
           selected_chapter_url.value = []
           tablePageCurrent.value = 1
         }
+
         // top empty table if new manga
         if (chapterList.value?.manga != res.manga) {
           tableDownload.length = 0
@@ -379,6 +383,7 @@ const goGetchDownload = useDebounceFn(async () => {
             (_, i) => dummyChap
           )
           tableDownload.splice(res.chapter.length, 0, ...dumArr)
+          chapterList.value.chapter.splice(res.chapter.length, 0, ...dumArr)
         }
       })
       .catch(err => {
@@ -399,7 +404,7 @@ chapterList.value?.chapter.forEach(item => {
 // DOWNLOAD SINGLE OR MULTIPLE CHAPTER
 const mdexPageServer = ref(false) // modelValue mdex datasaver server
 const downloadChapter = (c: types.ChapterList | null = null) => {
-  const server = getSelectedServer(selectedServer.value)
+  const server = getSelectedServer(selectedServer.value - 1)
   if (server && urldata.value != '' && chapterList.value != null) {
     var param = new types.Chapter(chapterList.value)
     param.datasaver = mdexPageServer.value
@@ -422,8 +427,16 @@ const downloadChapter = (c: types.ChapterList | null = null) => {
           Modal.error({
             title: 'Error Some Download',
             okText: 'OK',
-            content: () => [h('div', [res.error])],
+            content: () => [h('div', [res.manga, h('br'), res.error])],
           })
+        } else {
+          progress_dl.modal_dl = false
+          Message.success('Berhasil Download')
+          if (chapterList.value) {
+            if (chapterList.value.manga_id == 0) {
+              chapterList.value.manga_id = res.manga_id
+            }
+          }
         }
       })
       .catch(e => {
@@ -462,12 +475,16 @@ EventsOn('dl_eventpage', (p: EventPage) => {
 
   if (progress_dl.page == 1) {
     const i = tableDownload.findIndex(i => i.chapter == p.chapter.toString())
-    tableDownload[i].status = true
-    tableDownload[i].check = false
     if (chapterList.value) {
       chapterList.value.chapter[i].status = true
       chapterList.value.chapter[i].check = false
     }
+    tableDownload.forEach((item, i) => {
+      if (item.chapter == p.chapter.toString()) {
+        tableDownload[i].status = true
+        tableDownload[i].check = false
+      }
+    })
     //clear selected
     const ix = selected_chapter_url.value.findIndex(
       item => item.chapter == p.chapter.toString()
@@ -490,7 +507,7 @@ const clickRowTable = (c: types.ChapterList) => {
   )
 }
 
-/// tablePageChange dynamic load rest of chapter download
+/// tablePageChange dynamic load rest of chapter download for mangadex
 const tablePageChange = (p: number) => {
   tablePageCurrent.value = p
   if (chapterList.value) {
@@ -507,11 +524,31 @@ const tablePageChange = (p: number) => {
 
       GetChapterMdexPagination(urldata.value, limit, offset)
         .then(res => {
-          console.log(res)
-          if (res) {
-            tableDownload.splice(offset, res.length, ...res)
+          if (chapterList.value) {
+            var cp = new types.Chapter()
+            cp.manga = chapterList.value.manga
+            cp.manga_id = chapterList.value.manga_id
+            cp.chapter = JSON.parse(JSON.stringify(res))
+            CheckChapterDB(cp)
+              .then(cpp => {
+                tableDownload.splice(offset, cpp.chapter.length, ...cpp.chapter)
+                if (chapterList.value) {
+                  chapterList.value.chapter.splice(
+                    offset,
+                    cpp.chapter.length,
+                    ...cpp.chapter
+                  )
+                }
+                tableLoading.value = false
+              })
+              .catch(() => {
+                tableDownload.splice(offset, res.length, ...res)
+                if (chapterList.value) {
+                  chapterList.value.chapter.splice(offset, res.length, ...res)
+                }
+                tableLoading.value = false
+              })
           }
-          tableLoading.value = false
         })
         .catch(e => {
           console.log(e)
@@ -524,7 +561,7 @@ const tablePageChange = (p: number) => {
 //clearDownload
 const clearDownload = () => {
   urldata.value = ''
-  selectedServer.value = 1
+  selectedServer.value = 1 + 1 // temporary fix + 1 => not use id 1
   chapterList.value = null
   tableDownload.length = 0
   tablePageCurrent.value = 1
@@ -538,22 +575,14 @@ watchDebounced(
     const isURL = IsURL(newURL)
     if (isURL) {
       const res = servers.value?.find(item => item.url == isURL.host)
-      if (res?.id) {
-        selectedServer.value = res.id
+      if (res) {
+        // res.id + 1 // temporary fix warning
+        selectedServer.value = res.id + 1
       }
     }
   },
   { debounce: 25 }
 )
-
-const testFunc = () => {
-  const error = 'ini error dari variable'
-  Modal.error({
-    title: 'Error Some Download',
-    okText: 'OK',
-    content: () => [h('br'), h('div', [error])],
-  })
-}
 </script>
 
 <style>
@@ -565,5 +594,8 @@ const testFunc = () => {
 }
 #mtable .arco-table-td {
   font-size: 0.75rem !important;
+}
+#urlinput .arco-input-append {
+  padding: 0;
 }
 </style>

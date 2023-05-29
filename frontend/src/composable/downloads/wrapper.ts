@@ -169,6 +169,8 @@ export class Download {
           p.status_dl = true
           p.error = ''
         }
+
+        p.manga_id = manga_id
         // return pageResult to promise
         res(p)
         this.#p.clearURLAll()

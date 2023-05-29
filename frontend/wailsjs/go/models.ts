@@ -39,6 +39,7 @@ export namespace download {
 		}
 	}
 	export class PageReport {
+	    manga_id: number;
 	    manga: string;
 	    status_dl: boolean;
 	    error: string;
@@ -50,6 +51,7 @@ export namespace download {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manga_id = source["manga_id"];
 	        this.manga = source["manga"];
 	        this.status_dl = source["status_dl"];
 	        this.error = source["error"];
