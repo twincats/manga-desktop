@@ -10,41 +10,45 @@
       :input-attrs="{ class: 'text-center' }"
       search-button
     />
-    <div class="grid grid-cols-5 gap-2 lg:grid-cols-10">
-      <div
-        v-for="(manga, i) in mangaHome?.manga"
-        :key="i"
-        class="box relative"
-        :class="today(manga.download_time)"
-        @contextmenu.prevent="openContextMenu($event, manga)"
-      >
-        <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
-          <div class="h-203px lg:h-200px">
-            <img
-              :alt="manga.title"
-              :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
-            />
+    <div :style="{ minHeight: minH }">
+      <div class="grid grid-cols-5 gap-2 lg:grid-cols-10">
+        <div
+          v-for="(manga, i) in mangaHome?.manga"
+          :key="i"
+          class="box relative"
+          :class="today(manga.download_time)"
+          @contextmenu.prevent="openContextMenu($event, manga)"
+        >
+          <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
+            <div class="h-203px lg:h-200px">
+              <img
+                :alt="manga.title"
+                :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+              />
+            </div>
           </div>
-        </div>
-        <div
-          class="title select-none"
-          @click="$router.push(`chapter/${manga.id}`)"
-        >
-          <span>{{ manga.title }}</span>
-        </div>
-        <div class="chapter">
-          <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
-            Chapter {{ manga.chapter }}
-          </button>
-        </div>
-        <div
-          v-if="
-            DateApp.NewDate().Format('DD-MM-YYYY') ==
-            DateApp.NewDate(manga.download_time.toString()).Format('DD-MM-YYYY')
-          "
-          class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-blue-500"
-        >
-          New
+          <div
+            class="title select-none"
+            @click="$router.push(`chapter/${manga.id}`)"
+          >
+            <span>{{ manga.title }}</span>
+          </div>
+          <div class="chapter">
+            <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
+              Chapter {{ manga.chapter }}
+            </button>
+          </div>
+          <div
+            v-if="
+              DateApp.NewDate().Format('DD-MM-YYYY') ==
+              DateApp.NewDate(manga.download_time.toString()).Format(
+                'DD-MM-YYYY'
+              )
+            "
+            class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-blue-500"
+          >
+            New
+          </div>
         </div>
       </div>
     </div>
@@ -63,7 +67,18 @@
         <li @click="$router.push(`/addalter/${item.id}`)">Add Alternatif</li>
         <li @click="$router.push('/convert/' + item.id)">Convert Manga</li>
         <div class="divider"></div>
-        <li class="text-red-500 font-serif font-bold">DELETE</li>
+        <li class="text-red-500 font-serif font-bold">
+          <a-popconfirm
+            :content="
+              'Are you sure want Delete? ' + item.title.substring(0, 15)
+            "
+            ok-text="OK"
+            cancel-text="NO"
+            type="error"
+          >
+            <div class="w-full">DELETE</div>
+          </a-popconfirm>
+        </li>
       </context-menu>
     </teleport>
   </div>
@@ -93,6 +108,7 @@ const nav = reactive<Nav>({ page: 1, limit: 10 })
 const { breakpoints } = GetBreakPoints()
 const lg = breakpoints.greater('lg')
 const searchManga = ref('')
+const minH = ref('574px')
 
 /* INITIAL PRELOAD FUNCTION */
 //load manga
@@ -107,8 +123,10 @@ const loadManga = (sarch: string | null = null) => {
 // to make load nav accurate when sitch pages
 if (lg.value) {
   nav.limit = 30
+  minH.value = '856px'
 } else {
   nav.limit = 10
+  minH.value = '574px'
 }
 loadManga()
 
@@ -116,12 +134,14 @@ loadManga()
 watch([lg, () => nav.page], ([l, p], [_, op]) => {
   if (l) {
     nav.limit = 30
+    minH.value = '856px'
     if (op == p) {
       nav.page = Sequence(3, p)
     }
     loadManga(searchManga.value)
   } else {
     nav.limit = 10
+    minH.value = '574px'
     if (op == p) {
       nav.page = (p - 1) * 3 + 1
     }

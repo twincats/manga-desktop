@@ -21,7 +21,9 @@
         <a-menu-item key="1_0" @click="$router.push('/dlcode')"
           >Download JSCode</a-menu-item
         >
-        <a-menu-item key="1_1">Menu 2</a-menu-item>
+        <a-menu-item key="1_1" @click="$router.push('/serverstat')"
+          >Server Stat</a-menu-item
+        >
         <a-menu-item key="1_2">Menu 3</a-menu-item>
       </a-sub-menu>
       <a-sub-menu key="2">

@@ -48,5 +48,10 @@ export default createRouter({
       props: typedProps({ mid: Number }),
       component: () => import('../views/admin/AddAlter.vue'),
     },
+    {
+      path: '/serverstat',
+      name: 'serverstat',
+      component: () => import('../views/admin/ServerStat.vue'),
+    },
   ],
 })
