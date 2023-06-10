@@ -24,6 +24,7 @@
               <img
                 :alt="manga.title"
                 :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+                :onerror="errorLoadImage"
               />
             </div>
           </div>
@@ -94,6 +95,7 @@ import {
 } from '@/composable/helper'
 import { GetMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
+import imageFail from '@/assets/images/404.webp'
 
 /* INTERFACE */
 interface Nav {
@@ -159,6 +161,11 @@ const today = (date: Date): string => {
   } else {
     return ''
   }
+}
+
+const errorLoadImage = (e: Event) => {
+  const img = <HTMLImageElement>e.target
+  img.src = imageFail
 }
 </script>
 

@@ -8,7 +8,13 @@
           >Home</a-button
         >
         <a-button type="secondary" status="warning">context</a-button>
+        <a-button @click="autoRescans" type="secondary" status="warning"
+          >AutoReScans</a-button
+        >
       </a-space>
+    </div>
+    <div class="whitespace-pre">
+      {{ statRescans }}
     </div>
     <div>
       {{ mangaHome }}
@@ -30,6 +36,8 @@ import { GetMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 import ContextMenuApp from '@/components/app/ContextMenu.vue'
 import { UseContextMenu } from '@/composable/helper'
+import { AutoReScanDir } from '@wails/go/manga/Config'
+import { EventsOn } from '@wails/runtime/runtime'
 
 const mangaHome = ref<manga.MangaHome>()
 const showManga = () => {
@@ -43,6 +51,25 @@ const alerts = (m: string) => {
   alert(m)
   closeContextMenu()
 }
+
+const statRescans = ref('')
+const autoRescans = () => {
+  AutoReScanDir()
+    .then(v => {
+      if (v) {
+        alert('sukses')
+      } else {
+        alert('failed')
+      }
+    })
+    .catch(e => {
+      alert('failed')
+    })
+}
+
+EventsOn('status_rescans', v => {
+  statRescans.value += statRescans.value + v + '\n'
+})
 </script>
 
 <style scoped></style>
