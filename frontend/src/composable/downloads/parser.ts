@@ -135,7 +135,8 @@ export class Parser {
    */
   chap(v: string | null): number {
     const x = this.#setV(v)
-    const regex = /(?:(?:[Cc]hapter ?\s?)?(?:0?)+)((\d+)[\.\-,](\d+)|\d+)/gm
+    const regex =
+      /^(?:[Cc]h(?:apter|\.?) ?\s+?)?(?:0?)+((\d+)[\.\-,](\d+)|\d+)/gm
     var o = 0
     for (const m of x.matchAll(regex)) {
       if (m[2] && m[3]) {

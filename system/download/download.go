@@ -65,27 +65,22 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 		h := internet.NewFileDownloader()
 		title := helper.FixMangaTitle(o.Manga)
 
-		tx := app.DB.Begin()
 		var mg manga.Manga
 		if o.MangaId == 0 {
 			mg.Title = o.Manga
 			mg.Mdex = o.Mdex
-			err := tx.Create(&mg).Error
-			if err != nil {
-				tx.Rollback()
-				return pageReport, err
+			res := app.DB.FirstOrCreate(&mg, manga.Manga{Title: o.Manga})
+			if res.Error != nil {
+				return pageReport, res.Error
 			}
 
 			cvPath := filepath.Join(file.MANGA_PATH, title)
 			h.SetupDirectory(cvPath)
-			err = downloadCover(filepath.Join(cvPath, "cover.webp"), o.Cover)
+			err := downloadCover(filepath.Join(cvPath, "cover.webp"), o.Cover)
 			if err != nil {
-				h.RemoveFolder(cvPath)
-				tx.Rollback()
-				return pageReport, err
+				pageReport.Error = "Error Download cover"
 			}
 		}
-		tx.SavePoint("manga")
 
 		pageReport.Manga = o.Manga
 
@@ -152,7 +147,6 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 
 			// SAVE DB
 			var mcp manga.Chapter
-			tx.Where("manga_id")
 			mcpChap, _ := chap.Chapter.Float64()
 			mcpLang := manga.LangByLang(chap.Languange)
 			mcp.Chapter = float32(mcpChap)
@@ -165,7 +159,7 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 				mcp.MangaId = mg.ID
 			}
 
-			tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
+			app.DB.FirstOrCreate(&mcp, manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId})
 
 			// append error if not null
 			if len(failedRetry) > 0 || failChap.Err != nil {
@@ -174,13 +168,6 @@ func (f *Download) GetPage(o types.Chapter) (PageReport, error) {
 			}
 
 		} // END FOR
-
-		// commit tx
-		err := tx.Commit().Error
-		if err != nil {
-			fmt.Println("Error save DB", err)
-			pageReport.Error = "Error Save DB Commit TRX"
-		}
 
 		if len(pageReport.FailChap) == 0 {
 			pageReport.StatusDL = true
@@ -236,8 +223,6 @@ func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
 	// SAvae chapter
 	if len(failed) < len(p.Pages) {
 		//save chapter
-		tx := app.DB.Begin()
-		tx.Where("manga_id")
 		var mcp manga.Chapter
 		mcpChap, _ := p.Chapter.Chapter.Float64()
 		mcpLang := manga.LangByLang(p.Chapter.Languange)
@@ -245,15 +230,14 @@ func (f *Download) DownloadJS(p ParamJS) []internet.StatDownload {
 		mcp.Volume = p.Chapter.Volume
 		mcp.Group = p.Chapter.GroupName
 		mcp.LanguageId = uint(mcpLang.ID)
-		mcp.Language = mcpLang
 		mcp.MangaId = p.MangaID
 
-		tx.Where(manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId}).FirstOrCreate(&mcp)
+		res := app.DB.FirstOrCreate(&mcp, manga.Chapter{Chapter: mcp.Chapter, MangaId: mcp.MangaId})
 
-		err := tx.Commit().Error
-		if err != nil {
-			fmt.Println("Error save chapter", err)
+		if res.Error != nil {
+			fmt.Println("Error save chapter", res.Error)
 		}
+
 		fmt.Println("sukses save")
 	}
 
@@ -275,29 +259,21 @@ func (f *Download) SaveMangaCover(c types.Chapter) (uint, error) {
 		var mg manga.Manga
 		mg.Title = c.Manga
 		mg.Mdex = c.Mdex
-		tx := app.DB.Begin()
-		err := tx.Create(&mg).Error
-		if err != nil {
-			tx.Rollback()
+		res := app.DB.FirstOrCreate(&mg, manga.Manga{Title: mg.Title})
+		if res.Error != nil {
+			// tx.Rollback()
 			fmt.Println("error save manga trx")
-			return 0, err
+			return 0, res.Error
 		}
 
 		dl := internet.NewFileDownloader()
 		title := helper.FixMangaTitle(c.Manga)
 		cvPath := filepath.Join(file.MANGA_PATH, title)
 		dl.SetupDirectory(cvPath)
-		err = downloadCover(filepath.Join(cvPath, "cover.webp"), c.Cover)
+		err := downloadCover(filepath.Join(cvPath, "cover.webp"), c.Cover)
 		if err != nil {
 			dl.RemoveFolder(cvPath)
-			tx.Rollback()
 			fmt.Println("error save cover")
-			return 0, err
-		}
-
-		err = tx.Commit().Error
-		if err != nil {
-			fmt.Println("error commit trx")
 			return 0, err
 		}
 
