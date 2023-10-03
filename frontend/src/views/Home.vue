@@ -7,7 +7,7 @@
       allow-clear
       class="w-full mb-2"
       placeholder="Search Manga"
-      :input-attrs="{ class: 'text-center' }"
+      :input-attrs="{ class: 'text-center', id: 'searchManga' }"
       search-button
     />
     <div :style="{ minHeight: minH }">
