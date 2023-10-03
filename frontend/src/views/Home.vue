@@ -1,87 +1,143 @@
 <template>
-  <div id="homeid" class="px-3 pt-3">
-    <a-input-search
-      v-model="searchManga"
-      style="--primary-6: 255, 117, 24"
-      @change="loadManga(searchManga)"
-      allow-clear
-      class="w-full mb-2"
-      placeholder="Search Manga"
-      :input-attrs="{ class: 'text-center', id: 'searchManga' }"
-      search-button
-    />
-    <div :style="{ minHeight: minH }">
-      <div class="grid grid-cols-5 gap-2 lg:grid-cols-10">
-        <div
-          v-for="(manga, i) in mangaHome?.manga"
-          :key="i"
-          class="box relative"
-          :class="today(manga.download_time)"
-          @contextmenu.prevent="openContextMenu($event, manga)"
-        >
-          <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
-            <div class="h-203px lg:h-200px">
-              <img
-                :alt="manga.title"
-                :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
-                :onerror="errorLoadImage"
-              />
+  <div class="xl:(grid grid-cols-10) px-3 pt-3">
+    <div id="homeid" class="col-span-8">
+      <a-input-search
+        v-model="searchManga"
+        style="--primary-6: 255, 117, 24"
+        @change="loadManga(searchManga)"
+        allow-clear
+        class="w-full mb-2"
+        placeholder="Search Manga"
+        :input-attrs="{ class: 'text-center', id: 'searchManga' }"
+        search-button
+      />
+      <div :style="{ minHeight: minH }">
+        <div class="grid grid-cols-5 gap-2 lg:grid-cols-8">
+          <div
+            v-for="(manga, i) in mangaHome?.manga"
+            :key="i"
+            class="box relative"
+            :class="today(manga.download_time)"
+            @contextmenu.prevent="openContextMenu($event, manga)"
+          >
+            <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
+              <div class="h-203px lg:h-200px">
+                <img
+                  :alt="manga.title"
+                  :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+                  :onerror="errorLoadImage"
+                />
+              </div>
             </div>
-          </div>
-          <div
-            class="title select-none"
-            @click="$router.push(`chapter/${manga.id}`)"
-          >
-            <span>{{ manga.title }}</span>
-          </div>
-          <div class="chapter">
-            <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
-              Chapter {{ manga.chapter }}
-            </button>
-          </div>
-          <div
-            v-if="
-              DateApp.NewDate().Format('DD-MM-YYYY') ==
-              DateApp.NewDate(manga.download_time.toString()).Format(
-                'DD-MM-YYYY'
-              )
-            "
-            class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-blue-500"
-          >
-            New
+            <div
+              class="title select-none"
+              @click="$router.push(`chapter/${manga.id}`)"
+            >
+              <span>{{ manga.title }}</span>
+            </div>
+            <div class="chapter">
+              <button @click.stop="$router.push(`/page/${manga.chapter_id}`)">
+                Chapter {{ manga.chapter }}
+              </button>
+            </div>
+            <div
+              v-if="
+                DateApp.NewDate().Format('DD-MM-YYYY') ==
+                DateApp.NewDate(manga.download_time.toString()).Format(
+                  'DD-MM-YYYY'
+                )
+              "
+              class="absolute text-xs top-2 right-0 px-1 rounded-l border-b border-dark-100 drop-shadow bg-blue-500"
+            >
+              New
+            </div>
           </div>
         </div>
       </div>
+      <div class="mt-2">
+        <a-pagination
+          class="justify-center"
+          v-model:current="nav.page"
+          v-model:page-size="nav.limit"
+          :hide-on-single-page="true"
+          :auto-adjust="false"
+          :total="
+            mangaHome?.pagination?.total ? mangaHome?.pagination?.total : 0
+          "
+        />
+      </div>
+      <teleport to="#app">
+        <context-menu ref="refMenu" v-slot="{ item }: { item: manga.Manga }">
+          <li @click="$router.push(`/addalter/${item.id}`)">Add Alternatif</li>
+          <li @click="$router.push('/convert/' + item.id)">Convert Manga</li>
+          <div class="divider"></div>
+          <li class="text-red-500 font-serif font-bold">
+            <a-popconfirm
+              :content="
+                'Are you sure want Delete? ' + item.title.substring(0, 15)
+              "
+              ok-text="OK"
+              cancel-text="NO"
+              type="error"
+            >
+              <div class="w-full">DELETE</div>
+            </a-popconfirm>
+          </li>
+        </context-menu>
+      </teleport>
     </div>
-    <div class="mt-2">
-      <a-pagination
-        class="justify-center"
-        v-model:current="nav.page"
-        v-model:page-size="nav.limit"
-        :hide-on-single-page="true"
-        :auto-adjust="false"
-        :total="mangaHome?.pagination?.total ? mangaHome?.pagination?.total : 0"
-      />
+    <div v-if="lg" class="ml-3 col-span-2">
+      <div>
+        <a-date-picker
+          :default-value="new Date()"
+          :locale="enUS.datePicker"
+          :disabled-date="
+            current =>
+              current ? current.getTime() > new Date().getTime() : false
+          "
+          hide-trigger
+          style="
+            width: 100%;
+            --color-bg-popup: #2a2a2a;
+            --color-neutral-3: rgba(0, 0, 0, 0.75);
+            --link-6: var(--orange-6);
+          "
+        />
+      </div>
+      <div class="mt-3">
+        <a-typography-title class="text-center" :heading="5">
+          Random Unread Manga
+        </a-typography-title>
+        <a-list :bordered="false" :max-height="500" :scrollbar="true">
+          <a-list-item v-for="(manga, i) in mangaHome?.manga" :key="i">
+            <a-list-item-meta>
+              <template #avatar>
+                <a-avatar :size="64" shape="square">
+                  <img
+                    alt="avatar"
+                    :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+                  />
+                </a-avatar>
+              </template>
+              <template #title>
+                <a-link
+                  style="color: var(--color-text-1)"
+                  @click="$router.push(`chapter/${manga.id}`)"
+                  >{{ manga.title }}</a-link
+                >
+              </template>
+              <template #description>
+                <a-link
+                  style="color: rgba(var(--orange-6), 0.75)"
+                  @click="$router.push(`/page/${manga.chapter_id}`)"
+                  >Chapter {{ manga.chapter }}</a-link
+                >
+              </template>
+            </a-list-item-meta>
+          </a-list-item>
+        </a-list>
+      </div>
     </div>
-    <teleport to="#app">
-      <context-menu ref="refMenu" v-slot="{ item }: { item: manga.Manga }">
-        <li @click="$router.push(`/addalter/${item.id}`)">Add Alternatif</li>
-        <li @click="$router.push('/convert/' + item.id)">Convert Manga</li>
-        <div class="divider"></div>
-        <li class="text-red-500 font-serif font-bold">
-          <a-popconfirm
-            :content="
-              'Are you sure want Delete? ' + item.title.substring(0, 15)
-            "
-            ok-text="OK"
-            cancel-text="NO"
-            type="error"
-          >
-            <div class="w-full">DELETE</div>
-          </a-popconfirm>
-        </li>
-      </context-menu>
-    </teleport>
   </div>
 </template>
 
@@ -96,6 +152,7 @@ import {
 import { GetMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 import imageFail from '@/assets/images/404.webp'
+import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
 
 /* INTERFACE */
 interface Nav {
@@ -121,13 +178,15 @@ const loadManga = (sarch: string | null = null) => {
   })
 }
 
+const maxLimit = 24
+const minLimit = 10
 // ON_CREATED function loading Manga Data
 // to make load nav accurate when sitch pages
 if (lg.value) {
-  nav.limit = 30
+  nav.limit = maxLimit
   minH.value = '856px'
 } else {
-  nav.limit = 10
+  nav.limit = minLimit
   minH.value = '574px'
 }
 loadManga()
@@ -135,14 +194,14 @@ loadManga()
 // Watching View and Pagination page change
 watch([lg, () => nav.page], ([l, p], [_, op]) => {
   if (l) {
-    nav.limit = 30
+    nav.limit = maxLimit
     minH.value = '856px'
     if (op == p) {
       nav.page = Sequence(3, p)
     }
     loadManga(searchManga.value)
   } else {
-    nav.limit = 10
+    nav.limit = minLimit
     minH.value = '574px'
     if (op == p) {
       nav.page = (p - 1) * 3 + 1
