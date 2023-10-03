@@ -1,16 +1,25 @@
 <template>
   <div class="xl:(grid grid-cols-10) px-3 pt-3">
     <div id="homeid" class="col-span-8">
-      <a-input-search
-        v-model="searchManga"
-        style="--primary-6: 255, 117, 24"
-        @change="loadManga(searchManga)"
-        allow-clear
+      <a-input
+        id="homeinput"
         class="w-full mb-2"
         placeholder="Search Manga"
+        v-model="searchManga"
+        @change="loadManga(searchManga)"
         :input-attrs="{ class: 'text-center', id: 'searchManga' }"
-        search-button
-      />
+        allow-clear
+      >
+        <template #append>
+          <a-space size="mini">
+            <a-button type="primary" @click="loadManga(searchManga)"
+              ><icon-search
+            /></a-button>
+            <a-button><icon-eraser /></a-button>
+          </a-space>
+        </template>
+      </a-input>
+
       <div :style="{ minHeight: minH }">
         <div class="grid grid-cols-5 gap-2 lg:grid-cols-8">
           <div
@@ -87,10 +96,12 @@
       </teleport>
     </div>
     <div v-if="lg" class="ml-3 col-span-2">
-      <div>
+      <div id="panelDate">
         <a-date-picker
           :default-value="new Date()"
           :locale="enUS.datePicker"
+          :show-now-btn="false"
+          @select="testLog"
           :disabled-date="
             current =>
               current ? current.getTime() > new Date().getTime() : false
@@ -112,18 +123,18 @@
           <a-list-item v-for="(manga, i) in mangaHome?.manga" :key="i">
             <a-list-item-meta>
               <template #avatar>
-                <a-avatar :size="64" shape="square">
-                  <img
-                    alt="avatar"
-                    :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
-                  />
-                </a-avatar>
+                <a-image
+                  :preview="false"
+                  width="64"
+                  :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
+                />
               </template>
               <template #title>
                 <a-link
                   style="color: var(--color-text-1)"
                   @click="$router.push(`chapter/${manga.id}`)"
-                  >{{ manga.title }}</a-link
+                  >{{ manga.title.substring(0, 100)
+                  }}{{ manga.title.length >= 100 ? '...' : '' }}</a-link
                 >
               </template>
               <template #description>
@@ -142,6 +153,7 @@
 </template>
 
 <script setup lang="ts">
+import { IconSearch, IconEraser } from '@arco-design/web-vue/es/icon'
 import {
   MangaTitleURL,
   GetBreakPoints,
@@ -225,6 +237,10 @@ const today = (date: Date): string => {
 const errorLoadImage = (e: Event) => {
   const img = <HTMLImageElement>e.target
   img.src = imageFail
+}
+
+const testLog = () => {
+  console.log('berUbah')
 }
 </script>
 
@@ -313,6 +329,35 @@ const errorLoadImage = (e: Event) => {
     .cover,
     .title {
       background-color: tint(@border, 60%);
+    }
+  }
+}
+</style>
+
+<style lang="less">
+#panelDate {
+  .arco-panel-month,
+  .arco-panel-quarter,
+  .arco-panel-year {
+    box-sizing: border-box;
+    width: 100%;
+    .arco-picker-row {
+      padding: 15px 0;
+    }
+  }
+}
+#homeinput {
+  .arco-input-append {
+    padding: 0;
+    border: none;
+    .arco-space {
+      &:first-child {
+        button {
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+          padding: 0 10px;
+        }
+      }
     }
   }
 }

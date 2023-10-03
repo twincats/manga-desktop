@@ -6,7 +6,8 @@
         --primary-6: 255, 117, 24;
         --color-primary-light-1: rgba(var(--primary-6), 0.2);
         --color-primary-light-3: rgba(var(--primary-6), 0.5);
-        --primary-5: 204, 92, 18;
+        --primary-5: 255, 139, 61;
+        --primary-7: 204, 92, 18;
       "
     >
       <menu-bar
