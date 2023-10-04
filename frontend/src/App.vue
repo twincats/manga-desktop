@@ -1,30 +1,36 @@
 <template>
   <div>
-    <div
-      v-if="statusConfig"
-      style="
-        --primary-6: 255, 117, 24;
-        --color-primary-light-1: rgba(var(--primary-6), 0.2);
-        --color-primary-light-3: rgba(var(--primary-6), 0.5);
-        --primary-5: 255, 139, 61;
-        --primary-7: 204, 92, 18;
-      "
-    >
-      <menu-bar
-        @clickMenu="collapse = !collapse"
-        @clickToggleTheme="toggleTheme()"
-      />
-      <side-bar :collapse="collapse" />
-      <div id="main">
-        <router-view></router-view>
+    <a-config-provider :locale="enUS">
+      <div
+        v-if="statusConfig"
+        style="
+          --primary-6: 255, 117, 24;
+          --color-primary-light-1: rgba(var(--primary-6), 0.2);
+          --color-primary-light-3: rgba(var(--primary-6), 0.5);
+          --primary-5: 255, 139, 61;
+          --primary-7: 204, 92, 18;
+        "
+      >
+        <menu-bar
+          @clickMenu="collapse = !collapse"
+          @clickToggleTheme="toggleTheme()"
+        />
+        <side-bar :collapse="collapse" />
+        <div id="main">
+          <router-view></router-view>
+        </div>
+        <footer-bar />
       </div>
-      <footer-bar />
-    </div>
-    <manga-path @update:status-config="(s:boolean)=> statusConfig = s" v-else />
+      <manga-path
+        @update:status-config="(s:boolean)=> statusConfig = s"
+        v-else
+      />
+    </a-config-provider>
   </div>
 </template>
 
 <script lang="ts" setup>
+import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
 import { EmitListenOnce, useTheme } from '@/composable/helper'
 import { GetConfig } from '@wails/go/manga/Config'
 

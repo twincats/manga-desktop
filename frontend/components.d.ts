@@ -9,15 +9,19 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
-    AAvatar: typeof import('@arco-design/web-vue')['Avatar']
+    ABadge: typeof import('@arco-design/web-vue')['Badge']
     AButton: typeof import('@arco-design/web-vue')['Button']
     AButtonGroup: typeof import('@arco-design/web-vue')['ButtonGroup']
     ACheckbox: typeof import('@arco-design/web-vue')['Checkbox']
     ACheckboxGroup: typeof import('@arco-design/web-vue')['CheckboxGroup']
+    AConfigProvider: typeof import('@arco-design/web-vue')['ConfigProvider']
     ADatePicker: typeof import('@arco-design/web-vue')['DatePicker']
+    ADoption: typeof import('@arco-design/web-vue')['Doption']
+    ADropdownButton: typeof import('@arco-design/web-vue')['DropdownButton']
     AFormItem: typeof import('@arco-design/web-vue')['FormItem']
     AImage: typeof import('@arco-design/web-vue')['Image']
     AInput: typeof import('@arco-design/web-vue')['Input']
+    AInputGroup: typeof import('@arco-design/web-vue')['InputGroup']
     AInputSearch: typeof import('@arco-design/web-vue')['InputSearch']
     ALink: typeof import('@arco-design/web-vue')['Link']
     AList: typeof import('@arco-design/web-vue')['List']
