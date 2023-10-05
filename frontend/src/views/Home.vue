@@ -165,25 +165,19 @@ import { GetMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 import imageFail from '@/assets/images/404.webp'
 import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
-
-/* INTERFACE */
-interface Nav {
-  page: number
-  limit: number
-}
+import { useMangaState } from '@/store'
 
 /* INITIAL REACTIVE VARIABLE */
 const { refMenu, openContextMenu } = UseContextMenu()
-const mangaHome = ref<manga.MangaHome | null>(null)
-const nav = reactive<Nav>({ page: 1, limit: 10 })
+const { mangaHome, navHome: nav, searchManga } = useMangaState()
 const { breakpoints } = GetBreakPoints()
 const lg = breakpoints.greater('lg')
-const searchManga = ref('')
 const minH = ref('574px')
 
 /* INITIAL PRELOAD FUNCTION */
 //load manga
 const loadManga = (sarch: string | null = null) => {
+  console.log('fecthing manga dong')
   // console.log(nav, 'berore fetching')
   GetMangaHome(sarch, nav.page, nav.limit).then(res => {
     mangaHome.value = res
@@ -201,7 +195,10 @@ if (lg.value) {
   nav.limit = minLimit
   minH.value = '574px'
 }
-loadManga()
+if (mangaHome.value == null) {
+  console.log('kosong dong')
+  loadManga()
+}
 
 // Watching View and Pagination page change
 watch([lg, () => nav.page], ([l, p], [_, op]) => {
@@ -211,6 +208,7 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
     if (op == p) {
       nav.page = Sequence(3, p)
     }
+    console.log('fetch jika large')
     loadManga(searchManga.value)
   } else {
     nav.limit = minLimit
@@ -218,6 +216,7 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
     if (op == p) {
       nav.page = (p - 1) * 3 + 1
     }
+    console.log('fetch jika page ganti')
     loadManga(searchManga.value)
   }
 })

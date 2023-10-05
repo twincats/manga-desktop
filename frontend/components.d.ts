@@ -22,6 +22,7 @@ declare module '@vue/runtime-core' {
     AImage: typeof import('@arco-design/web-vue')['Image']
     AInput: typeof import('@arco-design/web-vue')['Input']
     AInputGroup: typeof import('@arco-design/web-vue')['InputGroup']
+    AInputNumber: typeof import('@arco-design/web-vue')['InputNumber']
     AInputSearch: typeof import('@arco-design/web-vue')['InputSearch']
     ALink: typeof import('@arco-design/web-vue')['Link']
     AList: typeof import('@arco-design/web-vue')['List']

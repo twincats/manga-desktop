@@ -30,19 +30,22 @@
       </a-typography>
       <div>
         <a-space>
-          <a-dropdown-button @click="showModalSelect">
-            Select
-            <template #icon>
-              <icon-down />
-            </template>
-            <template #content>
-              <a-doption @click="clearSelect">Clear</a-doption>
-              <a-doption @click="selectAll">Select All</a-doption>
-            </template>
-          </a-dropdown-button>
           <a-button-group>
-            <a-button status="success">Add</a-button>
-            <a-button status="danger">Delete</a-button>
+            <a-button @click="selectToggle">Select</a-button>
+            <a-dropdown-button @click="showModalSelect">
+              Multi
+              <template #icon>
+                <icon-down />
+              </template>
+              <template #content>
+                <a-doption @click="clearSelect">Clear</a-doption>
+                <a-doption @click="selectAll">Select All</a-doption>
+              </template>
+            </a-dropdown-button>
+          </a-button-group>
+          <a-button-group>
+            <a-button @click="showModalAdd" status="success">Add</a-button>
+            <a-button status="danger" :disabled="true">Delete</a-button>
           </a-button-group>
         </a-space>
       </div>
@@ -50,7 +53,6 @@
     <div>
       <div>
         <a-table
-          id="chapterTable"
           row-key="id"
           :data="result?.chapter"
           :row-selection="rowSelection"
@@ -67,6 +69,7 @@
             ></a-table-column>
             <a-table-column
               :width="88"
+              cell-class="chap"
               title="Chapter"
               data-index="chapter"
               align="center"
@@ -171,15 +174,98 @@
         </a-input-group>
       </div>
     </a-modal>
+    <!-- modal add chapter -->
+    <a-modal
+      v-model:visible="modalState.modalAdd"
+      :mask-closable="false"
+      title="Add Chapter"
+      @before-ok="handleAdd"
+    >
+      <div class="text-center">
+        <a-space direction="vertical" class="w-full">
+          <a-input-group class="w-full">
+            <a-input-number
+              ref="refFromChapter"
+              placeholder="Please Enter"
+              v-model="mAdd.chapter"
+              @keydown.-.prevent="addMulti"
+              :min="0"
+            />
+            <a-input-number
+              ref="refToChapter"
+              v-if="mAdd.multi"
+              placeholder="Please Enter"
+              v-model="mAdd.chapterTo"
+              :min="mAdd.chapter"
+              @keydown.enter.prevent=""
+            />
+          </a-input-group>
+          <div>
+            <a-space>
+              <a-radio-group type="button" v-model="mAdd.lang">
+                <a-radio value="English"
+                  ><i-twemoji-flag-for-flag-united-kingdom /> English</a-radio
+                >
+                <a-radio value="Indonesia"
+                  ><i-twemoji-flag-for-flag-indonesia /> Indonesia</a-radio
+                >
+              </a-radio-group>
+              <a-radio-group type="button" v-model="mAdd.multi">
+                <a-radio :value="false">Single</a-radio>
+                <a-radio :value="true">Multi</a-radio>
+              </a-radio-group>
+              <a-radio-group
+                :disabled="!mAdd.multi"
+                type="button"
+                v-model="mAdd.lvl"
+              >
+                <a-radio value="1">1</a-radio>
+                <a-radio value="0.5">0.5</a-radio>
+                <a-radio value="0.1">0.1</a-radio>
+              </a-radio-group>
+            </a-space>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <a-input-number
+              :disabled="modalState.addState.disableLoop"
+              placeholder="Loop Level"
+              class="col-span-3"
+              :input-attrs="{ class: 'text-center' }"
+              v-model="mAdd.looplvl"
+              :min="0"
+              mode="button"
+            />
+            <a-input-number
+              :disabled="true"
+              :input-attrs="{ class: 'text-center' }"
+              v-model="addChapterList.length"
+              :min="0"
+            />
+          </div>
+        </a-space>
+      </div>
+    </a-modal>
   </div>
 </template>
-
 <script setup lang="ts">
 import { GetMangaWithChapter } from '@wails/go/manga/Manga'
 import { manga } from '@wails/go/models'
 import { IconDown } from '@arco-design/web-vue/es/icon'
 import { MangaTitleURL, DateApp, GetBreakPoints } from '@/composable/helper'
-import type { PaginationProps, TableRowSelection } from '@arco-design/web-vue'
+import type {
+  PaginationProps,
+  TableRowSelection,
+  InputNumberInstance,
+} from '@arco-design/web-vue'
+
+interface Madd {
+  chapter: number | undefined
+  chapterTo: number | undefined
+  lang: string
+  multi: boolean
+  lvl: string
+  looplvl: number
+}
 
 const props = defineProps<{
   mid: string
@@ -221,25 +307,53 @@ watch(
   }
 )
 
-const rowSelection = reactive<TableRowSelection>({
+const rowSelectionDefault: TableRowSelection = {
   type: 'checkbox',
   showCheckedAll: true,
   onlyCurrent: false,
-})
+}
+
+const rowSelection = ref<TableRowSelection | undefined>()
 const selectedKeys = ref<number[]>([])
 
 const modalState = reactive({
   modalSelect: false,
+  modalAdd: false,
   select: {
     from: '',
     to: '',
   },
+  addState: {
+    disableLoop: true,
+    totalChaps: 1,
+  },
 })
+
+const mAdd = reactive<Madd>({
+  chapter: undefined,
+  chapterTo: undefined,
+  lang: 'English',
+  multi: false,
+  lvl: '1',
+  looplvl: 1,
+})
+const selectToggle = () => {
+  if (rowSelection.value) {
+    rowSelection.value = undefined
+    selectedKeys.value = []
+  } else {
+    rowSelection.value = rowSelectionDefault
+  }
+}
 const showModalSelect = async () => {
+  if (rowSelection.value == undefined) {
+    rowSelection.value = rowSelectionDefault
+  }
+  modalState.select.from = ''
+  modalState.select.to = ''
   modalState.modalSelect = true
   await nextTick()
-  var d = document.getElementById('fromInput')
-  d?.focus()
+  document.getElementById('fromInput')?.focus()
 }
 
 const keySelectEvent = (e: KeyboardEvent) => {
@@ -251,7 +365,7 @@ const keySelectEvent = (e: KeyboardEvent) => {
         document.getElementById('toInput')?.focus()
       }
     } else if (e.key == 'Enter') {
-      console.log('Enter ditekan')
+      // console.log('Enter ditekan')
       if ((e.target as HTMLElement).id == 'fromInput') {
         document.getElementById('toInput')?.focus()
       } else if ((e.target as HTMLElement).id == 'toInput') {
@@ -303,19 +417,127 @@ const selectAll = () => {
   const newm = result.value?.chapter.map(it => it.id)
   selectedKeys.value = newm ? newm : []
 }
-</script>
 
-<style lang="less">
-#chapterTable {
-  tr:nth-child(even) {
-    td:nth-child(2) {
-      color: var(--app-main);
+const refFromChapter = ref<InputNumberInstance>()
+const refToChapter = ref<InputNumberInstance>()
+const showModalAdd = async () => {
+  mAdd.chapter = undefined
+  mAdd.chapterTo = undefined
+  mAdd.lang = 'English'
+  mAdd.multi = false
+  mAdd.lvl = '1'
+  mAdd.looplvl = 1
+  const lang = result.value ? result.value.chapter[0].language.lang : 'English'
+  mAdd.lang = lang
+  modalState.modalAdd = true
+  await nextTick()
+  refFromChapter.value?.focus()
+}
+
+const addMulti = async () => {
+  mAdd.multi = true
+  await nextTick()
+  refToChapter.value?.focus()
+}
+
+watch(
+  () => mAdd.lvl,
+  lvl => {
+    if (lvl == '0.1') {
+      modalState.addState.disableLoop = false
+    } else {
+      modalState.addState.disableLoop = true
     }
   }
-  tr:hover {
-    td {
-      background-color: rgba(var(--primary-6), 0.1);
+)
+
+const addChapterList = computed<manga.Chapter[]>(() => {
+  const latestChap = result.value ? result.value.chapter[0] : null
+  const chapList: manga.Chapter[] = []
+  const f = mAdd.chapter
+  const t = mAdd.chapterTo
+  const cl = ref(1)
+  if (f) {
+    if (t && t > f) {
+      //no decimal number.integer
+      //calculate cf
+      switch (mAdd.lvl) {
+        case '1':
+          cl.value = t - f + 1
+          break
+        case '0.5':
+          cl.value = (t - f) * 2 + 1
+          break
+        default:
+          cl.value = t - f + (t - f) * mAdd.looplvl + 1
+          break
+      }
+      // console.log('total cl', cl.value, chapList)
+      //check added number already in chapter
+      for (let i = 0; i < cl.value; i++) {
+        const m = new manga.Chapter(latestChap)
+        switch (mAdd.lvl) {
+          case '1':
+            m.chapter = f + i
+            break
+          case '0.5':
+            m.chapter = i / 2 + f
+            break
+          default:
+            m.chapter = chapSeq(i, mAdd.looplvl, f)
+            break
+        }
+        //not add if already in chapter
+        if (inChapter(m.chapter)) {
+          chapList.push(m)
+        }
+      }
+    } else {
+      const m = new manga.Chapter(latestChap)
+      m.chapter = f
+      //not add if already in chapter
+      if (inChapter(f)) {
+        chapList.push(m)
+      }
     }
+  }
+
+  return chapList
+})
+
+const handleAdd = async () => {
+  console.log(JSON.parse(JSON.stringify(addChapterList.value)))
+  await new Promise(resolve => setTimeout(resolve, 600))
+
+  //reset to default
+  return true
+}
+
+const chapSeq = (n: number, length: number, start: number): number => {
+  const group = Math.floor(n / (length + 1))
+  const index = n % (length + 1)
+
+  return start + group + index * 0.1
+}
+
+const inChapter = (i: number): boolean => {
+  if (result.value) {
+    return result.value.chapter.findIndex(it => it.chapter == i) == -1
+  } else {
+    return false
+  }
+}
+</script>
+
+<style lang="less" scoped>
+:deep(tr:nth-child(even)) {
+  .chap {
+    color: var(--app-main);
+  }
+}
+:deep(tr:hover) {
+  td {
+    background-color: rgba(var(--primary-6), 0.1);
   }
 }
 </style>
