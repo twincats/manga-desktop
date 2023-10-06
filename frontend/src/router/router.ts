@@ -53,5 +53,10 @@ export default createRouter({
       name: 'serverstat',
       component: () => import('../views/admin/ServerStat.vue'),
     },
+    {
+      path: '/server/add',
+      name: 'serveradd',
+      component: () => import('../views/admin/AddServer.vue'),
+    },
   ],
 })

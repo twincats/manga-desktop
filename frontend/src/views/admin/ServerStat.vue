@@ -1,7 +1,11 @@
 <template>
   <div class="p-2">
     <div class="mb-2">Server Stat</div>
-    <div><a-button size="mini">Add Server</a-button></div>
+    <div>
+      <a-button @click="$router.push('/server/add')" size="mini"
+        >Add Server</a-button
+      >
+    </div>
     <div v-if="servers">
       <a-table
         :data="servers"
@@ -19,10 +23,14 @@
             title="Server Name"
             data-index="name"
           ></a-table-column>
-          <a-table-column title="URL Server" data-index="url"></a-table-column>
+          <a-table-column
+            v-if="lg"
+            title="URL Server"
+            data-index="url"
+          ></a-table-column>
           <a-table-column title="Status Active" align="center">
             <template #cell="{ record }: { record: manga.Server }">
-              <span class="chip bg-green-700" v-if="record.status_active"
+              <span class="chip bg-[rgb(14,153,88)]" v-if="record.status_active"
                 >Active</span
               >
               <span v-else class="chip_off">No</span>
@@ -33,9 +41,9 @@
               <span
                 class="chip on"
                 v-if="record.chap_jscode != '' || record.id == 1"
-                >SET</span
-              >
-              <span v-else class="chip off">Not</span>
+                ><i-mdi:check
+              /></span>
+              <span v-else class="chip off"><i-mdi:close /></span>
             </template>
           </a-table-column>
           <a-table-column title="Pages JSCODE" align="center">
@@ -43,9 +51,9 @@
               <span
                 class="chip on"
                 v-if="record.page_jscode != '' || record.id == 1"
-                >SET</span
-              >
-              <span v-else class="chip off">Not</span>
+                ><i-mdi:check
+              /></span>
+              <span v-else class="chip off"><i-mdi:close /></span>
             </template>
           </a-table-column>
           <a-table-column title="CRUD">
@@ -72,21 +80,23 @@ const fetchServer = async () => {
 }
 fetchServer()
 
-const pageSize = ref(16)
+const pSizeMini = 15
+const pSizeBig = 23
+const pageSize = ref(pSizeMini)
 const { breakpoints } = GetBreakPoints()
 const lg = breakpoints.greater('lg')
 
 if (lg.value) {
-  pageSize.value = 23
+  pageSize.value = pSizeBig
 } else {
-  pageSize.value = 16
+  pageSize.value = pSizeMini
 }
 
 watch(lg, l => {
   if (l) {
-    pageSize.value = 23
+    pageSize.value = pSizeBig
   } else {
-    pageSize.value = 16
+    pageSize.value = pSizeMini
   }
 })
 </script>
@@ -101,10 +111,10 @@ watch(lg, l => {
 
 .on {
   .chip();
-  background-color: rgb(24, 136, 101);
+  background-color: rgb(14, 153, 88);
 }
 .off {
   .chip();
-  background-color: rgb(167, 16, 16);
+  background-color: rgb(182, 18, 18);
 }
 </style>

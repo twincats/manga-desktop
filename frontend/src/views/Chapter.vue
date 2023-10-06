@@ -602,6 +602,7 @@ const selectedChapter = computed(() => {
     .map(it => {
       return it.chapter
     })
+    .reverse()
 })
 </script>
 
