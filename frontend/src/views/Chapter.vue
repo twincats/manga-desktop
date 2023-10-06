@@ -10,46 +10,88 @@
           :src="`/file/${MangaTitleURL(result.title)}/cover.webp`"
         />
       </div>
-      <a-typography class="w-full">
-        <a-typography-title :heading="5" style="margin-top: 0.25rem"
-          >{{ result?.title }}
-        </a-typography-title>
-        <a-typography-paragraph>
-          Status Complete : {{ result?.status_end }} <br />
-          <div v-if="result">
-            Manga Alternative Title :
-            <span v-if="result?.alter.length == 0">NO</span> <br />
-            <ul v-if="result?.alter">
-              <li v-for="(m, i) in result?.alter" :key="i">
-                {{ m.title }}
-              </li>
-            </ul>
-            {{ selectedKeys }}
+      <div class="w-full">
+        <a-typography>
+          <a-typography-title
+            :ellipsis="{
+              rows: 1,
+              showTooltip: true,
+            }"
+            :heading="5"
+            style="margin-top: 0.25rem"
+            >{{ result?.title }}
+          </a-typography-title>
+          <a-typography-paragraph>
+            Status Complete :
+            <strong>
+              <span v-if="result?.status_end">Yes</span>
+              <span class="text-red-600" v-else>NO</span>
+            </strong>
+            <br />
+            <div v-if="result">
+              Manga Alternative Title :
+              <div class="h-105px">
+                <a-list
+                  :bordered="false"
+                  size="small"
+                  :max-height="120"
+                  :scrollbar="true"
+                >
+                  <a-list-item
+                    style="padding: 0.05rem; font-size: 12px"
+                    v-for="(alt, i) in result.alter"
+                    :key="i"
+                  >
+                    <a-list-item-meta :title="alt.title"> </a-list-item-meta>
+                  </a-list-item>
+                  <template #empty> No </template>
+                </a-list>
+              </div>
+            </div>
+          </a-typography-paragraph>
+        </a-typography>
+        <div class="flex">
+          <div class="w-full pr-2">
+            <a-typography-paragraph
+              style="margin: 0"
+              :ellipsis="{
+                rows: 2,
+                showTooltip: true,
+              }"
+            >
+              {{ (selectedChapter.length ? 'Chapter ' : '') + selectedChapter }}
+            </a-typography-paragraph>
           </div>
-        </a-typography-paragraph>
-      </a-typography>
-      <div>
-        <a-space>
-          <a-button-group>
-            <a-button @click="selectToggle">Select</a-button>
-            <a-dropdown-button @click="showModalSelect">
-              Multi
-              <template #icon>
-                <icon-down />
-              </template>
-              <template #content>
-                <a-doption @click="clearSelect">Clear</a-doption>
-                <a-doption @click="selectAll">Select All</a-doption>
-              </template>
-            </a-dropdown-button>
-          </a-button-group>
-          <a-button-group>
-            <a-button @click="showModalAdd" status="success">Add</a-button>
-            <a-button status="danger" :disabled="true">Delete</a-button>
-          </a-button-group>
-        </a-space>
+          <div class="h-44px grid items-end">
+            <a-space>
+              <a-button-group>
+                <a-button @click="selectToggle">Select</a-button>
+                <a-dropdown-button @click="showModalSelect">
+                  Multi
+                  <template #icon>
+                    <icon-down />
+                  </template>
+                  <template #content>
+                    <a-doption @click="clearSelect">Clear</a-doption>
+                    <a-doption @click="selectAll">Select All</a-doption>
+                  </template>
+                </a-dropdown-button>
+              </a-button-group>
+              <a-button-group>
+                <a-button @click="showModalAdd" status="success">Add</a-button>
+                <a-button
+                  @click="deleteClick"
+                  status="danger"
+                  :disabled="!(selectedKeys.length > 0)"
+                  >Delete</a-button
+                >
+              </a-button-group>
+            </a-space>
+          </div>
+        </div>
       </div>
     </div>
+
     <div>
       <div>
         <a-table
@@ -252,10 +294,11 @@ import { GetMangaWithChapter } from '@wails/go/manga/Manga'
 import { manga } from '@wails/go/models'
 import { IconDown } from '@arco-design/web-vue/es/icon'
 import { MangaTitleURL, DateApp, GetBreakPoints } from '@/composable/helper'
-import type {
-  PaginationProps,
-  TableRowSelection,
-  InputNumberInstance,
+import {
+  type PaginationProps,
+  type TableRowSelection,
+  type InputNumberInstance,
+  Modal,
 } from '@arco-design/web-vue'
 
 interface Madd {
@@ -415,7 +458,10 @@ const clearSelect = () => {
 
 const selectAll = () => {
   const newm = result.value?.chapter.map(it => it.id)
-  selectedKeys.value = newm ? newm : []
+  if (newm) {
+    selectedKeys.value.push(...newm)
+  }
+  rowSelection.value = rowSelectionDefault
 }
 
 const refFromChapter = ref<InputNumberInstance>()
@@ -527,6 +573,36 @@ const inChapter = (i: number): boolean => {
     return false
   }
 }
+
+const deleteClick = () => {
+  console.log('delete')
+  const allChap = tableData.length == selectedKeys.value.length
+  Modal.warning({
+    title: 'Delete Confirmation',
+    content: () => [
+      h('div', 'Are you sure want to Delete Selected Chapter?'),
+      allChap
+        ? h('div', [
+            h('span', 'Deleting All Chapter make Manga with '),
+            h('span', { style: { color: 'red' } }, 'No Chapter'),
+          ])
+        : '',
+    ],
+    okText: 'Delete',
+    cancelText: 'No',
+    hideCancel: false,
+    bodyClass: 'text-center',
+    maskClosable: false,
+  })
+}
+
+const selectedChapter = computed(() => {
+  return tableData
+    .filter(it => selectedKeys.value.includes(it.id))
+    .map(it => {
+      return it.chapter
+    })
+})
 </script>
 
 <style lang="less" scoped>
@@ -535,9 +611,10 @@ const inChapter = (i: number): boolean => {
     color: var(--app-main);
   }
 }
+
 :deep(tr:hover) {
   td {
-    background-color: rgba(var(--primary-6), 0.1);
+    background-color: rgba(var(--primary-6), 0.1) !important;
   }
 }
 </style>

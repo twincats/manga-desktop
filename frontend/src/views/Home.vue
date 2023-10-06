@@ -177,7 +177,6 @@ const minH = ref('574px')
 /* INITIAL PRELOAD FUNCTION */
 //load manga
 const loadManga = (sarch: string | null = null) => {
-  console.log('fecthing manga dong')
   // console.log(nav, 'berore fetching')
   GetMangaHome(sarch, nav.page, nav.limit).then(res => {
     mangaHome.value = res
@@ -196,7 +195,6 @@ if (lg.value) {
   minH.value = '574px'
 }
 if (mangaHome.value == null) {
-  console.log('kosong dong')
   loadManga()
 }
 
@@ -208,7 +206,6 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
     if (op == p) {
       nav.page = Sequence(3, p)
     }
-    console.log('fetch jika large')
     loadManga(searchManga.value)
   } else {
     nav.limit = minLimit
@@ -216,7 +213,6 @@ watch([lg, () => nav.page], ([l, p], [_, op]) => {
     if (op == p) {
       nav.page = (p - 1) * 3 + 1
     }
-    console.log('fetch jika page ganti')
     loadManga(searchManga.value)
   }
 })
