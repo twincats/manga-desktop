@@ -129,22 +129,44 @@
               @page-change="tablePageChange"
               class="select-none"
               size="mini"
-              stripe
-              :scroll="{ x: 1200 }"
               @row-click="(c)=>clickRowTable(<types.ChapterList>c)"
             >
               <template #columns>
                 <a-table-column
-                  fixed="left"
-                  :width="100"
+                  :width="75"
                   align="center"
                   title="Chapter"
+                  cell-class="chap"
                   data-index="chapter"
                 />
                 <a-table-column :width="50" title="Vol" data-index="volume" />
-                <a-table-column title="Judul Chapter" data-index="title" />
+                <a-table-column title="Judul Chapter" data-index="title">
+                  <template #cell="{ record }: { record: types.ChapterList }">
+                    <a-typography-paragraph
+                      style="margin: 0"
+                      :ellipsis="{
+                        rows: 1,
+                        showTooltip: true,
+                      }"
+                    >
+                      {{ record.title }}
+                    </a-typography-paragraph>
+                  </template>
+                </a-table-column>
 
-                <a-table-column title="Group" data-index="group_name" />
+                <a-table-column title="Group" data-index="group_name">
+                  <template #cell="{ record }: { record: types.ChapterList }">
+                    <a-typography-paragraph
+                      style="margin: 0"
+                      :ellipsis="{
+                        rows: 1,
+                        showTooltip: true,
+                      }"
+                    >
+                      {{ record.group_name }}
+                    </a-typography-paragraph>
+                  </template>
+                </a-table-column>
 
                 <a-table-column :width="135" align="center" title="Release">
                   <template #cell="{ record }: { record: types.ChapterList }">
@@ -154,25 +176,21 @@
                   </template>
                 </a-table-column>
                 <a-table-column
-                  fixed="right"
-                  :width="80"
+                  :width="75"
                   align="center"
                   title="Bahasa"
                   data-index="language"
+                  :sortable="{ sortDirections: ['ascend', 'descend'] }"
                 >
                   <template #cell="{ record }: { record: types.ChapterList }">
                     <i-twemoji-flag-for-flag-indonesia
+                      class="id"
                       v-if="record.language == 'Indonesia'"
                     />
                     <i-twemoji-flag-for-flag-united-kingdom v-else />
                   </template>
                 </a-table-column>
-                <a-table-column
-                  fixed="right"
-                  :width="70"
-                  align="center"
-                  title="Status"
-                >
+                <a-table-column :width="70" align="center" title="Status">
                   <template #cell="{ record }: { record: types.ChapterList }">
                     <span
                       class="bg-green-600 px-2 rounded-lg"
@@ -182,12 +200,7 @@
                     <span v-else class="bg-red-600 px-2 rounded-lg">No</span>
                   </template>
                 </a-table-column>
-                <a-table-column
-                  :fixed="'right'"
-                  :width="50"
-                  title="Check"
-                  align="center"
-                >
+                <a-table-column :width="50" title="Check" align="center">
                   <template #cell="{ record }: { record: types.ChapterList }">
                     <span
                       v-if="selected_chapter_url.indexOf(record) != -1"
@@ -198,7 +211,6 @@
                   </template>
                 </a-table-column>
                 <a-table-column
-                  :fixed="'right'"
                   :width="110"
                   class="min-h-20px"
                   title="Download"
@@ -597,5 +609,21 @@ watchDebounced(
 }
 #urlinput .arco-input-append {
   padding: 0;
+}
+</style>
+
+<style lang="less" scoped>
+:deep(tr:has(.id)) {
+  td {
+    background-color: rgba(var(--black-6), 0.2) !important;
+  }
+  .chap {
+    color: rgb(var(--primary-6));
+  }
+}
+:deep(tr:hover) {
+  td {
+    background-color: rgba(var(--primary-6), 0.1) !important;
+  }
 }
 </style>
