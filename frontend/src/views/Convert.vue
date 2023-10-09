@@ -323,7 +323,9 @@ onStartTyping(() => {
 })
 
 onMounted(() => {
-  hiddenSearch.value?.focus()
+  if (mid == null) {
+    hiddenSearch.value?.focus()
+  }
 })
 
 ///APPLICATION METHODS

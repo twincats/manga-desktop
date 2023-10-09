@@ -95,7 +95,7 @@
         </context-menu>
       </teleport>
     </div>
-    <div v-if="lg" class="ml-3 col-span-2">
+    <div v-if="lg" class="ml-3 col-span-2 hidden lg:block">
       <div id="panelDate">
         <a-date-picker
           :default-value="new Date()"
@@ -194,7 +194,11 @@ if (lg.value) {
   nav.limit = minLimit
   minH.value = '574px'
 }
-if (mangaHome.value == null) {
+if (
+  mangaHome.value == null ||
+  (lg.value && mangaHome.value.manga.length < maxLimit) ||
+  (!lg.value && mangaHome.value.manga.length > minLimit)
+) {
   loadManga()
 }
 
@@ -237,6 +241,13 @@ const errorLoadImage = (e: Event) => {
 const testLog = () => {
   console.log('berUbah')
 }
+
+// onBeforeRouteUpdate((to, from) => {
+//   // only fetch the user if the id changed as maybe only the query or the hash changed
+//   console.log('onBefore Route')
+//   console.log('From: ', from.fullPath)
+//   console.log('to: ', to.fullPath)
+// })
 </script>
 
 <style lang="less" scoped>

@@ -230,6 +230,7 @@
               ref="refFromChapter"
               placeholder="Please Enter"
               v-model="mAdd.chapter"
+              name="madd_chapter"
               @keydown.-.prevent="addMulti"
               :min="0"
             />

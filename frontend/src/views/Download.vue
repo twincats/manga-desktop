@@ -529,7 +529,7 @@ const tablePageChange = (p: number) => {
     const seq = limit / pagesize
     const pSeq = Sequence(seq, p)
     const offset = pSeq * limit - limit
-
+    // const offset = (p - 1) * (limit / pagesize) + 1;
     const tbl = tableDownload[offset]
     if (tbl.id == '') {
       tableLoading.value = true
