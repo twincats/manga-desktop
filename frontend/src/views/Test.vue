@@ -41,7 +41,7 @@ import { EventsOn } from '@wails/runtime/runtime'
 
 const mangaHome = ref<manga.MangaHome>()
 const showManga = () => {
-  GetMangaHome(null, 1, 5).then(res => {
+  GetMangaHome(null, null, 1, 5).then(res => {
     mangaHome.value = res
   })
 }

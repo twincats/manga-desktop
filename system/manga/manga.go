@@ -39,10 +39,20 @@ func (m *Manga) GetMangas() []Manga {
 }
 
 // GetMangaHome get list of mangaHome with paginate []manga
-func (m *Manga) GetMangaHome(title *string, page int, limit int) MangaHome {
+func (m *Manga) GetMangaHome(title *string, dates *string, page int, limit int) MangaHome {
 	mangaHomeApi := MangaHomeApi{}
 
-	return mangaHomeApi.Paginate(title, page, limit)
+	return mangaHomeApi.Paginate(title, dates, page, limit)
+}
+
+func (m *Manga) GetRandomMangaHome(limit int) []MangaHomeApi {
+	var randomMangaHome []MangaHomeApi
+	query := MangaHomeApi{}.FetchQuery()
+	query.Where("chapters.status_read = false").
+		Order("RANDOM()").
+		Order("download_time desc, mangas.title").
+		Limit(limit).Find(&randomMangaHome)
+	return randomMangaHome
 }
 
 /* GetPage for Fetching list of images chapter */
@@ -156,12 +166,12 @@ type MangaHomeApi struct {
 	DownloadTime time.Time `json:"download_time" ts_type:"Date" ts_transform:"new Date(__VALUE__)"`
 }
 
-func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
+func (m *MangaHomeApi) Paginate(title *string, dates *string, page int, limit int) MangaHome {
 	// declaration for total data is fetched
 	var totalManga int64
 
 	// getQuery
-	query := m.FetchQuery()
+	query := m.FetchQuery().Order("download_time desc, mangas.title")
 
 	// if only
 	if title != nil && *title != "" {
@@ -180,6 +190,11 @@ func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
 	} else {
 		// get totalManga without searhing manga title
 		query.Count(&totalManga)
+	}
+
+	//filter date
+	if dates != nil && *dates != "" {
+		query = query.Where(`DATE( datetime( substr( download_time, 1, 19 ), substr( download_time, 21, 3 ) || ' hours' ) ) = ?`, dates)
 	}
 
 	// set pagination
@@ -202,8 +217,9 @@ func (f MangaHomeApi) FetchQuery() *gorm.DB {
 		Select("mangas.id", "mangas.title", "mdex", "status_ending", "chapters.id as chapter_id", "latest.chapter", "chapters.created_at as download_time").
 		Joins("inner join chapters on mangas.id = chapters.manga_id").
 		Joins("inner join (?) latest on mangas.id = latest.manga_id", latestSubQuery).
-		Where("latest.chapter = CAST(chapters.chapter as decimal)").
-		Order("download_time desc, mangas.title")
+		Where("latest.chapter = CAST(chapters.chapter as decimal)")
+		// .
+		// Order("download_time desc, mangas.title")
 	return homeApiQuery
 }
 

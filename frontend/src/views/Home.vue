@@ -15,7 +15,7 @@
             <a-button type="primary" @click="loadManga(searchManga)"
               ><icon-search
             /></a-button>
-            <a-button><icon-eraser /></a-button>
+            <a-button @click="clearFilter"><icon-eraser /></a-button>
           </a-space>
         </template>
       </a-input>
@@ -98,9 +98,9 @@
     <div v-if="lg" class="ml-3 col-span-2 hidden lg:block">
       <div id="panelDate">
         <a-date-picker
-          :default-value="new Date()"
           :locale="enUS.datePicker"
           :show-now-btn="false"
+          v-model="date_filter"
           @select="testLog"
           :disabled-date="
             current =>
@@ -117,10 +117,10 @@
       </div>
       <div class="mt-3">
         <a-typography-title class="text-center" :heading="5">
-          Random Unread Manga
+          Random Unread Manga <br />{{ date_filter }}
         </a-typography-title>
         <a-list :bordered="false" :max-height="500" :scrollbar="true">
-          <a-list-item v-for="(manga, i) in mangaHome?.manga" :key="i">
+          <a-list-item v-for="(manga, i) in randomManga" :key="i">
             <a-list-item-meta>
               <template #avatar>
                 <a-image
@@ -161,7 +161,7 @@ import {
   UseContextMenu,
   DateApp,
 } from '@/composable/helper'
-import { GetMangaHome } from '@wails/go/manga/Manga'
+import { GetMangaHome, GetRandomMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 import imageFail from '@/assets/images/404.webp'
 import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
@@ -173,12 +173,13 @@ const { mangaHome, navHome: nav, searchManga } = useMangaState()
 const { breakpoints } = GetBreakPoints()
 const lg = breakpoints.greater('lg')
 const minH = ref('574px')
+const date_filter = ref<string | undefined>()
 
 /* INITIAL PRELOAD FUNCTION */
 //load manga
 const loadManga = (sarch: string | null = null) => {
   // console.log(nav, 'berore fetching')
-  GetMangaHome(sarch, nav.page, nav.limit).then(res => {
+  GetMangaHome(sarch, date_filter.value, nav.page, nav.limit).then(res => {
     mangaHome.value = res
   })
 }
@@ -242,12 +243,28 @@ const testLog = () => {
   console.log('berUbah')
 }
 
-// onBeforeRouteUpdate((to, from) => {
-//   // only fetch the user if the id changed as maybe only the query or the hash changed
-//   console.log('onBefore Route')
-//   console.log('From: ', from.fullPath)
-//   console.log('to: ', to.fullPath)
-// })
+const randomManga = ref<manga.MangaHomeApi[]>([])
+const showRandomUnread = async () => {
+  randomManga.value = await GetRandomMangaHome(10)
+  console.log(randomManga.value)
+}
+//display random
+showRandomUnread()
+
+//watch filterdate
+watch(date_filter, df => {
+  if (df) {
+    searchManga.value = ''
+    loadManga()
+  }
+})
+
+//clear filter
+const clearFilter = () => {
+  date_filter.value = undefined
+  searchManga.value = ''
+  loadManga()
+}
 </script>
 
 <style lang="less" scoped>

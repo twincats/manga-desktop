@@ -4,7 +4,7 @@ import {manga} from '../models';
 
 export function GetManga(arg1:number):Promise<manga.Manga>;
 
-export function GetMangaHome(arg1:any,arg2:number,arg3:number):Promise<manga.MangaHome>;
+export function GetMangaHome(arg1:any,arg2:any,arg3:number,arg4:number):Promise<manga.MangaHome>;
 
 export function GetMangaWithAlter(arg1:number):Promise<manga.Manga>;
 
@@ -13,6 +13,8 @@ export function GetMangaWithChapter(arg1:number):Promise<manga.Manga>;
 export function GetMangas():Promise<Array<manga.Manga>>;
 
 export function GetPage(arg1:number):Promise<manga.Page>;
+
+export function GetRandomMangaHome(arg1:number):Promise<Array<manga.MangaHomeApi>>;
 
 export function GetServer():Promise<Array<manga.Server>>;
 

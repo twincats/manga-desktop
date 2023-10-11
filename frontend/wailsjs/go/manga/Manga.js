@@ -6,8 +6,8 @@ export function GetManga(arg1) {
   return window['go']['manga']['Manga']['GetManga'](arg1);
 }
 
-export function GetMangaHome(arg1, arg2, arg3) {
-  return window['go']['manga']['Manga']['GetMangaHome'](arg1, arg2, arg3);
+export function GetMangaHome(arg1, arg2, arg3, arg4) {
+  return window['go']['manga']['Manga']['GetMangaHome'](arg1, arg2, arg3, arg4);
 }
 
 export function GetMangaWithAlter(arg1) {
@@ -24,6 +24,10 @@ export function GetMangas() {
 
 export function GetPage(arg1) {
   return window['go']['manga']['Manga']['GetPage'](arg1);
+}
+
+export function GetRandomMangaHome(arg1) {
+  return window['go']['manga']['Manga']['GetRandomMangaHome'](arg1);
 }
 
 export function GetServer() {
