@@ -14,6 +14,9 @@
         <a-menu-item key="0_2" @click="$router.push('/download')"
           >Download</a-menu-item
         >
+        <a-menu-item key="0_0" @click="$router.push('/manga/all')"
+          >Manga All</a-menu-item
+        >
       </a-sub-menu>
       <a-sub-menu key="1">
         <template #icon><icon-desktop /></template>

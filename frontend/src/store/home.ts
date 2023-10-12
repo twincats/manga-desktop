@@ -29,7 +29,9 @@ export const useMangaState = createGlobalState(() => {
 
   const navHome = toReactive(navStorage)
 
+  const dateFilter = ref<string | undefined>()
+
   const searchManga = useStorage('searchmangahome', '', sessionStorage)
 
-  return { mangaHome, navHome, searchManga }
+  return { mangaHome, navHome, searchManga, dateFilter }
 })

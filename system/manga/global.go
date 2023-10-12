@@ -24,6 +24,15 @@ type Pagination struct {
 
 // set value for pagination struct
 func (p *Pagination) Paginate() {
+	if p.CurrentPage <= 0 || p.PerPage <= 0 {
+		p.CurrentPage = 1
+		p.From = 1
+		p.To = 1
+		p.LastPage = 1
+		p.PerPage = 0
+		p.Offset = 0
+		return
+	}
 	//set From
 	p.From = p.PerPage*p.CurrentPage - (p.PerPage - 1)
 

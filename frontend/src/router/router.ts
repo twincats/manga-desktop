@@ -10,6 +10,11 @@ export default createRouter({
       component: () => import('../views/Home.vue'),
     },
     {
+      path: '/manga/all',
+      name: 'manga_all',
+      component: () => import('../views/manga/All.vue'),
+    },
+    {
       path: '/convert/:mid?',
       name: 'convert',
       props: typedProps({ mid: Number }),

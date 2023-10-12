@@ -176,13 +176,8 @@ func (m *MangaHomeApi) Paginate(title *string, dates *string, page int, limit in
 	// if only
 	if title != nil && *title != "" {
 		ilike := fmt.Sprintf("%%%s%%", *title)
-		query = app.DB.Table("(?) as mh", query).
-			Select("mh.id", "mh.title", "mdex", "status_ending", "chapter_id", "chapter", "download_time").
-			Joins("left join manga_alternatives on manga_alternatives.manga_id = mh.id").
-			Where("mh.title LIKE ?", ilike).
-			Or("manga_alternatives.title LIKE ?", ilike).
-			Group("mh.id, mh.title,mdex,status_ending,chapter_id,chapter,download_time").
-			Order("mh.title")
+		query = query.Where("mangas.title LIKE ?", ilike).
+			Order("mangas.title")
 
 		// get totalManga with searhing manga title
 		app.DB.Table("(?) as mhome", query).Count(&totalManga)
@@ -195,6 +190,7 @@ func (m *MangaHomeApi) Paginate(title *string, dates *string, page int, limit in
 	//filter date
 	if dates != nil && *dates != "" {
 		query = query.Where(`DATE( datetime( substr( download_time, 1, 19 ), substr( download_time, 21, 3 ) || ' hours' ) ) = ?`, dates)
+		app.DB.Table("(?) as mhome", query).Count(&totalManga)
 	}
 
 	// set pagination
@@ -202,7 +198,11 @@ func (m *MangaHomeApi) Paginate(title *string, dates *string, page int, limit in
 	pagination.Paginate()
 
 	mhApi := []MangaHomeApi{}
-	query.Offset(pagination.Offset).Limit(pagination.PerPage).Find(&mhApi)
+	if pagination.PerPage != 0 {
+		query = query.Offset(pagination.Offset).Limit(pagination.PerPage)
+	}
+
+	query.Find(&mhApi)
 
 	return MangaHome{
 		Manga:      mhApi,

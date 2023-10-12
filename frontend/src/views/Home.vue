@@ -100,7 +100,7 @@
         <a-date-picker
           :locale="enUS.datePicker"
           :show-now-btn="false"
-          v-model="date_filter"
+          v-model="dateFilter"
           @select="testLog"
           :disabled-date="
             current =>
@@ -117,7 +117,7 @@
       </div>
       <div class="mt-3">
         <a-typography-title class="text-center" :heading="5">
-          Random Unread Manga <br />{{ date_filter }}
+          Random Unread Manga <br />{{ dateFilter }}
         </a-typography-title>
         <a-list :bordered="false" :max-height="500" :scrollbar="true">
           <a-list-item v-for="(manga, i) in randomManga" :key="i">
@@ -169,17 +169,16 @@ import { useMangaState } from '@/store'
 
 /* INITIAL REACTIVE VARIABLE */
 const { refMenu, openContextMenu } = UseContextMenu()
-const { mangaHome, navHome: nav, searchManga } = useMangaState()
+const { mangaHome, navHome: nav, searchManga, dateFilter } = useMangaState()
 const { breakpoints } = GetBreakPoints()
 const lg = breakpoints.greater('lg')
 const minH = ref('574px')
-const date_filter = ref<string | undefined>()
 
 /* INITIAL PRELOAD FUNCTION */
 //load manga
 const loadManga = (sarch: string | null = null) => {
-  // console.log(nav, 'berore fetching')
-  GetMangaHome(sarch, date_filter.value, nav.page, nav.limit).then(res => {
+  console.log('berore fetching')
+  GetMangaHome(sarch, dateFilter.value, nav.page, nav.limit).then(res => {
     mangaHome.value = res
   })
 }
@@ -246,13 +245,13 @@ const testLog = () => {
 const randomManga = ref<manga.MangaHomeApi[]>([])
 const showRandomUnread = async () => {
   randomManga.value = await GetRandomMangaHome(10)
-  console.log(randomManga.value)
+  // console.log(randomManga.value)
 }
 //display random
 showRandomUnread()
 
 //watch filterdate
-watch(date_filter, df => {
+watch(dateFilter, df => {
   if (df) {
     searchManga.value = ''
     loadManga()
@@ -261,7 +260,7 @@ watch(date_filter, df => {
 
 //clear filter
 const clearFilter = () => {
-  date_filter.value = undefined
+  dateFilter.value = undefined
   searchManga.value = ''
   loadManga()
 }
