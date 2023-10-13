@@ -1,10 +1,12 @@
 <template>
   <img
     ref="images"
+    class="select-none"
     :alt="alt"
     :style="{ ...sizeStyle, ...fitStyle }"
     :src="srcData"
     :onerror="onErrorLoad"
+    :draggable="draggable"
   />
 </template>
 
@@ -21,18 +23,29 @@ interface Props {
   lazy?: boolean
   alt?: string
   thresold?: number
+  draggable?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   preview: false,
   lazy: false,
   thresold: 0,
+  draggable: false,
 })
 
 const srcData = ref(props.src)
 if (props.lazy) {
   srcData.value = ''
 }
+
+watch(
+  () => props.src,
+  src => {
+    if (!props.lazy) {
+      srcData.value = src
+    }
+  }
+)
 
 const updateImage = () => {
   srcData.value = props.src

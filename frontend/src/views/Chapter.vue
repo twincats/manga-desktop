@@ -2,15 +2,13 @@
   <div class="text-left px-2 pt-2">
     <div class="flex pb-2">
       <div v-if="result" class="w-45 mr-2">
-        <a-image
-          :preview="false"
-          :width="180"
-          :height="250"
-          fit="cover"
+        <img
+          draggable="false"
+          class="select-none object-cover w-180px h-250px"
           :src="`/file/${MangaTitleURL(result.title)}/cover.webp`"
         />
       </div>
-      <div class="w-full">
+      <div class="w-full select-none">
         <a-typography>
           <a-typography-title
             :ellipsis="{

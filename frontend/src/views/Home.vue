@@ -24,7 +24,7 @@
       </a-input>
 
       <div :style="{ minHeight: minH }">
-        <div class="grid grid-cols-5 gap-2 lg:grid-cols-8">
+        <div class="grid grid-cols-5 gap-2 lg:grid-cols-8" draggable="false">
           <div
             v-for="(manga, i) in mangaView"
             :key="i"
@@ -37,11 +37,12 @@
             @contextmenu.prevent="openContextMenu($event, manga)"
           >
             <div class="cover" @click="$router.push(`/chapter/${manga.id}`)">
-              <div class="h-203px lg:h-200px">
-                <img
-                  :alt="manga.title"
+              <div>
+                <m-image
+                  height="200px"
+                  width="165px"
+                  fit="cover"
                   :src="`file/${MangaTitleURL(manga.title)}/cover.webp`"
-                  :onerror="errorLoadImage"
                 />
               </div>
             </div>
@@ -184,6 +185,9 @@ const minH = getLimit('574px', '856px')
 const nav = useNavStorage(mangaLimit)
 const randomManga = ref<manga.MangaHomeApi[]>([])
 
+//update per_page when created
+nav.per_page = mangaLimit.value
+
 /* FUNCTION & COMPUTED DATA */
 // isEqualDate check date1 and Date1
 const isEqualDate = (date1: Date, date2: Date) => {
@@ -247,14 +251,15 @@ loadManga() //load manga
 showRandomUnread() //display random
 </script>
 
-<style lang="less" scoped>
+<style lang="less">
 @mainColor: --color-bg-3;
 
 .box {
   text-align: center;
   border: solid 2px var(@mainColor);
   border-radius: 0.5rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
+
   .cover {
     padding: 0.25rem;
     border-bottom: 1px solid transparent;
@@ -262,13 +267,6 @@ showRandomUnread() //display random
       overflow: hidden;
       position: relative;
       border-radius: 0.3rem 0.3rem 0 0;
-      img {
-        height: 120%;
-        position: absolute;
-        margin: auto;
-        left: -999px;
-        right: -999px;
-      }
     }
   }
   .title {
@@ -286,6 +284,7 @@ showRandomUnread() //display random
     padding: 0.25rem 0;
     border-radius: 0 0 0.35rem 0.35rem;
     background-color: var(@mainColor);
+    user-select: none;
 
     button {
       background-color: unset;

@@ -19,7 +19,7 @@ export const useMangaState = createGlobalState(() => {
   const mangaHome = useStorage<manga.MangaHome | null>(
     'mangahome',
     null,
-    sessionStorage,
+    localStorage,
     { serializer: StorageSerializers.object }
   )
 
@@ -62,6 +62,10 @@ export const useMangaState = createGlobalState(() => {
     }
   }
 
+  const clearManga = () => {
+    mangaHome.value = null
+  }
+
   return {
     mangaHome,
     searchManga,
@@ -70,6 +74,7 @@ export const useMangaState = createGlobalState(() => {
     useNavStorage,
     loadManga,
     totalManga,
+    clearManga,
     lg,
   }
 })
