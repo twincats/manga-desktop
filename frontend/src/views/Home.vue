@@ -5,16 +5,19 @@
         id="homeinput"
         class="w-full mb-2"
         placeholder="Search Manga"
-        v-model="searchManga"
-        @change="loadManga(searchManga)"
-        :input-attrs="{ class: 'text-center', id: 'searchManga' }"
+        :value="searchManga"
+        @change="e => (searchManga = e)"
+        :input-attrs="{
+          class: 'text-center',
+          id: 'searchManga',
+          spellcheck: false,
+          autocomplete: false,
+        }"
         allow-clear
       >
         <template #append>
           <a-space size="mini">
-            <a-button type="primary" @click="loadManga(searchManga)"
-              ><icon-search
-            /></a-button>
+            <a-button type="primary"><icon-search /></a-button>
             <a-button @click="clearFilter"><icon-eraser /></a-button>
           </a-space>
         </template>
@@ -23,13 +26,17 @@
       <div :style="{ minHeight: minH }">
         <div class="grid grid-cols-5 gap-2 lg:grid-cols-8">
           <div
-            v-for="(manga, i) in mangaHome?.manga"
+            v-for="(manga, i) in mangaView"
             :key="i"
             class="box relative"
-            :class="today(manga.download_time)"
+            :class="
+              isEqualDate(new Date(manga.download_time), new Date())
+                ? 'today'
+                : ''
+            "
             @contextmenu.prevent="openContextMenu($event, manga)"
           >
-            <div class="cover" @click="$router.push(`chapter/${manga.id}`)">
+            <div class="cover" @click="$router.push(`/chapter/${manga.id}`)">
               <div class="h-203px lg:h-200px">
                 <img
                   :alt="manga.title"
@@ -40,7 +47,7 @@
             </div>
             <div
               class="title select-none"
-              @click="$router.push(`chapter/${manga.id}`)"
+              @click="$router.push(`/chapter/${manga.id}`)"
             >
               <span>{{ manga.title }}</span>
             </div>
@@ -67,12 +74,10 @@
         <a-pagination
           class="justify-center"
           v-model:current="nav.page"
-          v-model:page-size="nav.limit"
+          v-model:page-size="nav.per_page"
           :hide-on-single-page="true"
           :auto-adjust="false"
-          :total="
-            mangaHome?.pagination?.total ? mangaHome?.pagination?.total : 0
-          "
+          :total="totalManga"
         />
       </div>
       <teleport to="#app">
@@ -100,8 +105,8 @@
         <a-date-picker
           :locale="enUS.datePicker"
           :show-now-btn="false"
+          value-format="Date"
           v-model="dateFilter"
-          @select="testLog"
           :disabled-date="
             current =>
               current ? current.getTime() > new Date().getTime() : false
@@ -117,7 +122,7 @@
       </div>
       <div class="mt-3">
         <a-typography-title class="text-center" :heading="5">
-          Random Unread Manga <br />{{ dateFilter }}
+          Random Unread Manga
         </a-typography-title>
         <a-list :bordered="false" :max-height="500" :scrollbar="true">
           <a-list-item v-for="(manga, i) in randomManga" :key="i">
@@ -154,14 +159,8 @@
 
 <script setup lang="ts">
 import { IconSearch, IconEraser } from '@arco-design/web-vue/es/icon'
-import {
-  MangaTitleURL,
-  GetBreakPoints,
-  Sequence,
-  UseContextMenu,
-  DateApp,
-} from '@/composable/helper'
-import { GetMangaHome, GetRandomMangaHome } from '@wails/go/manga/Manga'
+import { MangaTitleURL, UseContextMenu, DateApp } from '@/composable/helper'
+import { GetRandomMangaHome } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 import imageFail from '@/assets/images/404.webp'
 import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
@@ -169,101 +168,83 @@ import { useMangaState } from '@/store'
 
 /* INITIAL REACTIVE VARIABLE */
 const { refMenu, openContextMenu } = UseContextMenu()
-const { mangaHome, navHome: nav, searchManga, dateFilter } = useMangaState()
-const { breakpoints } = GetBreakPoints()
-const lg = breakpoints.greater('lg')
-const minH = ref('574px')
+const {
+  lg,
+  useNavStorage,
+  getLimit,
+  loadManga,
+  totalManga,
+  mangaHome,
+  dateFilter,
+  searchManga,
+} = useMangaState()
 
-/* INITIAL PRELOAD FUNCTION */
-//load manga
-const loadManga = (sarch: string | null = null) => {
-  console.log('berore fetching')
-  GetMangaHome(sarch, dateFilter.value, nav.page, nav.limit).then(res => {
-    mangaHome.value = res
-  })
+const mangaLimit = getLimit(10, 24)
+const minH = getLimit('574px', '856px')
+const nav = useNavStorage(mangaLimit)
+const randomManga = ref<manga.MangaHomeApi[]>([])
+
+/* FUNCTION & COMPUTED DATA */
+// isEqualDate check date1 and Date1
+const isEqualDate = (date1: Date, date2: Date) => {
+  return date1.toLocaleDateString() === date2.toLocaleDateString()
 }
 
-const maxLimit = 24
-const minLimit = 10
-// ON_CREATED function loading Manga Data
-// to make load nav accurate when sitch pages
-if (lg.value) {
-  nav.limit = maxLimit
-  minH.value = '856px'
-} else {
-  nav.limit = minLimit
-  minH.value = '574px'
-}
-if (
-  mangaHome.value == null ||
-  (lg.value && mangaHome.value.manga.length < maxLimit) ||
-  (!lg.value && mangaHome.value.manga.length > minLimit)
-) {
-  loadManga()
-}
-
-// Watching View and Pagination page change
-watch([lg, () => nav.page], ([l, p], [_, op]) => {
-  if (l) {
-    nav.limit = maxLimit
-    minH.value = '856px'
-    if (op == p) {
-      nav.page = Sequence(3, p)
-    }
-    loadManga(searchManga.value)
-  } else {
-    nav.limit = minLimit
-    minH.value = '574px'
-    if (op == p) {
-      nav.page = (p - 1) * 3 + 1
-    }
-    loadManga(searchManga.value)
+// mangaView computed mangaHome for view
+const mangaView = computed<manga.MangaHomeApi[]>(() => {
+  // check mangaHome empty
+  if (!mangaHome.value) {
+    return []
   }
+
+  var mangaList = mangaHome.value.manga
+  const start = (nav.page - 1) * nav.per_page
+
+  // mangaView filtered when doing search
+  if (searchManga.value !== '') {
+    dateFilter.value = new Date()
+    const filteredManga = mangaList.filter(manga =>
+      manga.title.toLowerCase().includes(searchManga.value.toLowerCase())
+    )
+    const end = Math.min(nav.page * nav.per_page, filteredManga.length)
+    totalManga.value = filteredManga.length
+    return filteredManga.slice(start, end)
+  }
+
+  // mangaView filtered with dateFilter
+  if (!isEqualDate(dateFilter.value, new Date())) {
+    const filteredMangaDate = mangaHome.value.manga.filter(manga =>
+      isEqualDate(new Date(manga.download_time), dateFilter.value)
+    )
+    mangaList = filteredMangaDate
+  }
+
+  const end = Math.min(nav.page * nav.per_page, mangaList.length)
+  totalManga.value = mangaList.length
+  return mangaList.slice(start, end)
 })
 
-//today class
-const today = (date: Date): string => {
-  if (
-    DateApp.NewDate().Format('DD-MM-YYYY') ==
-    DateApp.NewDate(date.toString()).Format('DD-MM-YYYY')
-  ) {
-    return 'today'
-  } else {
-    return ''
-  }
+// showRandomUnread is getRandome manga with Limit
+const showRandomUnread = async () => {
+  randomManga.value = await GetRandomMangaHome(10)
 }
 
+// errorLoadImage is event change image when fail to load
 const errorLoadImage = (e: Event) => {
   const img = <HTMLImageElement>e.target
   img.src = imageFail
 }
 
-const testLog = () => {
-  console.log('berUbah')
-}
-
-const randomManga = ref<manga.MangaHomeApi[]>([])
-const showRandomUnread = async () => {
-  randomManga.value = await GetRandomMangaHome(10)
-  // console.log(randomManga.value)
-}
-//display random
-showRandomUnread()
-
-//watch filterdate
-watch(dateFilter, df => {
-  if (df) {
-    searchManga.value = ''
-    loadManga()
-  }
-})
-
-//clear filter
+// clear filter button function
 const clearFilter = () => {
-  dateFilter.value = undefined
+  dateFilter.value = new Date()
   searchManga.value = ''
-  loadManga()
+  nav.page = 1
 }
+
+/* INITIAL PRELOAD FUNCTION */
+loadManga() //load manga
+showRandomUnread() //display random
 </script>
 
 <style lang="less" scoped>
