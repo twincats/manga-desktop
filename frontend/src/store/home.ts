@@ -48,8 +48,23 @@ export const useMangaState = createGlobalState(() => {
 
     const navHome = toReactive(navStorage)
 
-    //watch large
+    // watch large
     watch(lg, () => (navStorage.value.per_page = limit.value))
+    // watch perPage
+    let oldPage = navStorage.value.page
+    watch(
+      () => navStorage.value.per_page,
+      (npp, opp) => {
+        if (npp > opp) oldPage = navStorage.value.page
+        const np = Math.floor(((navStorage.value.page - 1) * opp) / npp) + 1
+        const npo = Math.floor(((oldPage - 1) * npp) / opp) + 1
+        if (npp < opp && oldPage > np && np >= npo) {
+          navStorage.value.page = oldPage
+        } else {
+          navStorage.value.page = np > 0 ? np : 1
+        }
+      }
+    )
 
     return navHome
   }

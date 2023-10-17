@@ -1,6 +1,6 @@
 <template>
-  <div class="xl:(grid grid-cols-10) px-3 pt-3">
-    <div id="homeid" class="col-span-8">
+  <div class="xl:(grid grid-cols-12) px-3 pt-3">
+    <div id="homeid" class="col-span-10">
       <a-input
         id="homeinput"
         class="w-full mb-2"
@@ -24,7 +24,7 @@
       </a-input>
 
       <div :style="{ minHeight: minH }">
-        <div class="grid grid-cols-5 gap-2 lg:grid-cols-8" draggable="false">
+        <div class="grid grid-cols-5 gap-2 lg:grid-cols-10" draggable="false">
           <div
             v-for="(manga, i) in mangaView"
             :key="i"
@@ -180,7 +180,7 @@ const {
   searchManga,
 } = useMangaState()
 
-const mangaLimit = getLimit(10, 24)
+const mangaLimit = getLimit(10, 30)
 const minH = getLimit('574px', '856px')
 const nav = useNavStorage(mangaLimit)
 const randomManga = ref<manga.MangaHomeApi[]>([])
