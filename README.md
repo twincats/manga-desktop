@@ -1,18 +1,46 @@
 # README
 
-## About
+## manga-desktop
 
-This is the official Wails Vue-TS template.
+manga-desktop is desktop application for managing and downloading manga from server for read at later time
+offline without connection.
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+This application is named as mangav4 and build with wails and vue and for now it only support for windows.
 
 ## Live Development
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+To develop this app there are some requirement and setup some development environment to do.
+
+### Requirement
+
+- Windows 10/11
+- Golang latest
+- pnpm latest
+- git
+- mingw-w64
+
+### Setup
+
+- Install wails cli
+  ```
+  go install github.com/wailsapp/wails/v2/cmd/wails@latest
+  ```
+
+- Clone the repo
+  ```
+  git clone https://github.com/twincats/manga-desktop.git
+  ```
+
+- Setting Path Environment variable of dependency dll libvips
+  ```
+  extract libvips.7z in folder and setting path Environment variable to that folder
+  libvips.7z is located in REPO\build\windows\libvips.7z
+  ```
+
+- run dev in terminal
+  ```
+  wails dev
+  ```
 
 ## Building
 
