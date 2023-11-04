@@ -233,12 +233,6 @@ const showRandomUnread = async () => {
   randomManga.value = await GetRandomMangaHome(10)
 }
 
-// errorLoadImage is event change image when fail to load
-const errorLoadImage = (e: Event) => {
-  const img = <HTMLImageElement>e.target
-  img.src = imageFail
-}
-
 // clear filter button function
 const clearFilter = () => {
   dateFilter.value = new Date()

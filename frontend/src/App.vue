@@ -21,10 +21,7 @@
         </div>
         <footer-bar />
       </div>
-      <manga-path
-        @update:status-config="(s:boolean)=> statusConfig = s"
-        v-else
-      />
+      <manga-path @update:status-config="SetStatusConfig" v-else />
     </a-config-provider>
   </div>
 </template>
@@ -33,13 +30,21 @@
 import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
 import { EmitListenOnce, useTheme } from '@/composable/helper'
 import { GetConfig } from '@wails/go/manga/Config'
+import { useMangaState } from '@/store'
+
+const mangaState = useMangaState()
 
 const statusConfig = ref(false)
 GetConfig().then(res => {
   if (res.manga_folder != '') {
-    statusConfig.value = true
+    SetStatusConfig(true)
   }
 })
+
+const SetStatusConfig = (s: boolean) => {
+  statusConfig.value = s
+  mangaState.loadManga()
+}
 
 const router = useRouter()
 const collapse = ref(true)

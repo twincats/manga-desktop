@@ -3,10 +3,12 @@ import {
   StorageSerializers,
   useStorage,
   toReactive,
+  isDefined,
 } from '@vueuse/core'
 import { GetMangaHome } from '@wails/go/manga/Manga'
 import { GetBreakPoints } from '@/composable/helper'
 import { manga } from '@wails/go/models'
+import { GetCountMangas } from '@wails/go/manga/Manga'
 
 /* INTERFACE */
 export interface Nav {
@@ -22,6 +24,14 @@ export const useMangaState = createGlobalState(() => {
     localStorage,
     { serializer: StorageSerializers.object }
   )
+
+  //check count if mangaHome available (clear mangaHome when not match DB)
+  if (isDefined(mangaHome)) {
+    const mh_length = mangaHome.value.manga.length
+    GetCountMangas().then(totalManga => {
+      if (totalManga != mh_length) clearManga()
+    })
+  }
 
   const dateFilter = useStorage<Date>('date_filter', new Date(), sessionStorage)
   const searchManga = useStorage('searchmangahome', '', sessionStorage)
@@ -50,6 +60,7 @@ export const useMangaState = createGlobalState(() => {
 
     // watch large
     watch(lg, () => (navStorage.value.per_page = limit.value))
+
     // watch perPage
     let oldPage = navStorage.value.page
     watch(
@@ -70,10 +81,13 @@ export const useMangaState = createGlobalState(() => {
   }
 
   const totalManga = ref(0)
+  const loading = ref(false)
   const loadManga = async () => {
-    if (!mangaHome.value) {
+    if (!isDefined(mangaHome)) {
+      loading.value = true
       mangaHome.value = await GetMangaHome(null, null, 0, 0)
       totalManga.value = mangaHome.value.manga.length
+      loading.value = false
     }
   }
 
@@ -87,6 +101,7 @@ export const useMangaState = createGlobalState(() => {
     dateFilter,
     getLimit,
     useNavStorage,
+    loading,
     loadManga,
     totalManga,
     clearManga,

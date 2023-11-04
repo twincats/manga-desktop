@@ -2,10 +2,10 @@ package app
 
 import (
 	"context"
+	"mangav4/system/app/helper"
 	"mangav4/system/app/internet"
 	"os"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
 )
 
@@ -24,8 +24,8 @@ func Startup(ctx *context.Context) {
 	args := os.Args
 	arguments = args
 
-	runtime.EventsOnce(*WailsContext, "args", func(optionalData ...interface{}) {
-		runtime.EventsEmit(*WailsContext, "args", arguments[1:])
-	})
+	// IPC event
+	var ipc = helper.NewIPC(*WailsContext)
+	ipc.ListenEmit("args", arguments[1:])
 
 }

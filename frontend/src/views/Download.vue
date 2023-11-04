@@ -304,7 +304,7 @@ import { Message, Modal } from '@arco-design/web-vue'
 import '@arco-design/web-vue/es/message/style/index'
 import { types } from '@wails/go/models'
 import { UseTable, UseServer } from '@/composable/downloads/download'
-import { useDownloadState } from '@/store/global'
+import { useDownloadState, useMangaState } from '@/store'
 import { promiseTimeout, toValue } from '@vueuse/core'
 import { Download } from '@/composable/downloads/wrapper'
 import type { EventChap, EventPage } from '@/type/download'
@@ -330,6 +330,8 @@ const inititalProgressDL = {
 }
 
 const progress_dl = reactive({ ...inititalProgressDL })
+
+const mangaState = useMangaState()
 
 // FOR NEXT PROGRESS
 /*
@@ -450,6 +452,8 @@ const downloadChapter = (c: types.ChapterList | null = null) => {
             }
           }
         }
+        // clear mangaHome to update downloaded
+        mangaState.clearManga()
       })
       .catch(e => {
         console.log(e)

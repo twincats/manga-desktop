@@ -38,6 +38,13 @@ func (m *Manga) GetMangas() []Manga {
 	return manga
 }
 
+// GetCountMangas get Count total of manga
+func (m *Manga) GetCountMangas() int64 {
+	var totalManga int64
+	app.DB.Model(&Manga{}).Count(&totalManga)
+	return totalManga
+}
+
 // GetMangaHome get list of mangaHome with paginate []manga
 func (m *Manga) GetMangaHome(title *string, dates *string, page int, limit int) MangaHome {
 	mangaHomeApi := MangaHomeApi{}
