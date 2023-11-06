@@ -96,7 +96,7 @@
           row-key="id"
           :data="result?.chapter"
           :row-selection="rowSelection"
-          :pagination="pprop"
+          :pagination="{ hideOnSinglePage: true, pageSize: chapterPageSize }"
           v-model:selected-keys="selectedKeys"
           size="small"
         >
@@ -170,24 +170,6 @@
           </template>
         </a-table>
       </div>
-      <!-- <div class="col-span-2 pl-2">
-        <a-space>
-          <a-dropdown-button @click="showModalSelect">
-            Select
-            <template #icon>
-              <icon-down />
-            </template>
-            <template #content>
-              <a-doption @click="clearSelect">Clear</a-doption>
-              <a-doption @click="selectAll">Select All</a-doption>
-            </template>
-          </a-dropdown-button>
-          <a-button-group>
-            <a-button status="success">Add</a-button>
-            <a-button status="danger">Delete</a-button>
-          </a-button-group>
-        </a-space>
-      </div> -->
     </div>
     <!-- modal select chapter -->
     <a-modal
@@ -294,12 +276,13 @@ import { manga } from '@wails/go/models'
 import { IconDown } from '@arco-design/web-vue/es/icon'
 import { MangaTitleURL, DateApp, GetBreakPoints } from '@/composable/helper'
 import {
-  type PaginationProps,
   type TableRowSelection,
   type InputNumberInstance,
   Modal,
 } from '@arco-design/web-vue'
+import { useMangaState } from '@/store'
 
+// Madd is interface for Add Chapter Manual
 interface Madd {
   chapter: number | undefined
   chapterTo: number | undefined
@@ -309,17 +292,21 @@ interface Madd {
   looplvl: number
 }
 
+// props is default props definition
 const props = defineProps<{
   mid: string
 }>()
 
+// getLimit dynamic value by windows size
+const { getLimit } = useMangaState()
+
+// result is holder data MangaWithChapter
 const result = ref<manga.Manga>()
-
-const bp = GetBreakPoints()
-
-// const tableColumn = [{ title: 'Manga', dataIndex: 'title' }]
+// chapterPageSize dynamic value by windows size
+const chapterPageSize = getLimit(9, 17)
+// tableData is table for chapter
 const tableData = reactive<manga.Chapter[]>([])
-
+// GetMangaWithChapter is for loading MangaWithChapter data
 GetMangaWithChapter(Number(props.mid)).then(res => {
   result.value = res
   //sort desc
@@ -327,28 +314,9 @@ GetMangaWithChapter(Number(props.mid)).then(res => {
   res.chapter.forEach(item => {
     tableData.push(item)
   })
-  // console.log(res)
 })
 
-const pprop = reactive<PaginationProps>({
-  hideOnSinglePage: true,
-})
-
-const setAutopaginationSize = () => {
-  if (bp.lg.value) {
-    pprop.pageSize = 9
-  } else {
-    pprop.pageSize = 17
-  }
-}
-setAutopaginationSize()
-watch(
-  () => bp.lg.value,
-  () => {
-    setAutopaginationSize()
-  }
-)
-
+// rowSelectionDefault is configuration for selection table
 const rowSelectionDefault: TableRowSelection = {
   type: 'checkbox',
   showCheckedAll: true,
@@ -358,6 +326,7 @@ const rowSelectionDefault: TableRowSelection = {
 const rowSelection = ref<TableRowSelection | undefined>()
 const selectedKeys = ref<number[]>([])
 
+// Default value ModalState
 const modalState = reactive({
   modalSelect: false,
   modalAdd: false,
@@ -371,6 +340,7 @@ const modalState = reactive({
   },
 })
 
+// default value Add chapter
 const mAdd = reactive<Madd>({
   chapter: undefined,
   chapterTo: undefined,
@@ -379,6 +349,8 @@ const mAdd = reactive<Madd>({
   lvl: '1',
   looplvl: 1,
 })
+
+// selectToggle for toggling select chapter checkbox
 const selectToggle = () => {
   if (rowSelection.value) {
     rowSelection.value = undefined
@@ -387,6 +359,8 @@ const selectToggle = () => {
     rowSelection.value = rowSelectionDefault
   }
 }
+
+// showModalSelect click show modal select chapter in range
 const showModalSelect = async () => {
   if (rowSelection.value == undefined) {
     rowSelection.value = rowSelectionDefault
@@ -398,6 +372,7 @@ const showModalSelect = async () => {
   document.getElementById('fromInput')?.focus()
 }
 
+// keySelectEvent is event keyboard for select chapter in range
 const keySelectEvent = (e: KeyboardEvent) => {
   const allowedKey = ['.', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight']
   if (isNaN(Number(e.key)) && !allowedKey.includes(e.key)) {
@@ -411,11 +386,6 @@ const keySelectEvent = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).id == 'fromInput') {
         document.getElementById('toInput')?.focus()
       } else if ((e.target as HTMLElement).id == 'toInput') {
-        // if (Number(modalState.select.from) > Number(modalState.select.to)) {
-        //   console.log('tidak bisa angka lebih besar ke kecil')
-        // } else {
-        //   selectedKeys.value.push(1)
-        // }
         selectChapRange()
       }
     }
@@ -429,6 +399,7 @@ const keySelectEvent = (e: KeyboardEvent) => {
   }
 }
 
+// selectChapRange is for selecting chapter in range
 const selectChapRange = () => {
   const from = Number(modalState.select.from)
   const to = Number(modalState.select.to)
@@ -451,10 +422,12 @@ const selectChapRange = () => {
   modalState.modalSelect = false
 }
 
+// clearSelect for unselect all selected Chapter
 const clearSelect = () => {
   selectedKeys.value = []
 }
 
+// selectAll is for selecting All Chapter
 const selectAll = () => {
   const newm = result.value?.chapter.map(it => it.id)
   if (newm) {
@@ -465,6 +438,8 @@ const selectAll = () => {
 
 const refFromChapter = ref<InputNumberInstance>()
 const refToChapter = ref<InputNumberInstance>()
+
+// showModalAdd is show and setting add Modal
 const showModalAdd = async () => {
   mAdd.chapter = undefined
   mAdd.chapterTo = undefined
@@ -479,12 +454,14 @@ const showModalAdd = async () => {
   refFromChapter.value?.focus()
 }
 
+// autochange addMulti range
 const addMulti = async () => {
   mAdd.multi = true
   await nextTick()
   refToChapter.value?.focus()
 }
 
+// watch autochange state disableLoop for 0.1
 watch(
   () => mAdd.lvl,
   lvl => {
@@ -496,6 +473,24 @@ watch(
   }
 )
 
+// chapSeq is helper function sequence number used in addChapterList
+const chapSeq = (n: number, length: number, start: number): number => {
+  const group = Math.floor(n / (length + 1))
+  const index = n % (length + 1)
+
+  return start + group + index * 0.1
+}
+
+// inChapter is helper function check chapter in Result.Chapter
+const inChapter = (i: number): boolean => {
+  if (result.value) {
+    return result.value.chapter.findIndex(it => it.chapter == i) == -1
+  } else {
+    return false
+  }
+}
+
+// addChapterList is data to be send to DB
 const addChapterList = computed<manga.Chapter[]>(() => {
   const latestChap = result.value ? result.value.chapter[0] : null
   const chapList: manga.Chapter[] = []
@@ -534,6 +529,7 @@ const addChapterList = computed<manga.Chapter[]>(() => {
         }
         //not add if already in chapter
         if (inChapter(m.chapter)) {
+          m.created_at = new Date()
           chapList.push(m)
         }
       }
@@ -542,6 +538,7 @@ const addChapterList = computed<manga.Chapter[]>(() => {
       m.chapter = f
       //not add if already in chapter
       if (inChapter(f)) {
+        m.created_at = new Date()
         chapList.push(m)
       }
     }
@@ -550,6 +547,7 @@ const addChapterList = computed<manga.Chapter[]>(() => {
   return chapList
 })
 
+// handleAdd Save add chapter to DB
 const handleAdd = async () => {
   console.log(JSON.parse(JSON.stringify(addChapterList.value)))
   await new Promise(resolve => setTimeout(resolve, 600))
@@ -558,21 +556,7 @@ const handleAdd = async () => {
   return true
 }
 
-const chapSeq = (n: number, length: number, start: number): number => {
-  const group = Math.floor(n / (length + 1))
-  const index = n % (length + 1)
-
-  return start + group + index * 0.1
-}
-
-const inChapter = (i: number): boolean => {
-  if (result.value) {
-    return result.value.chapter.findIndex(it => it.chapter == i) == -1
-  } else {
-    return false
-  }
-}
-
+// deleteClick is function for deleting chapter from selectedChapter
 const deleteClick = () => {
   console.log('delete')
   const allChap = tableData.length == selectedKeys.value.length
@@ -595,6 +579,7 @@ const deleteClick = () => {
   })
 }
 
+// selectedChapter is computed selected result.chapter
 const selectedChapter = computed(() => {
   return tableData
     .filter(it => selectedKeys.value.includes(it.id))
