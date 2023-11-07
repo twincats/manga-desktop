@@ -1,7 +1,12 @@
 package manga
 
 import (
+	"fmt"
 	"mangav4/system/app"
+	"mangav4/system/file"
+	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -44,4 +49,23 @@ func (f *Chapter) InsertChapterBatch(c []Chapter) (*[]Chapter, error) {
 		return nil, result.Error
 	}
 	return &c, nil
+}
+
+func (f *Chapter) DeleteChapterBatch(c []Chapter) (int64, error) {
+	result := app.DB.Delete(&c)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	if len(c) == int(result.RowsAffected) {
+		fmt.Println("BASE MANGA PATH" + file.MANGA_PATH)
+		m := NewManga()
+		title := m.GetManga(c[0].MangaId).Title
+		for _, v := range c {
+			err := os.RemoveAll(filepath.Join(file.MANGA_PATH, title, strconv.FormatFloat(float64(v.Chapter), 'g', -1, 32)))
+			if err != nil {
+				return 0, err
+			}
+		}
+	}
+	return result.RowsAffected, nil
 }

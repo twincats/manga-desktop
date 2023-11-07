@@ -57,7 +57,10 @@
                 showTooltip: true,
               }"
             >
-              {{ (selectedChapter.length ? 'Chapter ' : '') + selectedChapter }}
+              {{
+                (selectedChapter.length ? 'Chapter ' : '') +
+                `${selectedChapter.map(item => item.chapter).join(',')}`
+              }}
             </a-typography-paragraph>
           </div>
           <div class="h-44px grid items-end">
@@ -72,6 +75,7 @@
                   <template #content>
                     <a-doption @click="clearSelect">Clear</a-doption>
                     <a-doption @click="selectAll">Select All</a-doption>
+                    <a-doption @click="openEx">Open Exploler</a-doption>
                   </template>
                 </a-dropdown-button>
               </a-button-group>
@@ -272,13 +276,14 @@
 </template>
 <script setup lang="ts">
 import { GetMangaWithChapter } from '@wails/go/manga/Manga'
-import { InsertChapterBatch } from '@wails/go/manga/Chapter'
+import { InsertChapterBatch, DeleteChapterBatch } from '@wails/go/manga/Chapter'
+import { OpenExpoler } from '@wails/go/tool/Dialog'
+import { GetConfig } from '@wails/go/manga/Config'
 import { manga } from '@wails/go/models'
 import { IconDown } from '@arco-design/web-vue/es/icon'
 import { MangaTitleURL, DateApp } from '@/composable/helper'
 import { type TableRowSelection, Modal } from '@arco-design/web-vue'
 import { useMangaState } from '@/store'
-import { isDef } from '@vueuse/core'
 
 // Madd is interface for Add Chapter Manual
 interface Madd {
@@ -299,7 +304,7 @@ const props = defineProps<{
   mid: string
 }>()
 // getLimit dynamic value by windows size
-const { getLimit, mangaHome } = useMangaState()
+const { getLimit, mangaHome, SortManga } = useMangaState()
 // result is holder data MangaWithChapter
 const result = ref<manga.Manga>()
 // chapterPageSize dynamic value by windows size
@@ -539,12 +544,14 @@ const addChapterList = computed<manga.Chapter[]>(() => {
 // selectedChapter is computed selected result.chapter
 const selectedChapter = computed(() => {
   if (isDefined(result)) {
-    return result.value.chapter
-      .filter(it => selectedKeys.value.includes(it.id))
-      .map(it => {
-        return it.chapter
-      })
-      .reverse()
+    return (
+      result.value.chapter
+        .filter(it => selectedKeys.value.includes(it.id))
+        // .map(it => {
+        //   return it.chapter
+        // })
+        .reverse()
+    )
   } else {
     return []
   }
@@ -560,6 +567,20 @@ useEventListener(refToChapter, 'keydown', async evt => {
   }
 })
 
+// updateHomeChapter
+const updateHomeChapter = (m: manga.Chapter) => {
+  if (isDefined(mangaHome)) {
+    const ix = mangaHome.value.manga.findIndex(it => it.id == m.manga_id)
+    if (ix >= 0) {
+      const mHome = mangaHome.value.manga[ix]
+      mHome.chapter = m.chapter
+      mHome.download_time = m.created_at
+
+      SortManga()
+    }
+  }
+}
+
 // handleAdd Save add chapter to DB
 const handleAdd = async () => {
   console.log(JSON.parse(JSON.stringify(addChapterList.value)))
@@ -569,17 +590,8 @@ const handleAdd = async () => {
       addChapterList.value
     )
     result.value?.chapter.splice(0, 0, ...saveChapter.reverse())
-    const latestAddChap = saveChapter[0]
-    if (isDefined(mangaHome)) {
-      const ix = mangaHome.value.manga.findIndex(
-        it => it.id == result.value?.id
-      )
-      if (ix >= 0) {
-        const mHome = mangaHome.value.manga[ix]
-        mHome.chapter = latestAddChap.chapter
-        mHome.download_time = latestAddChap.created_at
-      }
-    }
+    // update persisten mangaHome
+    updateHomeChapter(saveChapter[0])
     console.log(saveChapter)
     return true
   } catch (error) {
@@ -609,7 +621,45 @@ const deleteClick = () => {
     hideCancel: false,
     bodyClass: 'text-center',
     maskClosable: false,
+    onBeforeOk: handleDelete,
   })
+}
+
+const handleDelete = async (): Promise<boolean> => {
+  // console.log(selectedChapter.value)
+  await new Promise(resolve => setTimeout(resolve, 600))
+
+  try {
+    const rowsAffected = await DeleteChapterBatch(selectedChapter.value)
+    console.log('Total Deleted Rows : ' + rowsAffected)
+    if (isDefined(result) && selectedChapter.value.length == rowsAffected) {
+      const last = result.value.chapter[0]
+      result.value.chapter = result.value.chapter.filter(
+        it => !selectedChapter.value.includes(it)
+      )
+      if (last != result.value.chapter[0]) {
+        console.log('RESET HOME')
+        updateHomeChapter(result.value.chapter[0])
+      }
+    }
+    return true
+  } catch (error) {
+    console.log(error)
+    return false
+  }
+}
+
+const openEx = async () => {
+  const conf = await GetConfig()
+  if (isDefined(result)) {
+    const path = `${conf.manga_folder}\\${MangaTitleURL(result.value.title)}`
+    console.log(path)
+    try {
+      await OpenExpoler(path)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 }
 </script>
 

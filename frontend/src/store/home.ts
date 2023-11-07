@@ -95,6 +95,23 @@ export const useMangaState = createGlobalState(() => {
     mangaHome.value = null
   }
 
+  const SortManga = () => {
+    if (isDefined(mangaHome)) {
+      mangaHome.value.manga.sort((a, b) => {
+        // First, compare by 'date'
+        if (a.download_time < b.download_time) return 1
+        if (a.download_time > b.download_time) return -1
+
+        // If dates are equal, compare by 'title'
+        if (a.title < b.title) return 1
+        if (a.title > b.title) return -1
+
+        // Objects are equal
+        return 0
+      })
+    }
+  }
+
   return {
     mangaHome,
     searchManga,
@@ -105,6 +122,7 @@ export const useMangaState = createGlobalState(() => {
     loadManga,
     totalManga,
     clearManga,
+    SortManga,
     lg,
   }
 })

@@ -18,6 +18,10 @@ export function OpenDialog(arg1, arg2, arg3, arg4) {
   return window['go']['tool']['Dialog']['OpenDialog'](arg1, arg2, arg3, arg4);
 }
 
+export function OpenExpoler(arg1) {
+  return window['go']['tool']['Dialog']['OpenExpoler'](arg1);
+}
+
 export function SaveDialog(arg1, arg2, arg3, arg4) {
   return window['go']['tool']['Dialog']['SaveDialog'](arg1, arg2, arg3, arg4);
 }
