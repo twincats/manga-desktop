@@ -27,7 +27,7 @@ type Chapter struct {
 	Language         Language  `gorm:"foreignKey:LanguageId" json:"language" ts_type:"Language"`
 	CreatedAt        time.Time `json:"created_at" ts_type:"Date" ts_transform:"new Date(__VALUE__)"`
 	UpdatedAt        time.Time `json:"updated_at" ts_type:"Date" ts_transform:"new Date(__VALUE__)"`
-	MangaId          uint      `json:"-"`
+	MangaId          uint      `json:"manga_id"`
 }
 
 func (f *Chapter) InsertChapter(c Chapter) (uint, error) {
@@ -36,4 +36,12 @@ func (f *Chapter) InsertChapter(c Chapter) (uint, error) {
 		return 0, res.Error
 	}
 	return c.ID, nil
+}
+
+func (f *Chapter) InsertChapterBatch(c []Chapter) (*[]Chapter, error) {
+	result := app.DB.Create(&c)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &c, nil
 }

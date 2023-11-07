@@ -9,3 +9,7 @@ export function GetChapter(arg1) {
 export function InsertChapter(arg1) {
   return window['go']['manga']['Chapter']['InsertChapter'](arg1);
 }
+
+export function InsertChapterBatch(arg1) {
+  return window['go']['manga']['Chapter']['InsertChapterBatch'](arg1);
+}

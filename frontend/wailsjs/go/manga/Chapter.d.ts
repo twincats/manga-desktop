@@ -5,3 +5,5 @@ import {manga} from '../models';
 export function GetChapter(arg1:number):Promise<manga.Chapter>;
 
 export function InsertChapter(arg1:manga.Chapter):Promise<number>;
+
+export function InsertChapterBatch(arg1:Array<manga.Chapter>):Promise<any>;

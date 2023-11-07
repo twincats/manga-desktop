@@ -220,7 +220,7 @@
               placeholder="Please Enter"
               v-model="mAdd.chapterTo"
               :min="mAdd.chapter"
-              @keydown.enter.prevent=""
+              model-event="input"
             />
           </a-input-group>
           <div>
@@ -272,15 +272,13 @@
 </template>
 <script setup lang="ts">
 import { GetMangaWithChapter } from '@wails/go/manga/Manga'
+import { InsertChapterBatch } from '@wails/go/manga/Chapter'
 import { manga } from '@wails/go/models'
 import { IconDown } from '@arco-design/web-vue/es/icon'
-import { MangaTitleURL, DateApp, GetBreakPoints } from '@/composable/helper'
-import {
-  type TableRowSelection,
-  type InputNumberInstance,
-  Modal,
-} from '@arco-design/web-vue'
+import { MangaTitleURL, DateApp } from '@/composable/helper'
+import { type TableRowSelection, Modal } from '@arco-design/web-vue'
 import { useMangaState } from '@/store'
+import { isDef } from '@vueuse/core'
 
 // Madd is interface for Add Chapter Manual
 interface Madd {
@@ -292,39 +290,34 @@ interface Madd {
   looplvl: number
 }
 
+/*
+  INITIAL REACTIVE VARIABLE AND DEFAULT VARIABLE
+*/
+
 // props is default props definition
 const props = defineProps<{
   mid: string
 }>()
-
 // getLimit dynamic value by windows size
-const { getLimit } = useMangaState()
-
+const { getLimit, mangaHome } = useMangaState()
 // result is holder data MangaWithChapter
 const result = ref<manga.Manga>()
 // chapterPageSize dynamic value by windows size
 const chapterPageSize = getLimit(9, 17)
-// tableData is table for chapter
-const tableData = reactive<manga.Chapter[]>([])
-// GetMangaWithChapter is for loading MangaWithChapter data
-GetMangaWithChapter(Number(props.mid)).then(res => {
-  result.value = res
-  //sort desc
-  res.chapter.sort((a, b) => Number(b.chapter) - Number(a.chapter))
-  res.chapter.forEach(item => {
-    tableData.push(item)
-  })
-})
-
 // rowSelectionDefault is configuration for selection table
 const rowSelectionDefault: TableRowSelection = {
   type: 'checkbox',
   showCheckedAll: true,
   onlyCurrent: false,
 }
-
+// rowSelection is default configuration table row selection
 const rowSelection = ref<TableRowSelection | undefined>()
+// selectedKeys list of key index of selected chapter
 const selectedKeys = ref<number[]>([])
+// refFromChapter is variable for reference element from for add chapter
+const refFromChapter = ref<HTMLElement>()
+// refToChapter is variable for reference element from for add chapter
+const refToChapter = ref<HTMLElement>()
 
 // Default value ModalState
 const modalState = reactive({
@@ -339,7 +332,6 @@ const modalState = reactive({
     totalChaps: 1,
   },
 })
-
 // default value Add chapter
 const mAdd = reactive<Madd>({
   chapter: undefined,
@@ -350,6 +342,16 @@ const mAdd = reactive<Madd>({
   looplvl: 1,
 })
 
+/*
+  INITIAL HELPER FUNCTION AND CALLING FUNCTION
+*/
+
+// GetMangaWithChapter is for loading MangaWithChapter data
+GetMangaWithChapter(Number(props.mid)).then(res => {
+  result.value = res
+  //sort desc
+  res.chapter.sort((a, b) => Number(b.chapter) - Number(a.chapter))
+})
 // selectToggle for toggling select chapter checkbox
 const selectToggle = () => {
   if (rowSelection.value) {
@@ -359,7 +361,6 @@ const selectToggle = () => {
     rowSelection.value = rowSelectionDefault
   }
 }
-
 // showModalSelect click show modal select chapter in range
 const showModalSelect = async () => {
   if (rowSelection.value == undefined) {
@@ -371,7 +372,6 @@ const showModalSelect = async () => {
   await nextTick()
   document.getElementById('fromInput')?.focus()
 }
-
 // keySelectEvent is event keyboard for select chapter in range
 const keySelectEvent = (e: KeyboardEvent) => {
   const allowedKey = ['.', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight']
@@ -398,7 +398,6 @@ const keySelectEvent = (e: KeyboardEvent) => {
     }
   }
 }
-
 // selectChapRange is for selecting chapter in range
 const selectChapRange = () => {
   const from = Number(modalState.select.from)
@@ -421,12 +420,10 @@ const selectChapRange = () => {
   }
   modalState.modalSelect = false
 }
-
 // clearSelect for unselect all selected Chapter
 const clearSelect = () => {
   selectedKeys.value = []
 }
-
 // selectAll is for selecting All Chapter
 const selectAll = () => {
   const newm = result.value?.chapter.map(it => it.id)
@@ -435,10 +432,6 @@ const selectAll = () => {
   }
   rowSelection.value = rowSelectionDefault
 }
-
-const refFromChapter = ref<InputNumberInstance>()
-const refToChapter = ref<InputNumberInstance>()
-
 // showModalAdd is show and setting add Modal
 const showModalAdd = async () => {
   mAdd.chapter = undefined
@@ -453,14 +446,12 @@ const showModalAdd = async () => {
   await nextTick()
   refFromChapter.value?.focus()
 }
-
-// autochange addMulti range
+// autochange addMulti range Event -
 const addMulti = async () => {
   mAdd.multi = true
   await nextTick()
   refToChapter.value?.focus()
 }
-
 // watch autochange state disableLoop for 0.1
 watch(
   () => mAdd.lvl,
@@ -472,7 +463,6 @@ watch(
     }
   }
 )
-
 // chapSeq is helper function sequence number used in addChapterList
 const chapSeq = (n: number, length: number, start: number): number => {
   const group = Math.floor(n / (length + 1))
@@ -480,7 +470,6 @@ const chapSeq = (n: number, length: number, start: number): number => {
 
   return start + group + index * 0.1
 }
-
 // inChapter is helper function check chapter in Result.Chapter
 const inChapter = (i: number): boolean => {
   if (result.value) {
@@ -489,7 +478,6 @@ const inChapter = (i: number): boolean => {
     return false
   }
 }
-
 // addChapterList is data to be send to DB
 const addChapterList = computed<manga.Chapter[]>(() => {
   const latestChap = result.value ? result.value.chapter[0] : null
@@ -529,6 +517,7 @@ const addChapterList = computed<manga.Chapter[]>(() => {
         }
         //not add if already in chapter
         if (inChapter(m.chapter)) {
+          m.id = 0
           m.created_at = new Date()
           chapList.push(m)
         }
@@ -538,6 +527,7 @@ const addChapterList = computed<manga.Chapter[]>(() => {
       m.chapter = f
       //not add if already in chapter
       if (inChapter(f)) {
+        m.id = 0
         m.created_at = new Date()
         chapList.push(m)
       }
@@ -546,20 +536,63 @@ const addChapterList = computed<manga.Chapter[]>(() => {
 
   return chapList
 })
+// selectedChapter is computed selected result.chapter
+const selectedChapter = computed(() => {
+  if (isDefined(result)) {
+    return result.value.chapter
+      .filter(it => selectedKeys.value.includes(it.id))
+      .map(it => {
+        return it.chapter
+      })
+      .reverse()
+  } else {
+    return []
+  }
+})
+
+// useEventListener to refToChapter add keydown enter event
+useEventListener(refToChapter, 'keydown', async evt => {
+  if (evt.key == 'Enter') {
+    const ok = await handleAdd()
+    if (ok) {
+      modalState.modalAdd = false
+    }
+  }
+})
 
 // handleAdd Save add chapter to DB
 const handleAdd = async () => {
   console.log(JSON.parse(JSON.stringify(addChapterList.value)))
   await new Promise(resolve => setTimeout(resolve, 600))
-
-  //reset to default
-  return true
+  try {
+    const saveChapter: manga.Chapter[] = await InsertChapterBatch(
+      addChapterList.value
+    )
+    result.value?.chapter.splice(0, 0, ...saveChapter.reverse())
+    const latestAddChap = saveChapter[0]
+    if (isDefined(mangaHome)) {
+      const ix = mangaHome.value.manga.findIndex(
+        it => it.id == result.value?.id
+      )
+      if (ix >= 0) {
+        const mHome = mangaHome.value.manga[ix]
+        mHome.chapter = latestAddChap.chapter
+        mHome.download_time = latestAddChap.created_at
+      }
+    }
+    console.log(saveChapter)
+    return true
+  } catch (error) {
+    console.log(error)
+    return false
+  }
+  // return true
 }
 
 // deleteClick is function for deleting chapter from selectedChapter
 const deleteClick = () => {
   console.log('delete')
-  const allChap = tableData.length == selectedKeys.value.length
+  const allChap = result.value?.chapter.length == selectedKeys.value.length
   Modal.warning({
     title: 'Delete Confirmation',
     content: () => [
@@ -578,16 +611,6 @@ const deleteClick = () => {
     maskClosable: false,
   })
 }
-
-// selectedChapter is computed selected result.chapter
-const selectedChapter = computed(() => {
-  return tableData
-    .filter(it => selectedKeys.value.includes(it.id))
-    .map(it => {
-      return it.chapter
-    })
-    .reverse()
-})
 </script>
 
 <style lang="less" scoped>

@@ -211,6 +211,7 @@ export namespace manga {
 	    language: Language;
 	    created_at: Date;
 	    updated_at: Date;
+	    manga_id: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Chapter(source);
@@ -229,6 +230,7 @@ export namespace manga {
 	        this.language = source["language"];
 	        this.created_at = new Date(source["created_at"]);
 	        this.updated_at = new Date(source["updated_at"]);
+	        this.manga_id = source["manga_id"];
 	    }
 	}
 	export class Config {
