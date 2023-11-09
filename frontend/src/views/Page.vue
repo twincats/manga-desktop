@@ -33,6 +33,8 @@
 import { GetPage } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
 import { UseContextMenu } from '@/composable/helper'
+import { UpdateRead } from '@wails/go/manga/Chapter'
+
 
 // const Route = useRoute()
 const props = defineProps<{
@@ -52,6 +54,13 @@ const page = ref<manga.Page | null>(null)
 //fetching function
 const fetchData = async (cid: number) => {
   page.value = await GetPage(cid)
+
+  try {
+    // update read chapter
+    UpdateRead(cid,true)
+  } catch (error) {
+    console.log(error)
+  }
 }
 //initial fetch Data
 fetchData(Number(props.cid))
@@ -64,13 +73,9 @@ watch(
   async (newcid, _) => {
     await fetchData(newcid)
     scroll.y.value = 0
-    // if (newcid > oldcid) {
-    // scroll.y.value = 0
-    // } else {
-    //   scroll.y.value = 1000 * 1000
-    // }
   }
 )
+
 
 //mouse event
 // window.addEventListener('mousedown', function handleMouseButtonDown(event) {

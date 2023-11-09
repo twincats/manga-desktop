@@ -82,21 +82,18 @@
         />
       </div>
       <teleport to="#app">
-        <context-menu ref="refMenu" v-slot="{ item }: { item: manga.Manga }">
+        <context-menu
+          ref="refMenu"
+          v-slot="{ item }: { item: manga.MangaHomeApi }"
+        >
           <li @click="$router.push(`/addalter/${item.id}`)">Add Alternatif</li>
           <li @click="$router.push('/convert/' + item.id)">Convert Manga</li>
           <div class="divider"></div>
-          <li class="text-red-500 font-serif font-bold">
-            <a-popconfirm
-              :content="
-                'Are you sure want Delete? ' + item.title.substring(0, 15)
-              "
-              ok-text="OK"
-              cancel-text="NO"
-              type="error"
-            >
-              <div class="w-full">DELETE</div>
-            </a-popconfirm>
+          <li
+            @click="showModalDeleteConfirm(item)"
+            class="text-red-500 font-serif font-bold"
+          >
+            DELETE
           </li>
         </context-menu>
       </teleport>
@@ -155,17 +152,41 @@
         </a-list>
       </div>
     </div>
+    <a-modal
+      v-model:visible="Del.modal"
+      ok-text="Delete"
+      :mask-closable="false"
+      :body-style="{ padding: '.5rem 1.5rem' }"
+      :ok-button-props="{ status: 'danger' }"
+      :simple="true"
+      :width="500"
+      :esc-to-close="false"
+      @before-ok="handleDelete"
+    >
+      <template #title>
+        <span class="select-none"
+          ><icon-exclamation-circle-fill class="text-#ef4444" /> Confirmation
+          Delete</span
+        >
+      </template>
+      <div class="select-none text-center">
+        You are going to Delete : <br />
+        <strong class="text-#ef4444">{{ Del.Title }} </strong><br />
+        with all Chapter and Images. <br />
+        Are you sure?
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { IconSearch, IconEraser } from '@arco-design/web-vue/es/icon'
 import { MangaTitleURL, UseContextMenu, DateApp } from '@/composable/helper'
-import { GetRandomMangaHome } from '@wails/go/manga/Manga'
+import { GetRandomMangaHome, DeleteMangaWithFile } from '@wails/go/manga/Manga'
 import type { manga } from '@wails/go/models'
-import imageFail from '@/assets/images/404.webp'
 import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
 import { useMangaState } from '@/store'
+import { IconExclamationCircleFill } from '@arco-design/web-vue/es/icon'
 
 /* INITIAL REACTIVE VARIABLE */
 const { refMenu, openContextMenu } = UseContextMenu()
@@ -238,6 +259,41 @@ const clearFilter = () => {
   dateFilter.value = new Date()
   searchManga.value = ''
   nav.page = 1
+}
+
+const Del = reactive({
+  ID: 0,
+  Title: '',
+  modal: false,
+})
+// showModalDeleteConfirm
+const showModalDeleteConfirm = (m: manga.MangaHomeApi) => {
+  // console.log('showmodal ', m.title)
+  Del.ID = m.id
+  Del.Title = m.title
+  Del.modal = true
+  refMenu.value?.close()
+}
+
+// handleDelete
+const handleDelete = async () => {
+  if (Del.ID != 0) {
+    try {
+      await DeleteMangaWithFile(Del.ID)
+      // delete mangastate
+      if (isDefined(mangaHome)) {
+        const i = mangaHome.value.manga.findIndex(it => it.id == Del.ID)
+        i >= 0 ? mangaHome.value.manga.splice(i, 1) : ''
+        // reset Del Data
+        Del.ID = 0
+        Del.Title = ''
+      }
+      return true
+    } catch (error) {
+      console.log(error)
+      return false
+    }
+  }
 }
 
 /* INITIAL PRELOAD FUNCTION */

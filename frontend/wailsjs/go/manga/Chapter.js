@@ -17,3 +17,7 @@ export function InsertChapter(arg1) {
 export function InsertChapterBatch(arg1) {
   return window['go']['manga']['Chapter']['InsertChapterBatch'](arg1);
 }
+
+export function UpdateRead(arg1, arg2) {
+  return window['go']['manga']['Chapter']['UpdateRead'](arg1, arg2);
+}

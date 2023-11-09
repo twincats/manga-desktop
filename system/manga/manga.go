@@ -2,10 +2,12 @@ package manga
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
 	"mangav4/system/app"
+	"mangav4/system/app/helper"
 	"mangav4/system/file"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -137,6 +139,32 @@ func (f *Manga) UpdatePagesJS(serverID uint, pageJS string) (bool, error) {
 		return false, res.Error
 	}
 	return true, nil
+}
+
+func (f *Manga) DeletMangaOnly(ID uint) error {
+	result := app.DB.Delete(&Manga{}, ID)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+// DeleteMangaWithFile
+func (f *Manga) DeleteMangaWithFile(ID uint) error {
+	m := f.GetManga(ID)
+
+	result := app.DB.Delete(&m)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	//delete folder
+	path := filepath.Join(file.MANGA_PATH, helper.FixMangaTitle(m.Title))
+	err := os.RemoveAll(path)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // PageApi for Fetching chapter and Manga title

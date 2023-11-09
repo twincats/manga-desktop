@@ -9,3 +9,5 @@ export function GetChapter(arg1:number):Promise<manga.Chapter>;
 export function InsertChapter(arg1:manga.Chapter):Promise<number>;
 
 export function InsertChapterBatch(arg1:Array<manga.Chapter>):Promise<any>;
+
+export function UpdateRead(arg1:number,arg2:boolean):Promise<void>;

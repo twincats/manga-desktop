@@ -69,3 +69,11 @@ func (f *Chapter) DeleteChapterBatch(c []Chapter) (int64, error) {
 	}
 	return result.RowsAffected, nil
 }
+
+func (f *Chapter) UpdateRead(ID uint, status_read bool) error {
+	result := app.DB.Model(&Chapter{ID: ID}).Update("status_read", status_read)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
