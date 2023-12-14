@@ -31,7 +31,7 @@
 
 <script lang="ts" setup>
 import enUS from '@arco-design/web-vue/es/locale/lang/en-us'
-import { EmitListenOnce, useTheme } from '@/composable/helper'
+import { EmitListenOnce, Listen, useTheme } from '@/composable/helper'
 import { GetConfig } from '@wails/go/manga/Config'
 
 const statusConfig = ref(false)
@@ -44,12 +44,18 @@ GetConfig().then(res => {
 const router = useRouter()
 const collapse = ref(true)
 const { theme, toggleTheme } = useTheme()
+// emitListenOnce check firstInstance start arg convert
 EmitListenOnce('args', (res: string[]) => {
   if (res.length) {
     if (res.includes('convert')) {
       router.push('/convert')
     }
   }
+})
+
+// listen go_convert change page when secondInstance with arg convert
+Listen('go_convert', () => {
+  router.push('/convert')
 })
 </script>
 
