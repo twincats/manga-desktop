@@ -402,7 +402,11 @@ const goGetchDownload = useDebounceFn(async () => {
       })
       .catch(err => {
         console.log(err)
-        Message.error(err)
+        Modal.error({
+          title: 'Error Download',
+          okText: 'OK',
+          content: () => [h('div', [err])],
+        })
       })
       .finally(() => {
         afterGetChapURL = toValue(urldata)
@@ -456,6 +460,14 @@ const downloadChapter = (c: types.ChapterList | null = null) => {
         mangaState.clearManga()
       })
       .catch(e => {
+        useTimeoutFn(() => {
+          progress_dl.modal_dl = false
+          Modal.error({
+            title: 'Error Download',
+            okText: 'OK',
+            content: () => [h('div', [e])],
+          })
+        }, 500)
         console.log(e)
       })
     // end
@@ -590,7 +602,10 @@ watchDebounced(
   ([newURL]) => {
     const isURL = IsURL(newURL)
     if (isURL) {
-      const res = servers.value?.find(item => item.url == isURL.host)
+      const domain = isURL.hostname.split('.')
+      const res = servers.value?.find(item =>
+        domain.includes(item.name.toLowerCase())
+      )
       if (res) {
         // res.id + 1 // temporary fix warning
         selectedServer.value = res.id + 1
