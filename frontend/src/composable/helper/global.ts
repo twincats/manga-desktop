@@ -96,6 +96,7 @@ export class DateApp {
       ).slice(-2),
       ddd: this.date.toLocaleString(this.locale, { weekday: 'short' }),
       dddd: this.date.toLocaleString(this.locale, { weekday: 'long' }),
+      ms: this.date.getMilliseconds(),
     }
     //loop trough format string
     for (const [key, value] of Object.entries(format)) {

@@ -358,7 +358,7 @@ export class MangaParser {
         if (this.#tmpHTMLFetch != '') {
           res(this.#tmpHTMLFetch)
         } else {
-          rej('please clear urlFetch')
+          rej('please clear urlFetch' + this.urlFetch)
         }
       }
     })
@@ -393,23 +393,28 @@ export class MangaParser {
   }
   getManga(u: string, fn: string): Promise<types.Chapter> {
     return new Promise((res, rej) => {
-      this.fetch(u).then(out => {
-        try {
-          const func = this.getFuncSync(fn, 'p')
-          func(this, this.getParser(out))
-            .then((ro: unknown) => {
-              if (ro) {
-                // console.log(ro)
-              }
-            })
-            .catch((e: unknown) => rej(e))
-            .finally(() => {
-              res(this.#getManga())
-            })
-        } catch (e) {
+      this.fetch(u)
+        .then(out => {
+          try {
+            const func = this.getFuncSync(fn, 'p')
+            func(this, this.getParser(out))
+              .then((ro: unknown) => {
+                if (ro) {
+                  // console.log(ro)
+                }
+              })
+              .catch((e: unknown) => rej(e))
+              .finally(() => {
+                res(this.#getManga())
+              })
+          } catch (e) {
+            rej(e)
+          }
+        })
+        .catch(e => {
+          this.urlFetch = null
           rej(e)
-        }
-      })
+        })
     })
   }
   #getPages(): string[] {
@@ -417,23 +422,28 @@ export class MangaParser {
   }
   getPages(u: string, fn: string): Promise<string[]> {
     return new Promise((res, rej) => {
-      this.fetch(u).then(out => {
-        try {
-          const func = this.getFuncSync(fn, 'p')
-          func(this, this.getParser(out))
-            .then((ro: unknown) => {
-              if (ro) {
-                // console.log(ro)
-              }
-            })
-            .catch((e: unknown) => rej(e))
-            .finally(() => {
-              res(this.#getPages())
-            })
-        } catch (e) {
+      this.fetch(u)
+        .then(out => {
+          try {
+            const func = this.getFuncSync(fn, 'p')
+            func(this, this.getParser(out))
+              .then((ro: unknown) => {
+                if (ro) {
+                  // console.log(ro)
+                }
+              })
+              .catch((e: unknown) => rej(e))
+              .finally(() => {
+                res(this.#getPages())
+              })
+          } catch (e) {
+            rej(e)
+          }
+        })
+        .catch(e => {
+          this.urlFetch = null
           rej(e)
-        }
-      })
+        })
     })
   }
 
