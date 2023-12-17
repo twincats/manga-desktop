@@ -3,9 +3,10 @@ package internet
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/valyala/fasthttp"
 	"sync"
 	"unsafe"
+
+	"github.com/valyala/fasthttp"
 )
 
 type ContentType string
@@ -178,7 +179,7 @@ func (c *Client) Bytes() ([]byte, error) {
 		return nil, err
 	}
 
-	defer c.releaseRes()
+	defer c.releaseReq()
 	defer c.releaseRes()
 
 	contentType := c.res.Header.Peek("Content-Encoding")

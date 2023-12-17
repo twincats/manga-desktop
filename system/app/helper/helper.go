@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"regexp"
 	"sync"
 
 	"github.com/climech/naturalsort"
@@ -38,6 +39,39 @@ func ParallelCode[T any](p int, val []T, f func(v T)) {
 	wg.Wait()
 }
 
+// ParallelCodeI is multiple code in concurrency run as parrarel with slice data with Index
+func ParallelCodeI[T any](p int, val []T, f func(i int, v T)) {
+	var wg sync.WaitGroup
+	wg.Add(p)
+
+	type SChan struct {
+		i int
+		v T
+	}
+
+	channel := make(chan SChan)
+	for i := 0; i < p; i++ {
+		go func() {
+			for {
+				c, more := <-channel
+				if !more {
+					wg.Done()
+					return
+				}
+
+				f(c.i, c.v)
+			}
+		}()
+	}
+
+	for i, v := range val {
+		channel <- SChan{i: i, v: v}
+	}
+
+	close(channel)
+	wg.Wait()
+}
+
 // Contains return boolean if T is included in slice []T
 func Contains[T comparable](s []T, e T) bool {
 	for _, v := range s {
@@ -48,8 +82,8 @@ func Contains[T comparable](s []T, e T) bool {
 	return false
 }
 
-// AutoCrop crop manga image to desired width with contstrait
-func AutoCrop(image *vips.ImageRef, w int) bool {
+// AutoCropManga crop manga image to desired width with limit contstrait
+func AutoCropManga(image *vips.ImageRef, w int) bool {
 	width := image.Width()
 	height := image.Height()
 
@@ -75,6 +109,21 @@ func AutoCrop(image *vips.ImageRef, w int) bool {
 	return false
 }
 
+// AutoCrop crop manga image to desired width with contstrait
+func AutoCrop(image *vips.ImageRef, w int) bool {
+	width := image.Width()
+
+	if width > w {
+		err := image.ResizeWidthPixel(float64(w), vips.KernelMitchell)
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+		return true
+	}
+	return false
+}
+
 // ListFiles show all image with included extenstion in dir path
 func ListFiles(dir string, exts []string) []string {
 	var res []string
@@ -89,6 +138,17 @@ func ListFiles(dir string, exts []string) []string {
 	})
 	naturalsort.Sort(res)
 	return res
+}
+
+func StringReplace(regexString string, match string, replaceString string) string {
+	reg := regexp.MustCompile(regexString)
+	return reg.ReplaceAllString(match, replaceString)
+}
+
+func FixMangaTitle(title string) string {
+	mTitle := StringReplace(`(?m)[^\w\-[\]()' ~.,!@&]|\.+$`, title, "")
+	mTitle = StringReplace("(?m) $|^ ", mTitle, "")
+	return mTitle
 }
 
 // incase needed round by precision

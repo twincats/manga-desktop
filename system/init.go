@@ -16,6 +16,7 @@ func InitializeBinding() []interface{} {
 		manga.NewManga(),
 		manga.NewChapter(),
 		manga.NewConfig(),
+		manga.NewAlter(),
 		tool.NewDialog(),
 		tool.NewWeb(),
 		file.NewConvert(),

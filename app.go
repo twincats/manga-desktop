@@ -6,6 +6,7 @@ import (
 
 	"mangav4/system/app"
 
+	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -26,7 +27,7 @@ func (a *App) startup(ctx context.Context) {
 	go app.Startup(&ctx)
 }
 
-func (b *App) beforeClose(ctx context.Context) (prevent bool) {
+func (a *App) beforeClose(ctx context.Context) (prevent bool) {
 	if app.BlockClose {
 		dialog, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
 			Type:    runtime.QuestionDialog,
@@ -40,6 +41,12 @@ func (b *App) beforeClose(ctx context.Context) (prevent bool) {
 		return dialog != "Yes"
 	}
 	return false
+}
+
+func (a *App) onSecondInstanceLaunch(secIns options.SecondInstanceData) {
+	if len(secIns.Args) == 1 && secIns.Args[0] == "convert" {
+		runtime.EventsEmit(a.ctx, "go_convert")
+	}
 }
 
 // Greet returns a greeting for the given name

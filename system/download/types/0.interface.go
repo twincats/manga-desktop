@@ -2,30 +2,15 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"mangav4/system/app"
 	"reflect"
 )
 
 // CLASS is collection of manga server struct
 var CLASS = map[string]interface{}{
-	"Mangadex":      new(Mangadex),
-	"Lhtranslation": new(Lhtranslation),
-	"Ksgroupscans":  new(Ksgroupscans),
-	"Gdegenscans":   new(Gdegenscans),
-	"Westmanga":     new(Westmanga),
-	"Mangasushi":    new(Mangasushi),
-	"Flamescans":    new(Flamescans),
-	"Readmanganato": new(Readmanganato),
-	"KomikCast":     new(KomikCast),
-	"Kiryuu":        new(Kiryuu),
-	"PlatinumScans": new(PlatinumScans),
-	"Komikindo":     new(Komikindo),
-	"Mangatale":     new(Mangatale),
-	"Mangkomik":     new(Mangkomik),
-	"Inazumanga":    new(Inazumanga),
-	"Maid":          new(Maid),
-	"Mangaindo":     new(Mangaindo),
-	"Masterkomik":   new(Masterkomik),
+	"Mangadex":  new(Mangadex),
+	"Westmanga": new(Westmanga),
 }
 
 // Downloads is interface for every manga server struct
@@ -41,6 +26,16 @@ type Option struct {
 	Offset     *int   `json:"offset"`
 	Limit      *int   `json:"limit"`
 	DataSaver  *bool  `json:"datasaver"`
+}
+
+type OptionPage struct {
+	MangaId    uint          `json:"manga_id"`
+	Mdex       string        `json:"mdex,omitempty"`
+	Cover      string        `json:"cover_url"`
+	ServerName string        `json:"server_name"`
+	MangaTitle string        `json:"manga_title"`
+	DataSaver  bool          `json:"datasaver"`
+	Chapters   []ChapterList `json:"chapters"`
 }
 
 // NewDownload return Downloads interface from manga struct with nil as not found
@@ -59,13 +54,13 @@ func NewDownload(className string) *Downloads {
 type Chapter struct {
 	Manga      string        `json:"manga"`
 	Cover      string        `json:"cover_url"`
-	Mdex       string        `json:"mdex"`
-	MangaId    *int          `json:"manga_id"`
+	Mdex       string        `json:"mdex,omitempty"`
+	MangaId    uint          `json:"manga_id"`
 	ServerName string        `json:"server_name"`
 	Chapter    []ChapterList `json:"chapter"`
+	DataSaver  bool          `json:"datasaver"`
 	Limit      int           `json:"limit"`
 	Total      int           `json:"total"`
-	MdexData   interface{}   `json:"mdextest"`
 }
 
 // ChapterList is list of chapter for main data Chapter for GetChapter mehotds
@@ -112,6 +107,10 @@ func ParallelFetch(urlList []string) []ParallelFetchResult {
 				Url:  url,
 				Body: bodyByte,
 				Err:  err,
+			}
+			//test
+			if err != nil {
+				fmt.Println("ERROR PARALLEL FETCH : ", err)
 			}
 		}(s, i)
 	}

@@ -34,8 +34,18 @@ func (h *FileLoader) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		fileData, err := os.ReadFile(requestedFilename)
 
 		if err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			res.Write([]byte(fmt.Sprintf("Could not load file %s", requestedFilename)))
+
+			if requestedFilename[len(requestedFilename)-10:] == "cover.webp" {
+				reqPath := FirstImageinDir(requestedFilename[0 : len(requestedFilename)-10])
+				fileData, err = os.ReadFile(reqPath)
+				if err != nil {
+					res.WriteHeader(http.StatusBadRequest)
+				}
+
+			} else {
+				res.WriteHeader(http.StatusBadRequest)
+				res.Write([]byte(fmt.Sprintf("Could not load file %s", requestedFilename)))
+			}
 		}
 
 		res.Write(fileData)

@@ -9,4 +9,6 @@ export function MessageBoxQuestion(arg1:string,arg2:string):Promise<string>;
 
 export function OpenDialog(arg1:string,arg2:string,arg3:string,arg4:Array<{[key: string]: string}>):Promise<string>;
 
+export function OpenExpoler(arg1:string):Promise<void>;
+
 export function SaveDialog(arg1:string,arg2:string,arg3:string,arg4:Array<{[key: string]: string}>):Promise<string>;

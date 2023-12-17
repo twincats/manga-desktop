@@ -277,7 +277,7 @@ const initialOutput = {
   statusConvert: '',
 }
 
-const { mid = null } = defineProps<ConvertProps>()
+const { mid } = withDefaults(defineProps<ConvertProps>(), { mid: null })
 const data = reactive({ ...initialData })
 const output = reactive({ ...initialOutput })
 const hiddenSearch = ref<HTMLInputElement | null>(null)
@@ -323,7 +323,9 @@ onStartTyping(() => {
 })
 
 onMounted(() => {
-  hiddenSearch.value?.focus()
+  if (mid == null) {
+    hiddenSearch.value?.focus()
+  }
 })
 
 ///APPLICATION METHODS
@@ -374,6 +376,12 @@ const clickConvert = async () => {
   if (data.format.includes(2)) {
     cv.ext.push('.webp')
   }
+
+  // reset progress
+  output.sizeBefore = 0
+  output.sizeAfter = 0
+  output.percent = 0
+  output.progress = 0
 
   // doing convert
   DoConvert(cv)

@@ -11,6 +11,12 @@ type Language struct {
 	LangCode string `json:"lang_code"`
 }
 
+func LangByLang(s string) Language {
+	var l Language
+	app.DB.Where("lang = ?", s).First(&l)
+	return l
+}
+
 func SeedingLanguages() {
 	var languagesSeed = []Language{
 		{ID: 1, Lang: "English", LangCode: "en"},

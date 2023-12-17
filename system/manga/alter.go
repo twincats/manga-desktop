@@ -27,6 +27,15 @@ func (f *Alter) GetAlters() ([]Alter, error) {
 	return alter, nil
 }
 
+func (f *Alter) GetAlterManga(id uint) ([]Alter, error) {
+	var alter []Alter
+	res := app.DB.Where("manga_id", id).Find(&alter)
+	if res.Error != nil {
+		return alter, res.Error
+	}
+	return alter, nil
+}
+
 func (f *Alter) SetAlter(a Alter) error {
 	res := app.DB.Save(&a)
 	if res.Error != nil {

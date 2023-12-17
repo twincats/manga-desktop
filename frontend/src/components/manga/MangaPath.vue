@@ -35,8 +35,10 @@
 <script setup lang="ts">
 import { SetConfig, AutoScanDirs } from '@wails/go/manga/Config'
 import { EventsOn } from '@wails/runtime/runtime'
-
 import { manga } from '@wails/go/models'
+import { useMangaState } from '@/store'
+
+const mangaState = useMangaState()
 
 const emit = defineEmits<{
   (e: 'update:statusConfig', status: boolean): void
@@ -57,8 +59,8 @@ const saveConfig = () => {
     AutoScanDirs()
       .then(res => {
         statusLoading.value = false
-        console.log(res)
         emit('update:statusConfig', true)
+        mangaState.loadManga()
       })
       .catch(() => {
         emit('update:statusConfig', false)

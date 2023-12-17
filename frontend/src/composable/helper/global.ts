@@ -6,6 +6,16 @@ export const MangaTitleURL = (url: string) => {
   return fixed.trim()
 }
 
+export const sanitizeWindowsFileName = (input: string): string => {
+  // Define a regular expression pattern to match invalid characters
+  const invalidCharPattern = /[<>:"/\\|?*\x00-\x1F]/g
+
+  // Use String.prototype.replace() to remove invalid characters
+  const cleanString = input.replace(invalidCharPattern, '')
+
+  return cleanString
+}
+
 export const GetBreakPoints = () => {
   const breakpoints = useBreakpoints(breakpointsTailwind)
 
@@ -86,6 +96,7 @@ export class DateApp {
       ).slice(-2),
       ddd: this.date.toLocaleString(this.locale, { weekday: 'short' }),
       dddd: this.date.toLocaleString(this.locale, { weekday: 'long' }),
+      ms: this.date.getMilliseconds(),
     }
     //loop trough format string
     for (const [key, value] of Object.entries(format)) {

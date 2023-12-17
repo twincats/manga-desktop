@@ -104,7 +104,7 @@ func (f *Convert) DoConvert(c Convert) (ConvertResult, error) {
 		}
 
 		if c.Resize {
-			if helper.AutoCrop(image, c.ResizeWidth) {
+			if helper.AutoCropManga(image, c.ResizeWidth) {
 				res.TotalResize += 1
 				rc.Resized = true
 			}

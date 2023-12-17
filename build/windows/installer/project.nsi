@@ -48,7 +48,7 @@ VIAddVersionKey "ProductName"     "${INFO_PRODUCTNAME}"
 !include "MUI.nsh"
 
 !define MUI_ICON "..\icon.ico"
-!define MUI_UNICON "..\icon.ico"
+!define MUI_UNICON "..\icon1.ico"
 # !define MUI_WELCOMEFINISHPAGE_BITMAP "resources\leftimage.bmp" #Include this to add a bitmap on the left side of the Welcome Page. Must be a size of 164x314
 !define MUI_FINISHPAGE_NOAUTOCLOSE # Wait on the INSTFILES page so the user can take a look into the details of the installation steps
 !define MUI_ABORTWARNING # This will warn the user if they exit from the installer.
@@ -76,6 +76,24 @@ Function .onInit
    !insertmacro wails.checkArchitecture
 FunctionEnd
 
+Function Unzip
+  ; Set the installation directory
+  Push $INSTDIR
+
+  ; Specify the path to the zip file (e.g., libvips.7z) in $INSTDIR
+  Push "$INSTDIR\libvips.7z"
+
+  ; Call 7za.exe to extract the zip file to the installation directory
+  nsExec::Exec '"$INSTDIR\7za.exe" x "$INSTDIR\libvips.7z" -o"$INSTDIR\"'
+
+  ; Delete the zip file after extraction
+  Delete "$INSTDIR\libvips.7z"
+
+  ; Pop the parameters from the stack
+  Pop $2
+  Pop $1
+FunctionEnd
+
 Section
     !insertmacro wails.webview2runtime
 
@@ -85,8 +103,24 @@ Section
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
+    CreateShortCut "$DESKTOP\Convert ${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}" convert "$INSTDIR\icon2.ico"
+
 
     !insertmacro wails.writeUninstaller
+SectionEnd
+
+Section "addition files"
+    SetOutPath $INSTDIR
+    
+    File "..\icon2.ico"
+    File "..\7za.exe"
+    File "..\libvips.7z"
+    
+SectionEnd
+
+Section "Unzip Libvips"
+    ; Create a custom function to unzip libvips.7z to $INSTDIR
+    Call Unzip
 SectionEnd
 
 Section "uninstall" 
@@ -96,6 +130,7 @@ Section "uninstall"
 
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
+    Delete "$DESKTOP\Convert ${INFO_PRODUCTNAME}.lnk"
 
     !insertmacro wails.deleteUninstaller
 SectionEnd

@@ -18,11 +18,6 @@ import (
 var assets embed.FS
 
 func main() {
-	// Single instance check
-	if _, err := system.CreateMutexW(system.ProcCreateMutexW, "mangav4.application"); err != nil {
-		return
-	}
-
 	// Create an instance of the app structure
 	mangaApp := NewApp()
 
@@ -45,6 +40,7 @@ func main() {
 		Height:    768,
 		MinWidth:  1024,
 		MinHeight: 768,
+		// WindowStartState: options.Maximised,
 		AssetServer: &assetserver.Options{
 			Assets:  assets,
 			Handler: file.NewFileLoader(),
@@ -54,9 +50,13 @@ func main() {
 			WindowIsTranslucent:  false,
 		},
 		BackgroundColour: &options.RGBA{R: 24, G: 24, B: 24, A: 1},
-		OnStartup:        mangaApp.startup,
-		OnBeforeClose:    mangaApp.beforeClose,
-		Bind:             binding,
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "a620c3a7-c432-4b96-93c0-d1f935ed3bff",
+			OnSecondInstanceLaunch: mangaApp.onSecondInstanceLaunch,
+		},
+		OnStartup:     mangaApp.startup,
+		OnBeforeClose: mangaApp.beforeClose,
+		Bind:          binding,
 	})
 
 	if err != nil {

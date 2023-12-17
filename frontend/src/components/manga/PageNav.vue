@@ -8,6 +8,20 @@
         simple
       />
     </div>
+    <div id="tool">
+      <a-button
+        style="
+          --color-secondary: rgba(var(--gray-1), 1);
+          --color-secondary-hover: rgba(var(--gray-1), 1);
+          --color-secondary-active: rgba(var(--gray-2), 1);
+          --border-radius-small: 6px;
+          --color-text-2: rgba(var(--orange-6), 1);
+        "
+        size="small"
+        @click="$router.push('/')"
+        ><icon-home
+      /></a-button>
+    </div>
     <div id="pscroll">
       <a-button
         v-if="!scroll.arrivedState.top"
@@ -34,6 +48,8 @@
 </template>
 
 <script setup lang="ts">
+import { IconHome } from '@arco-design/web-vue/es/icon'
+
 const props = defineProps<{
   chaps: number[]
 }>()
@@ -97,6 +113,17 @@ watch(
     &:hover {
       opacity: 1;
     }
+  }
+}
+
+#tool {
+  position: absolute;
+  bottom: 35px;
+
+  left: 80%;
+  opacity: 0.3;
+  &:hover {
+    opacity: 0.8;
   }
 }
 </style>

@@ -2,10 +2,12 @@ package manga
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
 	"mangav4/system/app"
+	"mangav4/system/app/helper"
 	"mangav4/system/file"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -38,11 +40,28 @@ func (m *Manga) GetMangas() []Manga {
 	return manga
 }
 
+// GetCountMangas get Count total of manga
+func (m *Manga) GetCountMangas() int64 {
+	var totalManga int64
+	app.DB.Model(&Manga{}).Count(&totalManga)
+	return totalManga
+}
+
 // GetMangaHome get list of mangaHome with paginate []manga
-func (m *Manga) GetMangaHome(title *string, page int, limit int) MangaHome {
+func (m *Manga) GetMangaHome(title *string, dates *string, page int, limit int) MangaHome {
 	mangaHomeApi := MangaHomeApi{}
 
-	return mangaHomeApi.Paginate(title, page, limit)
+	return mangaHomeApi.Paginate(title, dates, page, limit)
+}
+
+func (m *Manga) GetRandomMangaHome(limit int) []MangaHomeApi {
+	var randomMangaHome []MangaHomeApi
+	query := MangaHomeApi{}.FetchQuery()
+	query.Where("chapters.status_read = false").
+		Order("RANDOM()").
+		Order("download_time desc, mangas.title").
+		Limit(limit).Find(&randomMangaHome)
+	return randomMangaHome
 }
 
 /* GetPage for Fetching list of images chapter */
@@ -102,6 +121,52 @@ func (f *Manga) TestHomeApiQuery() interface{} {
 	return v
 }
 
+func (f *Manga) UpdateChapJS(serverID uint, chapJS string) (bool, error) {
+	var server Server
+	server.ID = serverID
+	res := app.DB.Model(&server).Update("chap_js_code", chapJS)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}
+
+func (f *Manga) UpdatePagesJS(serverID uint, pageJS string) (bool, error) {
+	var server Server
+	server.ID = serverID
+	res := app.DB.Model(&server).Update("page_js_code", pageJS)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return true, nil
+}
+
+func (f *Manga) DeletMangaOnly(ID uint) error {
+	result := app.DB.Delete(&Manga{}, ID)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+// DeleteMangaWithFile
+func (f *Manga) DeleteMangaWithFile(ID uint) error {
+	m := f.GetManga(ID)
+
+	result := app.DB.Delete(&m)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	//delete folder
+	path := filepath.Join(file.MANGA_PATH, helper.FixMangaTitle(m.Title))
+	err := os.RemoveAll(path)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // PageApi for Fetching chapter and Manga title
 type PageApi struct {
 	ID      uint
@@ -133,26 +198,21 @@ type MangaHomeApi struct {
 	Mdex         string    `orm:"null" json:"mdex"`
 	ChapterID    uint      `json:"chapter_id"`
 	Chapter      float32   `json:"chapter"`
-	DownloadTime time.Time `json:"download_time"`
+	DownloadTime time.Time `json:"download_time" ts_type:"Date" ts_transform:"new Date(__VALUE__)"`
 }
 
-func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
+func (m *MangaHomeApi) Paginate(title *string, dates *string, page int, limit int) MangaHome {
 	// declaration for total data is fetched
 	var totalManga int64
 
 	// getQuery
-	query := m.FetchQuery()
+	query := m.FetchQuery().Order("download_time desc, mangas.title")
 
 	// if only
 	if title != nil && *title != "" {
 		ilike := fmt.Sprintf("%%%s%%", *title)
-		query = app.DB.Table("(?) as mh", query).
-			Select("mh.id", "mh.title", "mdex", "status_ending", "chapter_id", "chapter", "download_time").
-			Joins("left join manga_alternatives on manga_alternatives.manga_id = mh.id").
-			Where("mh.title LIKE ?", ilike).
-			Or("manga_alternatives.title LIKE ?", ilike).
-			Group("mh.id, mh.title,mdex,status_ending,chapter_id,chapter,download_time").
-			Order("mh.title")
+		query = query.Where("mangas.title LIKE ?", ilike).
+			Order("mangas.title")
 
 		// get totalManga with searhing manga title
 		app.DB.Table("(?) as mhome", query).Count(&totalManga)
@@ -162,12 +222,22 @@ func (m *MangaHomeApi) Paginate(title *string, page int, limit int) MangaHome {
 		query.Count(&totalManga)
 	}
 
+	//filter date
+	if dates != nil && *dates != "" {
+		query = query.Where(`DATE( datetime( substr( download_time, 1, 19 ), substr( download_time, 21, 3 ) || ' hours' ) ) = ?`, dates)
+		app.DB.Table("(?) as mhome", query).Count(&totalManga)
+	}
+
 	// set pagination
 	pagination := &Pagination{CurrentPage: page, Total: int(totalManga), PerPage: limit}
 	pagination.Paginate()
 
 	mhApi := []MangaHomeApi{}
-	query.Offset(pagination.Offset).Limit(pagination.PerPage).Find(&mhApi)
+	if pagination.PerPage != 0 {
+		query = query.Offset(pagination.Offset).Limit(pagination.PerPage)
+	}
+
+	query.Find(&mhApi)
 
 	return MangaHome{
 		Manga:      mhApi,
@@ -182,14 +252,15 @@ func (f MangaHomeApi) FetchQuery() *gorm.DB {
 		Select("mangas.id", "mangas.title", "mdex", "status_ending", "chapters.id as chapter_id", "latest.chapter", "chapters.created_at as download_time").
 		Joins("inner join chapters on mangas.id = chapters.manga_id").
 		Joins("inner join (?) latest on mangas.id = latest.manga_id", latestSubQuery).
-		Where("latest.chapter = CAST(chapters.chapter as decimal)").
-		Order("download_time desc, mangas.title")
+		Where("latest.chapter = CAST(chapters.chapter as decimal)")
+		// .
+		// Order("download_time desc, mangas.title")
 	return homeApiQuery
 }
 
 type MangaHome struct {
 	Manga      []MangaHomeApi `json:"manga"`
-	Pagination *Pagination    `json:"pagination"`
+	Pagination *Pagination    `json:"pagination" ts_type:"Pagination"`
 }
 
 type Page struct {
@@ -199,7 +270,11 @@ type Page struct {
 	MangaId uint     `json:"manga_id"`
 }
 
-// type Nav struct {
-// 	Next string `json:"next"`
-// 	Prev string `json:"prev"`
-// }
+func (f *Manga) GetMangaWithAlter(id uint) (Manga, error) {
+	var manga Manga
+	res := app.DB.Preload("Alter").First(&manga, id)
+	if res.Error != nil {
+		return manga, res.Error
+	}
+	return manga, nil
+}
