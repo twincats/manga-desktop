@@ -68,6 +68,10 @@ const open = (event: MouseEvent, dataExt: any = null) => {
     }
   }
 }
+export interface ExposedProps {
+  open: (event: MouseEvent, dataExt: any) => void // Method to toggle the menu
+  close: () => void // Expose the title reactive reference
+}
 // expose tobe available in $refs instance
 defineExpose({
   open,

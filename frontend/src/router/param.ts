@@ -1,5 +1,3 @@
-import { RouteLocationNormalized } from 'vue-router'
-
 /**
  * Casts props into proper data types.
  * Props ending in 'ID' and the prop 'id' are cast to Number automatically.

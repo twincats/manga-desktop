@@ -326,6 +326,7 @@ showRandomUnread() //display random
       line-height: 1.5;
       overflow: hidden;
       display: -webkit-box;
+      line-clamp: 1;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 1;
     }

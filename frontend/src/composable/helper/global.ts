@@ -1,5 +1,5 @@
 import { useBreakpoints, breakpointsTailwind } from '@vueuse/core'
-import ContextMenuApp from '@/components/app/ContextMenu.vue'
+import type { ExposedProps } from '@/components/app/ContextMenu.vue'
 
 export const MangaTitleURL = (url: string) => {
   const fixed = url.replaceAll(/[^A-Za-z0-9_\-[\]()' ~.,!@&]|\.+$/gm, '')
@@ -123,7 +123,7 @@ export class DateApp {
 
 // context menu instance
 export const UseContextMenu = () => {
-  const refMenu = ref<InstanceType<typeof ContextMenuApp> | null>(null)
+  const refMenu = ref<ExposedProps | null>(null)
   const openContextMenu = (ev: MouseEvent, data: any = null) => {
     refMenu.value?.open(ev, data)
   }

@@ -30,4 +30,5 @@ export default defineConfig({
     }),
     Icons({ autoInstall: true }),
   ],
+  appType: 'mpa', // temp fix custom assets handler for images
 })
