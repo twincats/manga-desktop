@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"mangav4/system/app"
-	"mangav4/system/app/internet"
+	"regexp"
 	"strings"
 	"time"
 
@@ -22,29 +22,19 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 	urlManga := fmt.Sprintf("https://api.mangadex.org/manga/%s?includes[]=cover_art", mdex)
 	urlChapter := fmt.Sprintf("https://api.mangadex.org/manga/%s/feed?translatedLanguage[]=en&translatedLanguage[]=id&includes[]=scanlation_group&limit=%d&offset=%d&order[chapter]=desc", mdex, limit, offset)
 
-	var UrlList = []string{urlManga, urlChapter}
-	result := ParallelFetch(UrlList)
-
 	var mdexmanga MdexManga
 	var mdexChapter MdexChapter
 
-	for _, fetchResult := range result {
-		if fetchResult.Err != nil {
-			return nil, fetchResult.Err
-		}
+	// Fetch & Parse manga
+	_, err := app.C.R().SetSuccessResult(&mdexmanga).Get(urlManga)
+	if err != nil {
+		return nil, err
+	}
 
-		switch fetchResult.ID {
-		case 0:
-			err := internet.BodyParser(fetchResult.Body, &mdexmanga)
-			if err != nil {
-				return nil, err
-			}
-		case 1:
-			err := internet.BodyParser(fetchResult.Body, &mdexChapter)
-			if err != nil {
-				return nil, err
-			}
-		}
+	// Fetch & Parse chapter
+	_, err = app.C.R().SetSuccessResult(&mdexChapter).Get(urlChapter)
+	if err != nil {
+		return nil, err
 	}
 
 	var c Chapter
@@ -61,24 +51,29 @@ func (d Mangadex) GetChapter(o Option) (*Chapter, error) {
 
 func (d Mangadex) GetPage(o Option) (*Page, error) {
 	mdex_page_url := fmt.Sprintf("https://api.mangadex.org/at-home/server/%s", o.URL)
-	pageByte, err := app.Client.Get(mdex_page_url).Bytes()
-	if err != nil {
-		return nil, err
-	}
 
+	// fetch & parse MdexPages
 	var mdex_page MdexPages
-	err = internet.BodyParser(pageByte, &mdex_page)
+	_, err := app.C.R().SetSuccessResult(&mdex_page).Get(mdex_page_url)
 	if err != nil {
 		return nil, err
 	}
 
 	var c Page
 	c.Title = "Mangadex"
+	var pages []string
 	if *o.DataSaver {
-		c.Pages = mdex_page.Chapter.DataSaver
+		for _, v := range mdex_page.Chapter.DataSaver {
+			url := fmt.Sprintf("%s/data-saver/%s/%s", mdex_page.BaseUrl, mdex_page.Chapter.Hash, v)
+			pages = append(pages, url)
+		}
 	} else {
-		c.Pages = mdex_page.Chapter.Data
+		for _, v := range mdex_page.Chapter.Data {
+			url := fmt.Sprintf("%s/data/%s/%s", mdex_page.BaseUrl, mdex_page.Chapter.Hash, v)
+			pages = append(pages, url)
+		}
 	}
+	c.Pages = pages
 
 	return &c, nil
 }
@@ -86,13 +81,10 @@ func (d Mangadex) GetPage(o Option) (*Page, error) {
 func (f *Mangadex) GetChapterMdexPagination(url string, limit, offset int) ([]ChapterList, error) {
 	mdex := getMangadexIdFromUrl(url)
 	urlChapter := fmt.Sprintf("https://api.mangadex.org/manga/%s/feed?translatedLanguage[]=en&translatedLanguage[]=id&includes[]=scanlation_group&limit=%d&offset=%d&order[chapter]=desc", mdex, limit, offset)
-	bodyByte, err := app.Client.Get(urlChapter).Bytes()
-	if err != nil {
-		return nil, err
-	}
 
+	// fetch & parse MdexChapter
 	var mdexChap MdexChapter
-	err = internet.BodyParser(bodyByte, &mdexChap)
+	_, err := app.C.R().SetSuccessResult(&mdexChap).Get(urlChapter)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +150,7 @@ func setMangadexChapter(m MdexChapter) []ChapterList {
 	for _, v := range m.Data {
 		chapterList = append(chapterList, ChapterList{
 			ID:        v.Id,
-			Chapter:   v.Attributes.Chapter,
+			Chapter:   ChapterJSON(v.Attributes.Chapter),
 			Volume:    v.Attributes.Volume,
 			Title:     v.Attributes.Title,
 			Timestamp: int(v.Attributes.PublishAt.Unix()),
@@ -212,6 +204,18 @@ func joinString(ss []string) string {
 	return v
 }
 
+// ChapterJSON convert string to Json string (save with leading zero)
+func ChapterJSON(c string) json.Number {
+	re := regexp.MustCompile(`(?m)0+\B`)
+	numstring := re.ReplaceAllString(c, "")
+	var num json.Number
+	json.Unmarshal([]byte(numstring), &num)
+	if num == "" {
+		num = "0"
+	}
+	return num
+}
+
 type MdexManga struct {
 	Data struct {
 		Id         string
@@ -243,7 +247,7 @@ type MdexChapter struct {
 	Data []struct {
 		Id         string
 		Attributes struct {
-			Chapter            json.Number
+			Chapter            string
 			Volume             string
 			Title              string
 			TranslatedLanguage string

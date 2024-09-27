@@ -7,6 +7,7 @@ export const UseTable = () => {
   const tableDownload = reactive<types.ChapterList[]>([]) // data for display chapter in table
   const tablePageSize = ref(5) // data shown how much data perpage in table default 5=>15
   const tableLoading = ref(false) // data for status loading table
+  const tablePageCurrent = ref(1)
   const { lg } = GetBreakPoints() // global breakpoint
   // set default perpage table
   if (lg.value) {
@@ -28,20 +29,29 @@ export const UseTable = () => {
     tableDownload,
     tablePageSize,
     tableLoading,
+    tablePageCurrent,
   }
 }
 
 export const UseServer = () => {
   const servers = ref<manga.Server[] | null>(null) // to fill list server
-  GetServer().then(res => {
-    // to fetch server only active server
-    servers.value = res.filter(item => item.status_active === true)
-  })
+
+  const refreshServer = () => {
+    GetServer().then(res => {
+      // to fetch server only active server
+      servers.value = res.filter(item => item.status_active === true)
+    })
+  }
+
+  // fetch server
+  refreshServer()
+
   const getSelectedServer = (id: number): manga.Server | undefined => {
     return servers.value?.find(item => item.id == id)
   }
   return {
     servers,
     getSelectedServer,
+    refreshServer,
   }
 }

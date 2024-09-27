@@ -10,6 +10,11 @@ export default createRouter({
       component: () => import('../views/Home.vue'),
     },
     {
+      path: '/manga/all',
+      name: 'manga_all',
+      component: () => import('../views/manga/All.vue'),
+    },
+    {
       path: '/convert/:mid?',
       name: 'convert',
       props: typedProps({ mid: Number }),
@@ -36,6 +41,27 @@ export default createRouter({
       path: '/test',
       name: 'test',
       component: () => import('../views/Test.vue'),
+    },
+    {
+      path: '/dlcode',
+      name: 'dlcode',
+      component: () => import('../views/admin/DownloadCodeEditor.vue'),
+    },
+    {
+      path: '/addalter/:mid',
+      name: 'addalter',
+      props: typedProps({ mid: Number }),
+      component: () => import('../views/admin/AddAlter.vue'),
+    },
+    {
+      path: '/serverstat',
+      name: 'serverstat',
+      component: () => import('../views/admin/ServerStat.vue'),
+    },
+    {
+      path: '/server/add',
+      name: 'serveradd',
+      component: () => import('../views/admin/AddServer.vue'),
     },
   ],
 })

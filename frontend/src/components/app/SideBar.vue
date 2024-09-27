@@ -14,13 +14,22 @@
         <a-menu-item key="0_2" @click="$router.push('/download')"
           >Download</a-menu-item
         >
+        <a-menu-item key="0_0" @click="$router.push('/manga/all')"
+          >Manga All</a-menu-item
+        >
       </a-sub-menu>
       <a-sub-menu key="1">
-        <template #icon><icon-bug></icon-bug></template>
-        <template #title>Navigation 2</template>
-        <a-menu-item key="1_0">Menu 1</a-menu-item>
-        <a-menu-item key="1_1">Menu 2</a-menu-item>
-        <a-menu-item key="1_2">Menu 3</a-menu-item>
+        <template #icon><icon-desktop /></template>
+        <template #title>Admin</template>
+        <a-menu-item key="1_0" @click="$router.push('/dlcode')"
+          >Download JSCode</a-menu-item
+        >
+        <a-menu-item key="1_1" @click="$router.push('/serverstat')"
+          >Server Stat</a-menu-item
+        >
+        <a-menu-item key="1_2" @click="$router.push('/server/add')"
+          >Add Server</a-menu-item
+        >
       </a-sub-menu>
       <a-sub-menu key="2">
         <template #icon><icon-bulb></icon-bulb></template>
@@ -45,7 +54,7 @@
 <script lang="ts" setup>
 import {
   IconApps,
-  IconBug,
+  IconDesktop,
   IconBulb,
   IconSettings,
 } from '@arco-design/web-vue/es/icon'

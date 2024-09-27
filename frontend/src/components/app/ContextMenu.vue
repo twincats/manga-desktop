@@ -6,7 +6,7 @@
     :style="{
       left: data.x + 'px',
       top: data.y - 10 + 'px',
-      width: width + 'px',
+      width: prop.width + 'px',
     }"
   >
     <ul class="">
@@ -22,7 +22,9 @@ interface Props {
 }
 
 // defineProps with default value need reactivityTransform: true
-const { width = 250 } = defineProps<Props>()
+const prop = withDefaults(defineProps<Props>(), {
+  width: 250,
+})
 
 // setup emit
 // const emit = defineEmits<{
@@ -56,8 +58,8 @@ const open = (event: MouseEvent, dataExt: any = null) => {
   data.x = event.x
   data.y = event.y
   extData.value = dataExt
-  if (width > limitX) {
-    data.x = winWidth.value - width
+  if (prop.width > limitX) {
+    data.x = winWidth.value - prop.width
   }
   if (cmenu.value) {
     const height = cmenu.value.offsetHeight
@@ -65,6 +67,10 @@ const open = (event: MouseEvent, dataExt: any = null) => {
       data.y = winHeight.value - height
     }
   }
+}
+export interface ExposedProps {
+  open: (event: MouseEvent, dataExt: any) => void // Method to toggle the menu
+  close: () => void // Expose the title reactive reference
 }
 // expose tobe available in $refs instance
 defineExpose({

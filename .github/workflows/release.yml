@@ -1,0 +1,73 @@
+# This workflow will build and release golang project when add tag version
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Install makensis (apt)'
+        run: sudo apt update && sudo apt install -y nsis
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.x'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          install-only: true
+
+      - name: Install Dependencies
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build
+        run: wails build -upx -nsis -platform windows/amd64
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: apptest1023-amd64-installer
+          path: build/bin/apptest1023-amd64-installer.exe # Should match the name used in the build step
+
+      - name: Determine Tag Type
+        id: determine_tag_type
+        run: echo "is_prerelease=$(echo ${GITHUB_REF#refs/tags/} | grep -E 'v[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta|rc)\.[0-9]+')" >> "$GITHUB_ENV"
+
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: apptest ${{  github.ref_name }}
+          files: |
+            apptest1023-amd64-installer.exe
+          prerelease: ${{ steps.determine_tag_type.outputs.is_prerelease }}
+          body: ${{ steps.changelog.outputs.changelog }}
+
+      - uses: dev-drprasad/delete-older-releases@v0.3.2
+        with:
+          keep_latest: 5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: write

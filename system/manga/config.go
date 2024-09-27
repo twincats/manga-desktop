@@ -3,9 +3,11 @@ package manga
 import (
 	"fmt"
 	"mangav4/system/app"
+	"mangav4/system/app/helper"
 	"mangav4/system/file"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -78,4 +80,54 @@ func (f *Config) AutoScanDirs() ([]string, error) {
 	}
 	file.MANGA_PATH = cf.MangaFolder
 	return mangaList, nil
+}
+
+func (f *Config) AutoReScanDir() (bool, error) {
+	cf, err := f.GetConfig()
+	if err != nil {
+		return false, err
+	}
+	var mu sync.Mutex
+	var totalManga int64
+	mangaList := file.ReadDir(cf.MangaFolder)
+
+	if len(mangaList) > 0 {
+		app.DB.Table("mangas").Count((&totalManga))
+
+		if len(mangaList) > int(totalManga) {
+			helper.ParallelCode[string](3, mangaList, func(v string) {
+				mu.Lock()
+				defer mu.Unlock()
+				var manga Manga
+				manga.Title = v
+				mid, _ := manga.InsertManga(manga)
+				mangaTitlePath := filepath.Join(cf.MangaFolder, v)
+				chaps := file.ReadDir(mangaTitlePath)
+				var chapters []Chapter
+				for _, cp := range chaps {
+					cfloat, _ := strconv.ParseFloat(cp, 32)
+					chapters = append(chapters, Chapter{
+						Chapter:    float32(cfloat),
+						LanguageId: 1,
+						Group:      "Unknown",
+						MangaId:    mid,
+					})
+				}
+				//save chapter
+				res := app.DB.Create(&chapters)
+				if res.Error != nil {
+					fmt.Println(res.Error)
+				}
+				chapters = nil
+				runtime.EventsEmit(*app.WailsContext, "status_rescans", v)
+			})
+		}
+	}
+
+	return true, nil
+}
+
+func (f *Config) MigrateServer() bool {
+	err := app.DB.AutoMigrate(&Server{})
+	return err == nil
 }

@@ -2,6 +2,7 @@ package tool
 
 import (
 	"mangav4/system/app"
+	"mangav4/system/app/helper"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -83,4 +84,12 @@ func (f *Dialog) OpenDialog(title, filename, directory string, filters []map[str
 		DefaultFilename:  filename,
 		Filters:          filter,
 	})
+}
+
+func (f *Dialog) OpenExpoler(path string) error {
+	err := helper.OpenExpoler(path)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -1,9 +1,19 @@
 import { useBreakpoints, breakpointsTailwind } from '@vueuse/core'
-import ContextMenuApp from '@/components/app/ContextMenu.vue'
+import type { ExposedProps } from '@/components/app/ContextMenu.vue'
 
 export const MangaTitleURL = (url: string) => {
   const fixed = url.replaceAll(/[^A-Za-z0-9_\-[\]()' ~.,!@&]|\.+$/gm, '')
   return fixed.trim()
+}
+
+export const sanitizeWindowsFileName = (input: string): string => {
+  // Define a regular expression pattern to match invalid characters
+  const invalidCharPattern = /[<>:"/\\|?*\x00-\x1F]/g
+
+  // Use String.prototype.replace() to remove invalid characters
+  const cleanString = input.replace(invalidCharPattern, '')
+
+  return cleanString
 }
 
 export const GetBreakPoints = () => {
@@ -86,6 +96,7 @@ export class DateApp {
       ).slice(-2),
       ddd: this.date.toLocaleString(this.locale, { weekday: 'short' }),
       dddd: this.date.toLocaleString(this.locale, { weekday: 'long' }),
+      ms: this.date.getMilliseconds(),
     }
     //loop trough format string
     for (const [key, value] of Object.entries(format)) {
@@ -112,7 +123,7 @@ export class DateApp {
 
 // context menu instance
 export const UseContextMenu = () => {
-  const refMenu = ref<InstanceType<typeof ContextMenuApp> | null>(null)
+  const refMenu = ref<ExposedProps | null>(null)
   const openContextMenu = (ev: MouseEvent, data: any = null) => {
     refMenu.value?.open(ev, data)
   }
